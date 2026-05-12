@@ -1,0 +1,45 @@
+deploy: publish zombie AI throttle + renderer perf hotfix
+
+Real fix for the runtime stutter many users (incl. RTX 5070 Ti +
+i7-14700F rigs) hit even after the asset diet. Diagnosis: the
+zombie game was JS-thread-bound, not GPU-bound. Source edits
+were made in xrctz/DeadTakeover, built, and deployed here.
+
+Changes in the new bundle (games/zombie/assets/index-WjXO7YF1.js):
+
+1. updateZombies: stop ticking every zombie every frame at
+   quality level 0. The round-robin code was already in place
+   for quality levels >= 1; just extended to level 0. Each
+   zombie now ticks at ~30 Hz instead of 60 Hz, halving the
+   single-threaded AI/distance-check/LOS cost. Visually
+   identical because dt accumulates correctly across skipped
+   frames.
+
+2. Sun shadow camera frustum tightened: far 130 -> 75 (matches
+   fog reach) and half-size 42 -> 32. Roughly doubles shadow
+   texel density on visible geometry and halves shadow pass
+   work for offscreen objects.
+
+3. Default pixelRatio cap: 1.25 -> 1.0 standalone, 0.85 when
+   embedded in the hub iframe (the iframe is smaller and you
+   don't need 4K-DPI crispness inside it). On a 4K display
+   this alone roughly halves fragment shader work.
+
+4. MSAA (antialias) disabled in embedded mode. Standalone keeps
+   it. MSAA is one of the most expensive fixed costs on
+   integrated/lower-end GPUs and the iframe is small enough
+   that aliasing is not visually distracting.
+
+5. Adaptive-quality thresholds tightened so it reacts faster:
+   downgrade at >20 ms avg (50 fps) instead of >24 ms (41 fps);
+   upgrade at <15 ms (66 fps) instead of <17.5 ms (57 fps).
+
+Deploy notes:
+- Only the index.html and the new JS bundle changed in this
+  repo. CSS and three.js bundles have identical hashes.
+- The fat dist textures from the source repo were NOT copied
+  over - the diet'd textures from the previous commit are
+  preserved.
+- Source changes live in xrctz/DeadTakeover at:
+    Zombie Open World Game/src/main.js
+  and will be committed there separately.
