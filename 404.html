@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#060b18" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="robots" content="noindex" />
+
+  <title>404 — AI Game Lab</title>
+
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="manifest" href="./manifest.json" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="./assets/futuristic.css" />
+</head>
+<body>
+  <div class="bg-orbs" aria-hidden="true">
+    <div class="orb"></div>
+    <div class="orb"></div>
+    <div class="orb"></div>
+  </div>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="topbar" role="banner">
+    <div class="topbar-inner">
+      <a class="brand" href="/ai-game-lab/" aria-label="AI Game Lab Home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-name">AI Game Lab</span>
+      </a>
+
+      <nav id="siteNav" class="nav" aria-label="Site">
+        <a href="/ai-game-lab/">Home</a>
+        <a href="/ai-game-lab/showcase/">Showcase</a>
+        <a href="/ai-game-lab/play/">Play</a>
+        <a href="/ai-game-lab/story/">Story</a>
+      </nav>
+      <button id="menuToggle" class="menu-toggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="siteNav">
+        <svg width="20" height="16" viewBox="0 0 20 16" fill="none" aria-hidden="true">
+          <rect width="20" height="2" rx="1" fill="currentColor"/>
+          <rect y="7" width="20" height="2" rx="1" fill="currentColor"/>
+          <rect y="14" width="20" height="2" rx="1" fill="currentColor"/>
+        </svg>
+      </button>
+
+      <button id="themeBtn" type="button" aria-label="Toggle theme">
+        <span class="icon-sun" aria-hidden="true">☀️</span>
+        <span class="icon-moon" aria-hidden="true">🌙</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="notfound reveal">
+      <div class="glitch-text" aria-hidden="true">404</div>
+      <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap">Page not found — 404</h1>
+      <p class="sub">This coordinate drifted into deep space. The page you are looking for does not exist, or moved beyond the observable universe.</p>
+      <a class="btn primary" href="/ai-game-lab/">Return to home base</a>
+    </section>
+
+    <footer class="footer">
+      <p>AI Game Lab — design, test, and ship playable ideas.</p>
+      <p id="copyright"><span id="copyrightYear">2026</span> AI Game Lab</p>
+    </footer>
+
+    <button id="scrollTop" class="scroll-top" type="button" aria-label="Scroll to top" hidden>
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="m4 13 6-6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="./assets/hub.js"></script>
+</body>
+</html>

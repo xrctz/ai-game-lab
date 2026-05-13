@@ -1,16 +1,210 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AI Game Lab — Showcase</title>
-  <meta http-equiv="refresh" content="0; url=../index.html#showcase" />
-  <link rel="canonical" href="../index.html#showcase" />
-  <script>
-    location.replace("../index.html#showcase");
-  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AI Game Lab Showcase — Three distinct game systems built with AI collaboration: voxel sandbox, open-world FPS, and AI agent launcher." />
+  <meta name="theme-color" content="#060b18" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="robots" content="noindex" />
+
+  <title>Showcase — AI Game Lab</title>
+
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="manifest" href="../manifest.json" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="../assets/futuristic.css" />
 </head>
 <body>
-  <p>Redirecting to <a href="../index.html#showcase">Showcase</a>…</p>
+  <div class="bg-orbs" aria-hidden="true">
+    <div class="orb"></div>
+    <div class="orb"></div>
+    <div class="orb"></div>
+  </div>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="topbar" role="banner">
+    <div class="topbar-inner">
+      <a class="brand" href="/ai-game-lab/" aria-label="AI Game Lab Home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-name">AI Game Lab</span>
+      </a>
+
+      <nav id="siteNav" class="nav" aria-label="Site">
+        <a href="/ai-game-lab/">Home</a>
+        <a href="/ai-game-lab/showcase/">Showcase</a>
+        <a href="/ai-game-lab/play/">Play</a>
+        <a href="/ai-game-lab/story/">Story</a>
+      </nav>
+      <button id="menuToggle" class="menu-toggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="siteNav">
+        <svg width="20" height="16" viewBox="0 0 20 16" fill="none" aria-hidden="true">
+          <rect width="20" height="2" rx="1" fill="currentColor"/>
+          <rect y="7" width="20" height="2" rx="1" fill="currentColor"/>
+          <rect y="14" width="20" height="2" rx="1" fill="currentColor"/>
+        </svg>
+      </button>
+
+      <button id="themeBtn" type="button" aria-label="Toggle theme">
+        <span class="icon-sun" aria-hidden="true">☀️</span>
+        <span class="icon-moon" aria-hidden="true">🌙</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="top" class="hero reveal">
+      <p class="pill">Explore everything</p>
+      <h1>Creators Showcase</h1>
+      <p class="lead">Three AI-collaborative game systems — each with a different genre, stack, and approach.</p>
+    </section>
+
+    <section class="section">
+      <div class="showcase-tools">
+        <div class="filter-group" role="tablist" aria-label="Filter projects by type">
+          <button class="filter-btn active" type="button" role="tab" data-filter="all" aria-selected="true">All</button>
+          <button class="filter-btn" type="button" role="tab" data-filter="playable" aria-selected="false">Playable</button>
+          <button class="filter-btn" type="button" role="tab" data-filter="tools" aria-selected="false">Tools</button>
+        </div>
+        <span id="resultsNote" class="results-note">Showing all projects</span>
+      </div>
+
+      <div class="grid reveal">
+        <article class="game neon-a" data-category="playable">
+          <div class="game-head">
+            <div>
+              <p class="kicker">Playable Game</p>
+              <h3>CraftVerse Engine</h3>
+            </div>
+            <span class="badge">v1.0</span>
+          </div>
+          <p class="desc">
+            Minecraft-compatible voxel world generator with infinite terrain, biome blending, water simulation, survival loops, and multiplayer support.
+          </p>
+          <div class="cols">
+            <div>
+              <p class="label">Features</p>
+              <ul class="bullets">
+                <li>Infinite procedural terrain</li>
+                <li>Multi-biome blending</li>
+                <li>Water &amp; fluid simulation</li>
+                <li>Survival game loop</li>
+                <li>In-browser multiplayer</li>
+              </ul>
+            </div>
+            <div>
+              <p class="label">Tech Stack</p>
+              <ul class="bullets">
+                <li>Three.js &amp; WebGL</li>
+                <li>Custom noise algorithms</li>
+                <li>ECS architecture</li>
+                <li>WebSocket networking</li>
+              </ul>
+            </div>
+          </div>
+          <div class="game-actions">
+            <a class="btn primary small" href="/ai-game-lab/play/" data-play="voxel" data-scroll="#player">Play</a>
+          </div>
+          <p class="meta"><strong>Milestone:</strong> First AI-designed infinite-world game that actually performs on the web.</p>
+        </article>
+
+        <article class="game neon-b" data-category="playable">
+          <div class="game-head">
+            <div>
+              <p class="kicker">Playable Game</p>
+              <h3>DeadTakeover Protocol</h3>
+            </div>
+            <span class="badge">v2.0</span>
+          </div>
+          <p class="desc">
+            Browser zombie survival FPS with twelve maps, special infected, loot progression, horde siege events, and squad matchmaking.
+          </p>
+          <div class="cols">
+            <div>
+              <p class="label">Features</p>
+              <ul class="bullets">
+                <li>Single-player &amp; co-op modes</li>
+                <li>12 unique maps</li>
+                <li>12 special infected types</li>
+                <li>Loot &amp; progression system</li>
+                <li>Horde siege events</li>
+              </ul>
+            </div>
+            <div>
+              <p class="label">Tech Stack</p>
+              <ul class="bullets">
+                <li>Three.js &amp; WebGL</li>
+                <li>Instanced Mesh rendering</li>
+                <li>Adaptive quality system</li>
+                <li>Streaming chunk world</li>
+              </ul>
+            </div>
+          </div>
+          <div class="game-actions">
+            <a class="btn primary small" href="/ai-game-lab/play/" data-play="zombie" data-scroll="#player">Play</a>
+          </div>
+          <p class="meta"><strong>Milestone:</strong> A browser game with instanced rendering and map progression that scales beyond a demo.</p>
+        </article>
+
+        <article class="game neon-c" data-category="tools">
+          <div class="game-head">
+            <div>
+              <p class="kicker">Tool</p>
+              <h3>Mindcraft Control Deck</h3>
+            </div>
+            <span class="badge">v2.0</span>
+          </div>
+          <p class="desc">
+            Java-based AI agent launcher with automated runtime setup, profile and world management, and a streamlined text interface for Minecraft bots.
+          </p>
+          <div class="cols">
+            <div>
+              <p class="label">Features</p>
+              <ul class="bullets">
+                <li>One-click Java setup</li>
+                <li>Profile &amp; world management</li>
+                <li>AI bot auto-launch</li>
+                <li>Text-based control panel</li>
+                <li>Local server integration</li>
+              </ul>
+            </div>
+            <div>
+              <p class="label">Tech Stack</p>
+              <ul class="bullets">
+                <li>Java SE 21+</li>
+                <li>Node.js + Express</li>
+                <li>Keycloak Auth</li>
+                <li>MariaDB</li>
+              </ul>
+            </div>
+          </div>
+          <div class="game-actions">
+            <a class="btn primary small" href="/ai-game-lab/play/" data-play="mindcraft" data-scroll="#player">Run</a>
+          </div>
+          <p class="meta"><strong>Milestone:</strong> First AI-driven game host that handles install, config, and runtime. Runs locally.</p>
+        </article>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>AI Game Lab — design, test, and ship playable ideas.</p>
+      <p id="copyright"><span id="copyrightYear">2026</span> AI Game Lab</p>
+    </footer>
+
+    <button id="scrollTop" class="scroll-top" type="button" aria-label="Scroll to top" hidden>
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="m4 13 6-6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="../assets/hub.js"></script>
 </body>
 </html>

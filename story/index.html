@@ -1,16 +1,133 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AI Game Lab — Story</title>
-  <meta http-equiv="refresh" content="0; url=../index.html#story" />
-  <link rel="canonical" href="../index.html#story" />
-  <script>
-    location.replace("../index.html#story");
-  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AI Game Lab Story — How we use AI as a co-designer to iterate on game systems, not just asset generators." />
+  <meta name="theme-color" content="#060b18" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="robots" content="noindex" />
+
+  <title>Story — AI Game Lab</title>
+
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="manifest" href="../manifest.json" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="../assets/futuristic.css" />
 </head>
 <body>
-  <p>Redirecting to <a href="../index.html#story">Story</a>…</p>
+  <div class="bg-orbs" aria-hidden="true">
+    <div class="orb"></div>
+    <div class="orb"></div>
+    <div class="orb"></div>
+  </div>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="topbar" role="banner">
+    <div class="topbar-inner">
+      <a class="brand" href="/ai-game-lab/" aria-label="AI Game Lab Home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-name">AI Game Lab</span>
+      </a>
+
+      <nav id="siteNav" class="nav" aria-label="Site">
+        <a href="/ai-game-lab/">Home</a>
+        <a href="/ai-game-lab/showcase/">Showcase</a>
+        <a href="/ai-game-lab/play/">Play</a>
+        <a href="/ai-game-lab/story/">Story</a>
+      </nav>
+      <button id="menuToggle" class="menu-toggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="siteNav">
+        <svg width="20" height="16" viewBox="0 0 20 16" fill="none" aria-hidden="true">
+          <rect width="20" height="2" rx="1" fill="currentColor"/>
+          <rect y="7" width="20" height="2" rx="1" fill="currentColor"/>
+          <rect y="14" width="20" height="2" rx="1" fill="currentColor"/>
+        </svg>
+      </button>
+
+      <button id="themeBtn" type="button" aria-label="Toggle theme">
+        <span class="icon-sun" aria-hidden="true">☀️</span>
+        <span class="icon-moon" aria-hidden="true">🌙</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="top" class="hero reveal">
+      <p class="pill">The philosophy</p>
+      <h1>Why we build this way</h1>
+      <p class="lead">This lab exists because AI is a capable collaborator — but only when you treat it like one.</p>
+    </section>
+
+    <section class="section reveal">
+      <h2 class="section-title">What AI Co-Design Means Here</h2>
+      <div class="about">
+        <p>
+          We do not use AI to "generate a game." Those outputs are shallow and break
+          the moment you ask for something real. Instead, each project follows a loop:
+        </p>
+        <ul class="bullets">
+          <li>Write the spec together — AI sketches algorithms, architecture, and edge cases</li>
+          <li>Implement incrementally — AI writes systems, not boilerplate; we review every commit</li>
+          <li>Iterate fast — the AI co-design loop lets you try three architectures before lunch</li>
+          <li>Ship it — every game on this hub plays in the browser with zero install</li>
+        </ul>
+        <p>
+          The result is not perfect. Some features are unfinished, some performance
+          numbers could be better, and there will always be bugs. But the velocity
+          is real — you can prototype an infinite world generator, a zombie FPS, and
+          an AI agent launcher in the same month.
+        </p>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <h2 class="section-title">How to Use This Hub</h2>
+      <div class="about">
+        <ul class="bullets">
+          <li><strong>Play panel</strong> — Select a game from the <a href="/ai-game-lab/play/" style="color:var(--accent-a)">Play page</a> and it launches inline. Use the controls to stop, fullscreen, or open a separate tab.</li>
+          <li><strong>Theme remembers</strong> — Toggle light or dark mode. Your preference is stored and persists across visits.</li>
+          <li><strong>Run on localhost</strong> — Each game has copy-paste dev commands on the Play page. Clone, install, and run in seconds.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <h2 class="section-title">What Comes Next</h2>
+      <div class="about">
+        <p>
+          We are working on deeper AI integration inside each game: dynamic NPC dialog,
+          real-time world adaptation, and procedural storytelling that actually responds
+          to player action. The foundation — three working game engines — is enough to
+          start experimenting seriously.
+        </p>
+        <p>
+          The goal is not a company. It is a pattern: prove that AI lets a small team
+          build systems that used to require dozens of engineers. The lab itself is
+          the proof.
+        </p>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>AI Game Lab — design, test, and ship playable ideas.</p>
+      <p id="copyright"><span id="copyrightYear">2026</span> AI Game Lab</p>
+    </footer>
+
+    <button id="scrollTop" class="scroll-top" type="button" aria-label="Scroll to top" hidden>
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="m4 13 6-6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="../assets/hub.js"></script>
 </body>
 </html>

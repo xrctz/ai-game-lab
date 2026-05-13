@@ -1,0 +1,8 @@
+feat: redesign hub into futuristic multi-page site
+
+Replace single-page hub with multi-page architecture:
+- 4 content pages (Home, Showcase, Play, Story) + 404
+- Shared futuristic.css design system (neon accents, glass morphism, animated backgrounds, light/dark theme)
+- Shared hub.js (theme toggle, toast, copy, scroll-top, hamburger menu, player manager, showcase filters)
+- All game assets (games/, favicon.svg, manifest.json, .github/) preserved unchanged
+- Game player logic preserved with iframe management, fullscreen, focus controls

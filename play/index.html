@@ -1,16 +1,162 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AI Game Lab — Play</title>
-  <meta http-equiv="refresh" content="0; url=../index.html#play" />
-  <link rel="canonical" href="../index.html#play" />
-  <script>
-    location.replace("../index.html#play");
-  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AI Game Lab Play — Launch CraftVerse, DeadTakeover, or Mindcraft directly inside your browser." />
+  <meta name="theme-color" content="#060b18" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="robots" content="noindex" />
+
+  <title>Play — AI Game Lab</title>
+
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="manifest" href="../manifest.json" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="../assets/futuristic.css" />
 </head>
 <body>
-  <p>Redirecting to the <a href="../index.html#play">Play</a> section…</p>
+  <div class="bg-orbs" aria-hidden="true">
+    <div class="orb"></div>
+    <div class="orb"></div>
+    <div class="orb"></div>
+  </div>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="topbar" role="banner">
+    <div class="topbar-inner">
+      <a class="brand" href="/ai-game-lab/" aria-label="AI Game Lab Home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-name">AI Game Lab</span>
+      </a>
+
+      <nav id="siteNav" class="nav" aria-label="Site">
+        <a href="/ai-game-lab/">Home</a>
+        <a href="/ai-game-lab/showcase/">Showcase</a>
+        <a href="/ai-game-lab/play/">Play</a>
+        <a href="/ai-game-lab/story/">Story</a>
+      </nav>
+      <button id="menuToggle" class="menu-toggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="siteNav">
+        <svg width="20" height="16" viewBox="0 0 20 16" fill="none" aria-hidden="true">
+          <rect width="20" height="2" rx="1" fill="currentColor"/>
+          <rect y="7" width="20" height="2" rx="1" fill="currentColor"/>
+          <rect y="14" width="20" height="2" rx="1" fill="currentColor"/>
+        </svg>
+      </button>
+
+      <button id="themeBtn" type="button" aria-label="Toggle theme">
+        <span class="icon-sun" aria-hidden="true">☀️</span>
+        <span class="icon-moon" aria-hidden="true">🌙</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="top" class="hero reveal">
+      <p class="pill">Live play panel</p>
+      <h1>Game Launcher</h1>
+      <p class="lead">Select a game below and it will load right here. Everything runs inside one browser tab.</p>
+    </section>
+
+    <section id="player" class="reveal">
+      <div class="player">
+        <div class="player-bar">
+          <div class="player-status">
+            <p class="label">Status</p>
+            <span id="playerTitle" class="player-title">Choose a game to start</span>
+          </div>
+          <div class="player-actions">
+            <button class="btn ghost small" type="button" data-play="voxel">Voxel</button>
+            <button class="btn ghost small" type="button" data-play="zombie">Zombie</button>
+            <button class="btn ghost small" type="button" data-play="mindcraft">Mindcraft</button>
+            <button id="stopBtn" class="btn ghost small" type="button" disabled>Stop</button>
+            <button id="fullBtn" class="btn ghost small" type="button" disabled title="Fullscreen">⛶</button>
+            <button id="focusBtn" class="btn ghost small" type="button" disabled title="Focus player">◎</button>
+            <button id="openHereBtn" class="btn ghost small" type="button" disabled title="Navigate to game">↗</button>
+            <a id="openTab" class="btn ghost small" href="#" target="_blank" rel="noopener" aria-disabled="true" title="Open in new tab" style="pointer-events:none;opacity:0.35">⇱</a>
+          </div>
+        </div>
+        <div class="player-frame">
+          <iframe id="playerFrame"
+                  title="Game player viewport"
+                  allow="accelerometer; autoplay; clipboard-write; cross-origin-isolated; fullscreen; gamepad; gyroscope"
+                  sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals"
+                  loading="lazy"
+                  style="display:none"></iframe>
+          <div id="playerPlaceholder" style="display:flex;align-items:center;justify-content:center;position:absolute;inset:0;color:var(--text-muted);font-size:0.92rem">
+            Choose a game above to start playing inside this viewport.
+          </div>
+          <div id="playerLoader" class="player-loader">
+            <div class="spinner"></div>
+            <span style="color:var(--text-secondary);font-size:0.82rem">Loading game engine…</span>
+          </div>
+        </div>
+        <p id="playerHint" class="player-hint" hidden>
+          <strong>Tip:</strong> Some games use the keyboard and pointer lock — click inside the viewport to capture input.
+        </p>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <h2 class="section-title">Run Locally</h2>
+      <p class="section-sub">Copy these commands to clone and run any game on your own machine.</p>
+
+      <div class="run-grid">
+        <div class="run-card neon-a reveal">
+          <div class="run-head">
+            <h3>CraftVerse</h3>
+            <button class="btn ghost small" type="button" data-copy="#voxelCmd">Copy</button>
+          </div>
+          <pre><code id="voxelCmd">git clone https://github.com/example/craftverse-engine
+cd craftverse-engine
+npm install &amp;&amp; npm run dev</code></pre>
+          <p class="hint">Requires Node.js 18+. Opens at <a href="http://localhost:5173" target="_blank" rel="noopener">localhost:5173</a>.</p>
+        </div>
+
+        <div class="run-card neon-b reveal">
+          <div class="run-head">
+            <h3>DeadTakeover</h3>
+            <button class="btn ghost small" type="button" data-copy="#zombieCmd">Copy</button>
+          </div>
+          <pre><code id="zombieCmd">git clone https://github.com/example/deadtakeover-protocol
+cd deadtakeover-protocol
+npm install &amp;&amp; npm run dev</code></pre>
+          <p class="hint">Requires Node.js 18+. Opens at <a href="http://localhost:5173" target="_blank" rel="noopener">localhost:5173</a>.</p>
+        </div>
+
+        <div class="run-card neon-c reveal">
+          <div class="run-head">
+            <h3>Mindcraft</h3>
+            <button class="btn ghost small" type="button" data-copy="#mindcraftCmd">Copy</button>
+          </div>
+          <pre><code id="mindcraftCmd">git clone https://github.com/example/mindcraft-control
+cd mindcraft-control
+docker compose up -d &amp;&amp; npm run dev</code></pre>
+          <p class="hint">Requires Docker &amp; Node.js 18+. Opens at <a href="http://localhost:43110" target="_blank" rel="noopener">localhost:43110</a>.</p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>AI Game Lab — design, test, and ship playable ideas.</p>
+      <p id="copyright"><span id="copyrightYear">2026</span> AI Game Lab</p>
+    </footer>
+
+    <button id="scrollTop" class="scroll-top" type="button" aria-label="Scroll to top" hidden>
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="m4 13 6-6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="../assets/hub.js"></script>
 </body>
 </html>
