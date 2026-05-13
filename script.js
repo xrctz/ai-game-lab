@@ -5,7 +5,54 @@
 (function () {
   'use strict';
 
-  /* ---------- Theme ---------- */
+  /* ---------- Cursor spotlight tracking ---------- */
+  document.addEventListener('mousemove', (e) => {
+    const cx = (e.clientX / window.innerWidth) * 100;
+    const cy = (e.clientY / window.innerHeight) * 100;
+    document.body.style.setProperty('--cx', cx + '%');
+    document.body.style.setProperty('--cy', cy + '%');
+  }, { passive: true });
+
+  /* ---------- Particle background ---------- */
+  (function initParticles() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const canvas = document.createElement('canvas');
+    canvas.style.cssText = 'position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.5;';
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    let w, h, particles = [];
+    function resize() { w = canvas.width = innerWidth; h = canvas.height = innerHeight; }
+    function create() {
+      particles = [];
+      for (let i = 0; i < 40; i++) {
+        particles.push({
+          x: Math.random() * w, y: Math.random() * h,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3 - 0.1,
+          r: Math.random() * 1.5 + 0.5,
+          o: Math.random() * 0.15 + 0.15
+        });
+      }
+    }
+    let last = 0;
+    function draw(ts) {
+      const dt = Math.min((ts - last) / 16, 2);
+      last = ts;
+      ctx.clearRect(0, 0, w, h);
+      for (const p of particles) {
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        if (p.x < -10) p.x = w + 10; if (p.x > w + 10) p.x = -10;
+        if (p.y < -10) p.y = h + 10; if (p.y > h + 10) p.y = -10;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(124, 92, 255, ${p.o})`;
+        ctx.fill();
+      }
+      requestAnimationFrame(draw);
+    }
+    addEventListener('resize', () => { resize(); create(); });
+    resize(); create(); requestAnimationFrame(draw);
+  })();
   const html = document.documentElement;
   const THEME_KEY = 'aigamelab-theme';
 
