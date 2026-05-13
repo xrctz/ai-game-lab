@@ -3,49 +3,38 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="AI Game Lab — A futuristic hub for playable game experiments built with AI. Voxel sandbox, open-world FPS, and AI agent launcher." />
-  <meta name="theme-color" content="#060b18" />
+  <meta name="description" content="AI Game Lab — A hub for playable game experiments built with AI. Voxel sandbox, open-world FPS, and an AI agent launcher." />
+  <meta name="theme-color" content="#08090b" />
   <meta name="color-scheme" content="dark light" />
 
   <meta property="og:title" content="AI Game Lab" />
   <meta property="og:description" content="Playable game worlds designed with AI — voxel sandbox, open-world FPS, and AI agent launcher, all in your browser." />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://aigamelab.dev" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="AI Game Lab" />
-  <meta name="twitter:description" content="Playable game worlds designed with AI — voxel sandbox, open-world FPS, and AI agent launcher." />
 
-  <title>AI Game Lab — Playable Worlds</title>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
+  <title>AI Game Lab — Playable worlds, built with AI</title>
 
-  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="/ai-game-lab/favicon.svg" />
+  <link rel="manifest" href="/ai-game-lab/manifest.json" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="/ai-game-lab/styles.css" />
 </head>
 <body>
-  <div class="bg-orbs" aria-hidden="true">
-    <div class="orb"></div>
-    <div class="orb"></div>
-    <div class="orb"></div>
-  </div>
-  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="mesh-bg" aria-hidden="true"><div class="mesh-3"></div></div>
+  <div class="noise" aria-hidden="true"></div>
 
   <a class="skip" href="#main">Skip to content</a>
 
   <header class="topbar" role="banner">
     <div class="topbar-inner">
-      <a class="brand" href="/ai-game-lab/" aria-label="AI Game Lab Home">
+      <a class="brand" href="/ai-game-lab/" aria-label="AI Game Lab home">
         <span class="brand-mark" aria-hidden="true"></span>
         <span class="brand-name">AI Game Lab</span>
       </a>
-
       <nav id="siteNav" class="nav" aria-label="Site">
         <a href="/ai-game-lab/">Home</a>
         <a href="/ai-game-lab/showcase/">Showcase</a>
@@ -53,98 +42,160 @@
         <a href="/ai-game-lab/story/">Story</a>
       </nav>
       <button id="menuToggle" class="menu-toggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="siteNav">
-        <svg width="20" height="16" viewBox="0 0 20 16" fill="none" aria-hidden="true">
-          <rect width="20" height="2" rx="1" fill="currentColor"/>
-          <rect y="7" width="20" height="2" rx="1" fill="currentColor"/>
-          <rect y="14" width="20" height="2" rx="1" fill="currentColor"/>
+        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
       </button>
-
       <button id="themeBtn" type="button" aria-label="Toggle theme">
-        <span class="icon-sun" aria-hidden="true">☀️</span>
-        <span class="icon-moon" aria-hidden="true">🌙</span>
+        <svg class="ico-moon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <svg class="ico-sun" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M8 1v2M8 13v2M15 8h-2M3 8H1M13.07 2.93l-1.42 1.42M4.34 11.66l-1.41 1.41M13.07 13.07l-1.42-1.42M4.34 4.34 2.93 2.93" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
       </button>
     </div>
   </header>
 
   <main id="main">
-    <section id="top" class="hero">
+    <section class="hero">
       <div class="hero-grid">
         <div class="hero-copy reveal">
-          <p class="pill">Built with AI collaboration</p>
-          <h1>
-            We are building
-            <span class="grad">playable worlds</span>
-            together.
+          <span class="eyebrow">AI Game Lab · Live</span>
+          <h1 class="h1">
+            Playable worlds,
+            <br />
+            <span class="grad">built with AI.</span>
           </h1>
           <p class="lead">
-            This hub is not a portfolio. It is a live showcase of what we designed with AI:
-            gameplay systems, worlds, tools, and experiments you can run right now inside one
-            website.
+            A working showcase of game systems we designed alongside AI. Three engines, one hub —
+            each runs straight in the browser, no install.
           </p>
-          <div class="hero-actions">
-            <a class="btn primary" href="/ai-game-lab/play/">Launch game hub</a>
+          <div class="btn-row">
+            <a class="btn primary" href="/ai-game-lab/play/">
+              Launch hub
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="m6 4 4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
             <a class="btn ghost" href="/ai-game-lab/showcase/">See creations</a>
           </div>
-          <div class="chips">
-            <span class="chip">Playable in-browser</span>
-            <span class="chip">AI co-designed</span>
-            <span class="chip">System-heavy games</span>
-          </div>
-          <div class="hero-stats">
-            <div class="stat"><strong>3</strong><span>Playable worlds</span></div>
-            <div class="stat"><strong>1 Hub</strong><span>Unified launcher</span></div>
-            <div class="stat"><strong>Live</strong><span>Iterating daily</span></div>
+          <div class="stats" aria-label="Lab stats">
+            <div class="stat"><strong>3</strong><span>Playable</span></div>
+            <div class="stat"><strong>1</strong><span>Hub</span></div>
+            <div class="stat"><strong>Live</strong><span>Iterating</span></div>
           </div>
         </div>
-        <div class="hero-art reveal" aria-hidden="true">
-          <div class="card-float">
-            <div class="card-float-inner">
-              <p class="mini">Inside this lab</p>
-              <ul>
-                <li>Explore game architecture</li>
-                <li>Launch worlds inline</li>
-                <li>Run local stacks quickly</li>
-              </ul>
-            </div>
+
+        <aside class="hero-visual reveal" aria-hidden="true">
+          <div class="hv-head">
+            <div class="hv-dots"><span></span><span></span><span></span></div>
+            <span class="hv-label">lab.status</span>
           </div>
-        </div>
+          <div class="hv-row">
+            <span class="dot"></span>
+            <b>CraftVerse</b>
+            <span class="num">v1.0</span>
+          </div>
+          <div class="hv-row">
+            <span class="dot"></span>
+            <b>DeadTakeover</b>
+            <span class="num">v2.0</span>
+          </div>
+          <div class="hv-row">
+            <span class="dot warn"></span>
+            <b>Mindcraft</b>
+            <span class="num">local</span>
+          </div>
+          <div class="hv-row">
+            <span class="dot idle"></span>
+            <b>Next experiment</b>
+            <span class="num">soon</span>
+          </div>
+        </aside>
       </div>
     </section>
 
-    <section id="featured" class="section reveal">
-      <h2 class="section-title">Featured Worlds</h2>
-      <p class="section-sub">Three different game systems, each built and iterated with AI-assisted workflows.</p>
-      <div class="games-featured">
-        <a class="game-featured reveal" href="/ai-game-lab/showcase/">
-          <p class="kicker">Voxel Sandbox</p>
-          <h3>CraftVerse Engine</h3>
-          <p class="mini-desc">Minecraft-inspired world generation, block interactions, survival loops, and multiplayer-ready architecture.</p>
+    <section class="section">
+      <div class="section-head">
+        <span class="eyebrow">Featured</span>
+        <h2 class="h2">Three engines, one lab.</h2>
+        <p>Each is a different genre, stack, and risk — all running in the browser.</p>
+      </div>
+
+      <div class="bento">
+        <a class="tile tile-lg reveal" href="/ai-game-lab/showcase/">
+          <div class="tile-visual vis-b" aria-hidden="true"></div>
+          <div class="tile-meta">
+            <span class="chip accent">Playable</span>
+            <span class="chip">Open-world FPS</span>
+          </div>
+          <h3 class="tile-title">DeadTakeover Protocol</h3>
+          <p class="tile-desc">
+            Browser zombie survival with twelve maps, special infected, loot progression, and
+            horde siege events. Instanced rendering and adaptive quality scale across hardware.
+          </p>
+          <div class="tile-foot">
+            <span>View details</span>
+            <svg class="arrow" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="m6 4 4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
         </a>
-        <a class="game-featured reveal" href="/ai-game-lab/showcase/">
-          <p class="kicker">AI Launcher</p>
-          <h3>Mindcraft Control Deck</h3>
-          <p class="mini-desc">Local control surface combining Java runtime setup, profile handling, and AI bot management in one panel.</p>
+
+        <a class="tile reveal" href="/ai-game-lab/showcase/">
+          <div class="tile-visual vis-a" aria-hidden="true"></div>
+          <div class="tile-meta">
+            <span class="chip accent">Playable</span>
+          </div>
+          <h3 class="tile-title">CraftVerse Engine</h3>
+          <p class="tile-desc">
+            Voxel sandbox with infinite procedural terrain, biome blending, and survival loops.
+          </p>
+          <div class="tile-foot">
+            <span>View details</span>
+            <svg class="arrow" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="m6 4 4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
         </a>
-        <a class="game-featured reveal" href="/ai-game-lab/showcase/">
-          <p class="kicker">Open-World FPS</p>
-          <h3>DeadTakeover Protocol</h3>
-          <p class="mini-desc">Browser zombie survival FPS with map progression, special infected, team dynamics, and escalating horde pressure.</p>
+
+        <a class="tile reveal" href="/ai-game-lab/showcase/">
+          <div class="tile-visual vis-c" aria-hidden="true"></div>
+          <div class="tile-meta">
+            <span class="chip">Tool</span>
+          </div>
+          <h3 class="tile-title">Mindcraft Control Deck</h3>
+          <p class="tile-desc">
+            Local AI agent launcher with Java runtime setup, profile lifecycle, and bot ops.
+          </p>
+          <div class="tile-foot">
+            <span>View details</span>
+            <svg class="arrow" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="m6 4 4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
         </a>
       </div>
     </section>
-
-    <footer class="footer">
-      <p>AI Game Lab — design, test, and ship playable ideas.</p>
-      <p id="copyright"><span id="copyrightYear">2026</span> AI Game Lab</p>
-    </footer>
 
     <button id="scrollTop" class="scroll-top" type="button" aria-label="Scroll to top" hidden>
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-        <path d="m4 13 6-6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="m4 10 4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
   </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <a class="brand" href="/ai-game-lab/" aria-label="AI Game Lab home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>AI Game Lab</span>
+      </a>
+      <span>© <span id="copyrightYear">2026</span> · Design, test, and ship playable ideas.</span>
+    </div>
+  </footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 

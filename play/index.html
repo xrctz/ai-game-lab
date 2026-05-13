@@ -4,38 +4,33 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="AI Game Lab Play — Launch CraftVerse, DeadTakeover, or Mindcraft directly inside your browser." />
-  <meta name="theme-color" content="#060b18" />
+  <meta name="theme-color" content="#08090b" />
   <meta name="color-scheme" content="dark light" />
   <meta name="robots" content="noindex" />
 
   <title>Play — AI Game Lab</title>
 
-  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
-  <link rel="manifest" href="../manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="/ai-game-lab/favicon.svg" />
+  <link rel="manifest" href="/ai-game-lab/manifest.json" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="/ai-game-lab/styles.css" />
 </head>
 <body>
-  <div class="bg-orbs" aria-hidden="true">
-    <div class="orb"></div>
-    <div class="orb"></div>
-    <div class="orb"></div>
-  </div>
-  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="mesh-bg" aria-hidden="true"><div class="mesh-3"></div></div>
+  <div class="noise" aria-hidden="true"></div>
 
   <a class="skip" href="#main">Skip to content</a>
 
   <header class="topbar" role="banner">
     <div class="topbar-inner">
-      <a class="brand" href="/ai-game-lab/" aria-label="AI Game Lab Home">
+      <a class="brand" href="/ai-game-lab/" aria-label="AI Game Lab home">
         <span class="brand-mark" aria-hidden="true"></span>
         <span class="brand-name">AI Game Lab</span>
       </a>
-
       <nav id="siteNav" class="nav" aria-label="Site">
         <a href="/ai-game-lab/">Home</a>
         <a href="/ai-game-lab/showcase/">Showcase</a>
@@ -43,45 +38,74 @@
         <a href="/ai-game-lab/story/">Story</a>
       </nav>
       <button id="menuToggle" class="menu-toggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="siteNav">
-        <svg width="20" height="16" viewBox="0 0 20 16" fill="none" aria-hidden="true">
-          <rect width="20" height="2" rx="1" fill="currentColor"/>
-          <rect y="7" width="20" height="2" rx="1" fill="currentColor"/>
-          <rect y="14" width="20" height="2" rx="1" fill="currentColor"/>
+        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
       </button>
-
       <button id="themeBtn" type="button" aria-label="Toggle theme">
-        <span class="icon-sun" aria-hidden="true">☀️</span>
-        <span class="icon-moon" aria-hidden="true">🌙</span>
+        <svg class="ico-moon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <svg class="ico-sun" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M8 1v2M8 13v2M15 8h-2M3 8H1M13.07 2.93l-1.42 1.42M4.34 11.66l-1.41 1.41M13.07 13.07l-1.42-1.42M4.34 4.34 2.93 2.93" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
       </button>
     </div>
   </header>
 
   <main id="main">
-    <section id="top" class="hero reveal">
-      <p class="pill">Live play panel</p>
-      <h1>Game Launcher</h1>
-      <p class="lead">Select a game below and it will load right here. Everything runs inside one browser tab.</p>
+    <section class="hero">
+      <div class="reveal" style="display:flex; flex-direction:column; gap:18px;">
+        <span class="eyebrow">Play</span>
+        <h1 class="h1">Launch a game,<br /><span class="grad">right in the browser.</span></h1>
+        <p class="lead">Pick a build below. Everything loads inside this page — no downloads, no install. Mindcraft needs its local server running first.</p>
+      </div>
     </section>
 
-    <section id="player" class="reveal">
-      <div class="player">
+    <section id="player">
+      <div class="player reveal">
         <div class="player-bar">
-          <div class="player-status">
-            <p class="label">Status</p>
+          <div id="playerStatus" class="player-status">
+            <span class="dot"></span>
             <span id="playerTitle" class="player-title">Choose a game to start</span>
           </div>
-          <div class="player-actions">
-            <button class="btn ghost small" type="button" data-play="voxel">Voxel</button>
-            <button class="btn ghost small" type="button" data-play="zombie">Zombie</button>
-            <button class="btn ghost small" type="button" data-play="mindcraft">Mindcraft</button>
-            <button id="stopBtn" class="btn ghost small" type="button" disabled>Stop</button>
-            <button id="fullBtn" class="btn ghost small" type="button" disabled title="Fullscreen">⛶</button>
-            <button id="focusBtn" class="btn ghost small" type="button" disabled title="Focus player">◎</button>
-            <button id="openHereBtn" class="btn ghost small" type="button" disabled title="Navigate to game">↗</button>
-            <a id="openTab" class="btn ghost small" href="#" target="_blank" rel="noopener" aria-disabled="true" title="Open in new tab" style="pointer-events:none;opacity:0.35">⇱</a>
+
+          <div class="player-controls">
+            <div class="segmented" role="tablist" aria-label="Select game">
+              <button type="button" role="tab" data-play="voxel" aria-selected="false">Voxel</button>
+              <button type="button" role="tab" data-play="zombie" aria-selected="false">Zombie</button>
+              <button type="button" role="tab" data-play="mindcraft" aria-selected="false">Mindcraft</button>
+            </div>
+            <div class="divider" aria-hidden="true"></div>
+            <button id="stopBtn" class="icon-btn" type="button" aria-label="Stop" title="Stop" disabled>
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1" fill="currentColor"/></svg>
+            </button>
+            <button id="fullBtn" class="icon-btn" type="button" aria-label="Fullscreen" title="Fullscreen" disabled>
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <button id="focusBtn" class="icon-btn" type="button" aria-label="Focus player" title="Focus" disabled>
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <circle cx="8" cy="8" r="5.25" stroke="currentColor" stroke-width="1.5"/>
+                <circle cx="8" cy="8" r="1.25" fill="currentColor"/>
+              </svg>
+            </button>
+            <div class="divider" aria-hidden="true"></div>
+            <button id="openHereBtn" class="icon-btn" type="button" aria-label="Navigate to game" title="Open in this tab" disabled>
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M3 13 13 3M13 3H7M13 3v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <a id="openTab" class="icon-btn" href="#" target="_blank" rel="noopener" aria-disabled="true" title="Open in new tab" style="pointer-events:none;opacity:0.3">
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M11 2h3v3M14 2 8 8M13 9v4H3V3h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
           </div>
         </div>
+
         <div class="player-frame">
           <iframe id="playerFrame"
                   title="Game player viewport"
@@ -89,26 +113,35 @@
                   sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals"
                   loading="lazy"
                   style="display:none"></iframe>
-          <div id="playerPlaceholder" style="display:flex;align-items:center;justify-content:center;position:absolute;inset:0;color:var(--text-muted);font-size:0.92rem">
-            Choose a game above to start playing inside this viewport.
+          <div id="playerPlaceholder" class="player-placeholder">
+            <span class="pp-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+                <path d="m6 5 5 3-5 3V5Z" fill="currentColor"/>
+              </svg>
+            </span>
+            <p>Choose a game above and it loads here. Click inside to capture input, press Escape to release.</p>
           </div>
           <div id="playerLoader" class="player-loader">
-            <div class="spinner"></div>
-            <span style="color:var(--text-secondary);font-size:0.82rem">Loading game engine…</span>
+            <div class="spinner" aria-hidden="true"></div>
+            <span style="color:var(--text-muted); font-size:0.82rem">Loading engine…</span>
           </div>
         </div>
+
         <p id="playerHint" class="player-hint" hidden>
-          <strong>Tip:</strong> Some games use the keyboard and pointer lock — click inside the viewport to capture input.
+          Tip: click inside the viewport to capture mouse and keyboard. Press <kbd>Esc</kbd> to release.
         </p>
       </div>
     </section>
 
-    <section class="section reveal">
-      <h2 class="section-title">Run Locally</h2>
-      <p class="section-sub">Copy these commands to clone and run any game on your own machine.</p>
+    <section class="section">
+      <div class="section-head">
+        <span class="eyebrow">Run locally</span>
+        <h2 class="h2">Clone, install, run.</h2>
+        <p>Each game also runs on your own machine — useful for the Mindcraft control deck.</p>
+      </div>
 
       <div class="run-grid">
-        <div class="run-card neon-a reveal">
+        <div class="run-card reveal">
           <div class="run-head">
             <h3>CraftVerse</h3>
             <button class="btn ghost small" type="button" data-copy="#voxelCmd">Copy</button>
@@ -116,10 +149,10 @@
           <pre><code id="voxelCmd">git clone https://github.com/example/craftverse-engine
 cd craftverse-engine
 npm install &amp;&amp; npm run dev</code></pre>
-          <p class="hint">Requires Node.js 18+. Opens at <a href="http://localhost:5173" target="_blank" rel="noopener">localhost:5173</a>.</p>
+          <p class="hint">Node 18+. Opens at <a href="http://localhost:5173" target="_blank" rel="noopener">localhost:5173</a>.</p>
         </div>
 
-        <div class="run-card neon-b reveal">
+        <div class="run-card reveal">
           <div class="run-head">
             <h3>DeadTakeover</h3>
             <button class="btn ghost small" type="button" data-copy="#zombieCmd">Copy</button>
@@ -127,10 +160,10 @@ npm install &amp;&amp; npm run dev</code></pre>
           <pre><code id="zombieCmd">git clone https://github.com/example/deadtakeover-protocol
 cd deadtakeover-protocol
 npm install &amp;&amp; npm run dev</code></pre>
-          <p class="hint">Requires Node.js 18+. Opens at <a href="http://localhost:5173" target="_blank" rel="noopener">localhost:5173</a>.</p>
+          <p class="hint">Node 18+. Opens at <a href="http://localhost:5173" target="_blank" rel="noopener">localhost:5173</a>.</p>
         </div>
 
-        <div class="run-card neon-c reveal">
+        <div class="run-card reveal">
           <div class="run-head">
             <h3>Mindcraft</h3>
             <button class="btn ghost small" type="button" data-copy="#mindcraftCmd">Copy</button>
@@ -138,22 +171,27 @@ npm install &amp;&amp; npm run dev</code></pre>
           <pre><code id="mindcraftCmd">git clone https://github.com/example/mindcraft-control
 cd mindcraft-control
 docker compose up -d &amp;&amp; npm run dev</code></pre>
-          <p class="hint">Requires Docker &amp; Node.js 18+. Opens at <a href="http://localhost:43110" target="_blank" rel="noopener">localhost:43110</a>.</p>
+          <p class="hint">Docker &amp; Node 18+. Opens at <a href="http://localhost:43110" target="_blank" rel="noopener">localhost:43110</a>.</p>
         </div>
       </div>
     </section>
 
-    <footer class="footer">
-      <p>AI Game Lab — design, test, and ship playable ideas.</p>
-      <p id="copyright"><span id="copyrightYear">2026</span> AI Game Lab</p>
-    </footer>
-
     <button id="scrollTop" class="scroll-top" type="button" aria-label="Scroll to top" hidden>
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-        <path d="m4 13 6-6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="m4 10 4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
   </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <a class="brand" href="/ai-game-lab/" aria-label="AI Game Lab home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>AI Game Lab</span>
+      </a>
+      <span>© <span id="copyrightYear">2026</span> · Design, test, and ship playable ideas.</span>
+    </div>
+  </footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
