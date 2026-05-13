@@ -1042,10 +1042,14 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            transition: background var(--transition-fast);
         }
-        .menu-toggle span {
-            font-size: 1.1rem;
-            line-height: 1;
+        .menu-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .menu-toggle svg {
+            width: 20px;
+            height: 16px;
         }
 
         /* ── Toast ── */
@@ -1200,13 +1204,17 @@
                 <span class="brand-name">AI Game Lab</span>
             </a>
 
-            <nav class="nav" aria-label="Site">
+            <nav id="siteNav" class="nav" aria-label="Site">
                 <a href="#showcase">Showcase</a>
                 <a href="#play">Play</a>
                 <a href="#story">Story</a>
             </nav>
             <button id="menuToggle" class="menu-toggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="siteNav">
-                <span></span><span></span><span></span>
+                <svg width="20" height="16" viewBox="0 0 20 16" fill="none" aria-hidden="true">
+                    <rect width="20" height="2" rx="1" fill="currentColor"/>
+                    <rect y="7" width="20" height="2" rx="1" fill="currentColor"/>
+                    <rect y="14" width="20" height="2" rx="1" fill="currentColor"/>
+                </svg>
             </button>
 
             <button id="themeBtn" class="btn ghost" type="button" aria-label="Toggle theme" style="padding:0;width:38px;height:38px;border-radius:50%;">
@@ -1506,6 +1514,7 @@
 
         <footer class="footer">
             <p>AI Game Lab — design, test, and ship playable ideas.</p>
+            <p style="font-size:0.74rem;opacity:0.55;margin-top:4px;"></p>
         </footer>
     </main>
 
@@ -1739,6 +1748,103 @@
                 'color:#b0b8cc;');
             console.log('%cSelect a game and launch it in the player above.',
                 'color:#6b7394;');
+
+            // ── Showcase filter ──
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const gameCards = document.querySelectorAll('.grid .game');
+            const resultsNote = document.getElementById('resultsNote');
+
+            const filterLabels = {
+                all: 'Showing all projects',
+                playable: 'Showing playable games',
+                tools: 'Showing tools',
+            };
+
+            let activeFilter = 'all';
+
+            function applyFilter(filter) {
+                activeFilter = filter;
+                filterBtns.forEach(b => {
+                    const match = b.getAttribute('data-filter') === filter;
+                    b.classList.toggle('active', match);
+                    b.setAttribute('aria-selected', match);
+                });
+                let visibleCount = 0;
+                gameCards.forEach(card => {
+                    const category = card.getAttribute('data-category');
+                    const show = filter === 'all' || category === filter;
+                    card.classList.toggle('is-hidden', !show);
+                    if (show) visibleCount += 1;
+                });
+                if (resultsNote) {
+                    resultsNote.textContent = filterLabels[filter] || `Showing ${visibleCount} project${visibleCount !== 1 ? 's' : ''}`;
+                }
+            }
+
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const filter = btn.getAttribute('data-filter');
+                    if (filter) applyFilter(filter);
+                });
+            });
+
+            // ── Hamburger menu ──
+            const menuToggle = document.getElementById('menuToggle');
+            const siteNav = document.getElementById('siteNav');
+
+            if (menuToggle && siteNav) {
+                menuToggle.addEventListener('click', () => {
+                    const open = siteNav.classList.toggle('open');
+                    menuToggle.setAttribute('aria-expanded', open);
+                });
+                // Close on outside click
+                document.addEventListener('click', (e) => {
+                    if (!siteNav.classList.contains('open')) return;
+                    if (!menuToggle.contains(e.target) && !siteNav.contains(e.target)) {
+                        siteNav.classList.remove('open');
+                        menuToggle.setAttribute('aria-expanded', 'false');
+                    }
+                });
+                // Close on nav link click
+                siteNav.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        siteNav.classList.remove('open');
+                        menuToggle.setAttribute('aria-expanded', 'false');
+                    });
+                });
+            }
+
+            // ── Scroll-aware nav highlighting ──
+            const navLinks = document.querySelectorAll('.nav a');
+            const sections = [];
+            navLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href && href.startsWith('#')) {
+                    const el = document.querySelector(href);
+                    if (el) sections.push({ link, section: el });
+                }
+            });
+
+            function highlightNav() {
+                const scrollY = window.scrollY + 100;
+                let current = sections[0];
+                for (const s of sections) {
+                    if (s.section.offsetTop <= scrollY) current = s;
+                }
+                navLinks.forEach(l => l.style.color = '');
+                if (current) {
+                    current.link.style.color = 'var(--accent-a)';
+                }
+            }
+
+            window.addEventListener('scroll', highlightNav, { passive: true });
+            highlightNav();
+
+            // ── Dynamic copyright year ──
+            const footerYear = document.querySelector('.footer p:last-child');
+            if (footerYear) {
+                footerYear.textContent = `© ${new Date().getFullYear()} AI Game Lab`;
+            }
         })();
     </script>
 </body>
