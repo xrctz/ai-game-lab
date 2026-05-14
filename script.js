@@ -17,7 +17,7 @@
   (function initParticles() {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const canvas = document.createElement('canvas');
-    canvas.style.cssText = 'position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.5;';
+    canvas.style.cssText = 'position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.7;';
     document.body.appendChild(canvas);
     const ctx = canvas.getContext('2d');
     let w, h, particles = [];
