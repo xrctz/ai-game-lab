@@ -1,5 +1,7 @@
 """
-Generate raster PNG key art for hub / showcase cards (1200x750, ~16:10).
+Generate procedural PNG key art (offline fallback). For stock photos from the
+internet, use scripts/fetch_preview_images.py instead.
+
 Run from repo root: python scripts/generate_preview_images.py
 """
 from __future__ import annotations
