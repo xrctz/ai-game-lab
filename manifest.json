@@ -1,14 +1,15 @@
 {
   "name": "AI Game Lab",
   "short_name": "AIGameLab",
-  "description": "A colorful interactive hub for playable game experiments built with AI.",
-  "start_url": "/index.html",
+  "description": "A hub for playable game experiments built with AI — browser games and tools.",
+  "start_url": "/ai-game-lab/",
+  "scope": "/ai-game-lab/",
   "display": "standalone",
-  "background_color": "#0a1022",
-  "theme_color": "#0a1022",
+  "background_color": "#030406",
+  "theme_color": "#030406",
   "icons": [
     {
-      "src": "favicon.svg",
+      "src": "/ai-game-lab/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

@@ -172,6 +172,25 @@ document.addEventListener('click', function (e) {
   if (el) el.textContent = new Date().getFullYear();
 })();
 
+/* ---------- Prefetch Play hub on hover (once) ---------- */
+(function prefetchPlayHub() {
+  var path = '/ai-game-lab/play/';
+  var done = false;
+  function addPrefetch() {
+    if (done) return;
+    done = true;
+    var link = document.createElement('link');
+    link.rel = 'prefetch';
+    link.href = path;
+    link.as = 'document';
+    document.head.appendChild(link);
+  }
+  document.querySelectorAll('a[href="' + path + '"]').forEach(function (a) {
+    a.addEventListener('mouseenter', addPrefetch, { once: true });
+    a.addEventListener('focus', addPrefetch, { once: true });
+  });
+})();
+
 /* ---------- Showcase filter ---------- */
 (function initFilter() {
   var buttons = document.querySelectorAll('.filter-btn');
