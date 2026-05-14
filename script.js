@@ -330,258 +330,31 @@ document.addEventListener('click', function (e) {
   }
 })();
 
-/* ---------- Hero canvas visual ---------- */
-(function initHeroCanvas() {
-  var canvas = document.getElementById('heroCanvas');
-  if (!canvas) return;
+/* ---------- Hero loop video (replaces canvas) ---------- */
+(function initHeroVideo() {
+  var v = document.getElementById('heroVideo');
+  if (!v) return;
 
-  var ctx = canvas.getContext('2d', { alpha: true });
-  if (!ctx) return;
+  var mq = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-  var w = 0;
-  var h = 0;
-  var cx = 0;
-  var cy = 0;
-  var lastW = -1;
-  var lastH = -1;
-
-  function getDpr() {
-    return Math.min(window.devicePixelRatio || 1, 2);
-  }
-
-  var lastDpr = -1;
-
-  function resize() {
-    var rect = canvas.getBoundingClientRect();
-    var nw = Math.floor(rect.width);
-    var nh = Math.floor(rect.height);
-    if (nw < 2 || nh < 2) return false;
-
-    var dpr = getDpr();
-    if (nw === lastW && nh === lastH && dpr === lastDpr) return true;
-
-    lastW = nw;
-    lastH = nh;
-    lastDpr = dpr;
-    w = nw;
-    h = nh;
-    cx = w / 2;
-    cy = h / 2;
-    canvas.width = Math.max(1, Math.floor(w * dpr));
-    canvas.height = Math.max(1, Math.floor(h * dpr));
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    return true;
-  }
-
-  var time = 0;
-  var lastTs = 0;
-  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  function glowArc(x, y, r, a1, a2, color, alpha, width) {
-    var grad = ctx.createRadialGradient(x, y, r * 0.7, x, y, r * 1.3);
-    grad.addColorStop(0, color);
-    grad.addColorStop(1, 'transparent');
-    ctx.beginPath();
-    ctx.arc(x, y, r, a1, a2);
-    ctx.strokeStyle = grad;
-    ctx.lineWidth = width;
-    ctx.globalAlpha = alpha;
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-  }
-
-  function drawRing(centerX, centerY, radius, segments, color1, color2, rot) {
-    var step = (Math.PI * 2) / segments;
-    for (var i = 0; i < segments; i++) {
-      var a = rot + i * step;
-      var nx = Math.cos(a);
-      var ny = Math.sin(a);
-      var x1 = centerX + nx * radius;
-      var y1 = centerY + ny * radius;
-      var x2 = centerX + nx * (radius * 0.35);
-      var y2 = centerY + ny * (radius * 0.35);
-
-      var prog = i / segments;
-      var alpha = 0.2 + 0.35 * Math.abs(Math.sin(prog * Math.PI * 3 + time * 1.5));
-      var r = radius * (0.2 + 0.15 * Math.sin(prog * 6 + time * 2));
-
-      // Glow dot
-      var g = ctx.createRadialGradient(x1, y1, 0, x1, y1, r * 2.5);
-      g.addColorStop(0, color1);
-      g.addColorStop(0.4, color2);
-      g.addColorStop(1, 'transparent');
-
-      ctx.beginPath();
-      ctx.arc(x1, y1, r * 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = g;
-      ctx.globalAlpha = alpha;
-      ctx.fill();
-
-      // Connector line
-      ctx.beginPath();
-      ctx.moveTo(x2, y2);
-      ctx.lineTo(x1, y1);
-      ctx.strokeStyle = color2;
-      ctx.lineWidth = 0.6;
-      ctx.globalAlpha = alpha * 0.5;
-      ctx.stroke();
+  function sync() {
+    if (mq.matches) {
+      v.pause();
+      try {
+        v.currentTime = 0;
+      } catch (e) {}
+    } else {
+      var p = v.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(function () {});
+      }
     }
-    ctx.globalAlpha = 1;
   }
 
-  function drawOrbitingParticle(centerX, centerY, orbitR, angle, size, color) {
-    var x = centerX + Math.cos(angle) * orbitR;
-    var y = centerY + Math.sin(angle) * orbitR;
-    var g = ctx.createRadialGradient(x, y, 0, x, y, size * 5);
-    g.addColorStop(0, color);
-    g.addColorStop(0.3, color);
-    g.addColorStop(1, 'transparent');
-
-    ctx.beginPath();
-    ctx.arc(x, y, size * 5, 0, Math.PI * 2);
-    ctx.fillStyle = g;
-    ctx.globalAlpha = 0.7;
-    ctx.fill();
-    ctx.globalAlpha = 1;
-
-    // Trail
-    var trailAlpha = 0.08;
-    for (var i = 1; i <= 5; i++) {
-      var ta = angle - i * 0.15;
-      var tx = centerX + Math.cos(ta) * orbitR;
-      var ty = centerY + Math.sin(ta) * orbitR;
-      ctx.beginPath();
-      ctx.arc(tx, ty, size * (1 - i * 0.15), 0, Math.PI * 2);
-      ctx.fillStyle = color;
-      ctx.globalAlpha = trailAlpha * (1 - i / 6);
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
+  sync();
+  if (mq.addEventListener) {
+    mq.addEventListener('change', sync);
+  } else if (mq.addListener) {
+    mq.addListener(sync);
   }
-
-  function drawCenterGlow(x, y, r) {
-    var pulse = 1 + 0.15 * Math.sin(time * 1.3);
-    var g = ctx.createRadialGradient(x, y, 0, x, y, r * pulse);
-    g.addColorStop(0, 'rgba(155, 48, 255, 0.5)');
-    g.addColorStop(0.35, 'rgba(155, 48, 255, 0.15)');
-    g.addColorStop(0.7, 'rgba(0, 240, 255, 0.04)');
-    g.addColorStop(1, 'transparent');
-
-    ctx.beginPath();
-    ctx.arc(x, y, r * pulse, 0, Math.PI * 2);
-    ctx.fillStyle = g;
-    ctx.fill();
-  }
-
-  function drawInnerCore(x, y, r) {
-    // Diamond shape
-    var pulse = 1 + 0.08 * Math.sin(time * 2.5);
-    var g = ctx.createRadialGradient(x, y, 0, x, y, r * pulse);
-    g.addColorStop(0, 'rgba(180, 80, 255, 0.9)');
-    g.addColorStop(0.5, 'rgba(155, 48, 255, 0.4)');
-    g.addColorStop(1, 'rgba(155, 48, 255, 0)');
-
-    ctx.beginPath();
-    ctx.arc(x, y, r * pulse, 0, Math.PI * 2);
-    ctx.fillStyle = g;
-    ctx.fill();
-
-    // Bright center dot
-    ctx.beginPath();
-    ctx.arc(x, y, r * 0.15, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fill();
-  }
-
-  function drawRays(x, y, outerR, count) {
-    for (var i = 0; i < count; i++) {
-      var a = (i / count) * Math.PI * 2 + time * 0.3;
-      var len = outerR * (0.6 + 0.3 * Math.sin(time * 3 + i));
-      var startR = outerR * 0.08;
-      var x1 = x + Math.cos(a) * startR;
-      var y1 = y + Math.sin(a) * startR;
-      var x2 = x + Math.cos(a) * len;
-      var y2 = y + Math.sin(a) * len;
-
-      var g = ctx.createLinearGradient(x1, y1, x2, y2);
-      g.addColorStop(0, 'rgba(155, 48, 255, 0.25)');
-      g.addColorStop(1, 'transparent');
-
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.strokeStyle = g;
-      ctx.lineWidth = 1;
-      ctx.globalAlpha = 0.35;
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  function draw(ts) {
-    if (!resize()) {
-      lastTs = ts;
-      requestAnimationFrame(draw);
-      return;
-    }
-
-    if (!lastTs) lastTs = ts;
-    var dt = reduced ? 0 : (ts - lastTs) / 1000;
-    lastTs = ts;
-    time += dt;
-
-    ctx.clearRect(0, 0, w, h);
-
-    var size = Math.min(w, h);
-    if (size < 8) {
-      lastTs = ts;
-      requestAnimationFrame(draw);
-      return;
-    }
-    var radius = size * 0.35;
-
-    drawCenterGlow(cx, cy, radius * 1.2);
-    drawRays(cx, cy, radius * 1.4, 24);
-    drawRing(cx, cy, radius, 28, 'rgba(155, 48, 255, 0.8)', 'rgba(155, 48, 255, 0.25)', time * 0.4);
-    drawRing(cx, cy, radius * 0.55, 18, 'rgba(0, 240, 255, 0.7)', 'rgba(0, 240, 255, 0.2)', -time * 0.55);
-    drawRing(cx, cy, radius * 0.78, 8, 'rgba(180, 80, 255, 0.6)', 'rgba(155, 48, 255, 0.15)', time * 0.32);
-    drawOrbitingParticle(cx, cy, radius * 0.85, time * 1.4, 3, 'rgba(155, 48, 255, 0.9)');
-    drawOrbitingParticle(cx, cy, radius * 0.82, time * 1.4 + Math.PI, 3, 'rgba(155, 48, 255, 0.9)');
-    drawOrbitingParticle(cx, cy, radius * 0.95, -time * 0.9 + Math.PI * 0.7, 2.5, 'rgba(0, 240, 255, 0.85)');
-    drawOrbitingParticle(cx, cy, radius * 0.93, -time * 0.9 + Math.PI * 1.7, 2.5, 'rgba(0, 240, 255, 0.85)');
-    drawOrbitingParticle(cx, cy, radius * 0.6, time * 1.7, 2, 'rgba(255, 255, 255, 0.6)');
-    drawInnerCore(cx, cy, radius * 0.12);
-    glowArc(cx, cy, radius, time * 0.8, time * 0.8 + Math.PI * 0.7, 'rgba(155, 48, 255, 0.4)', 0.6, 2);
-    glowArc(cx, cy, radius, -time * 0.6, -time * 0.6 + Math.PI * 0.5, 'rgba(0, 240, 255, 0.35)', 0.5, 1.5);
-
-    requestAnimationFrame(draw);
-  }
-
-  var mqReduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-  if (mqReduce.addEventListener) {
-    mqReduce.addEventListener('change', function () { reduced = mqReduce.matches; });
-  } else if (mqReduce.addListener) {
-    mqReduce.addListener(function () { reduced = mqReduce.matches; });
-  }
-
-  var started = false;
-  function startLoop() {
-    if (started) return;
-    started = true;
-    resize();
-    requestAnimationFrame(draw);
-  }
-
-  if (typeof ResizeObserver !== 'undefined') {
-    var ro = new ResizeObserver(function () { resize(); });
-    ro.observe(canvas);
-    if (canvas.parentElement) ro.observe(canvas.parentElement);
-  } else {
-    window.addEventListener('resize', function () { resize(); });
-  }
-
-  window.addEventListener('load', function () {
-    requestAnimationFrame(function () { startLoop(); });
-  });
-  requestAnimationFrame(function () { startLoop(); });
 })();

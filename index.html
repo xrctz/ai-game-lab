@@ -91,7 +91,22 @@
         </div>
       </div>
       <div class="hero-right reveal">
-        <canvas class="hero-canvas" id="heroCanvas" aria-hidden="true"></canvas>
+        <!-- Hero loop: Pexels video 5680034 (see showcase/hero/SOURCE.txt) -->
+        <div class="hero-visual" aria-hidden="true">
+          <video
+            id="heroVideo"
+            class="hero-video"
+            width="420"
+            height="420"
+            poster="/ai-game-lab/showcase/hero/poster.jpg"
+            muted
+            loop
+            playsinline
+            preload="metadata"
+          >
+            <source src="/ai-game-lab/showcase/hero/hero-loop.mp4" type="video/mp4" />
+          </video>
+        </div>
       </div>
     </section>
 
