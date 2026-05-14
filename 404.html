@@ -3,24 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#08090b" />
+  <meta name="theme-color" content="#030406" />
   <meta name="color-scheme" content="dark light" />
-  <meta name="robots" content="noindex" />
-
   <title>404 — AI Game Lab</title>
-
-  <link rel="icon" type="image/svg+xml" href="/ai-game-lab/favicon.svg" />
-  <link rel="manifest" href="/ai-game-lab/manifest.json" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="/ai-game-lab/styles.css" />
 </head>
 <body>
-  <div class="mesh-bg" aria-hidden="true"><div class="mesh-3"></div></div>
-  <div class="noise" aria-hidden="true"></div>
+  <div class="ambient" aria-hidden="true">
+    <div class="orb"></div>
+    <div class="orb"></div>
+    <div class="orb"></div>
+  </div>
 
   <a class="skip" href="#main">Skip to content</a>
 
@@ -37,39 +35,30 @@
         <a href="/ai-game-lab/story/">Story</a>
       </nav>
       <button id="menuToggle" class="menu-toggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="siteNav">
-        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
+        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </button>
       <button id="themeBtn" type="button" aria-label="Toggle theme">
-        <svg class="ico-moon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-        </svg>
-        <svg class="ico-sun" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M8 1v2M8 13v2M15 8h-2M3 8H1M13.07 2.93l-1.42 1.42M4.34 11.66l-1.41 1.41M13.07 13.07l-1.42-1.42M4.34 4.34 2.93 2.93" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
+        <svg class="ico-moon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <svg class="ico-sun" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M15 8h-2M3 8H1M13.07 2.93l-1.42 1.42M4.34 11.66l-1.41 1.41M13.07 13.07l-1.42-1.42M4.34 4.34 2.93 2.93" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </button>
     </div>
   </header>
 
   <main id="main">
-    <section class="notfound">
-      <span class="eyebrow">Page not found</span>
-      <div class="err-code" data-text="404">404</div>
-      <h1 class="visually-hidden" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap">404 — Page not found</h1>
-      <p class="err-sub">
-        This coordinate drifted out of bounds. The page you wanted isn't here — try heading back to the lab.
-      </p>
-      <div class="btn-row">
-        <a class="btn primary" href="/ai-game-lab/">Back to home</a>
-        <a class="btn ghost" href="/ai-game-lab/play/">Go to player</a>
+    <div class="lost">
+      <h1 class="lost-code reveal">404</h1>
+      <p class="lost-sub reveal">This page drifted out of bounds. The render distance doesn't go this far.</p>
+      <div class="hero-actions reveal">
+        <a class="btn-cta" href="/ai-game-lab/">
+          Back to base
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m10 4-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
       </div>
-    </section>
+    </div>
   </main>
 
-  <footer class="footer">
-    <div class="footer-inner">
+  <footer class="footer-block">
+    <div class="inner">
       <a class="brand" href="/ai-game-lab/" aria-label="AI Game Lab home">
         <span class="brand-mark" aria-hidden="true"></span>
         <span>AI Game Lab</span>
@@ -79,7 +68,6 @@
   </footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-
   <script src="/ai-game-lab/script.js"></script>
 </body>
 </html>
