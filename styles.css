@@ -233,11 +233,65 @@ main {
 /* ---------- Cinematic Hero ---------- */
 .hero-block {
   padding: 80px 0 60px;
-  text-align: center;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 48px;
+}
+.hero-left {
+  flex: 1 1 55%;
+  min-width: 0;
+}
+.hero-right {
+  flex: 1 1 45%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hero-visual {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+}
+/* SVG animation keyframes */
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes pulseScale {
+  0%, 100% { transform: scale(1); opacity: 0.25; }
+  50% { transform: scale(1.08); opacity: 0.35; }
+}
+@keyframes gridFade {
+  0%, 100% { opacity: 0.07; }
+  50% { opacity: 0.22; }
+}
+@keyframes ringExpand {
+  0%, 100% { transform: scale(1); opacity: 0.2; }
+  50% { transform: scale(1.05); opacity: 0.35; }
+}
+.hero-visual .voxel-top,
+.hero-visual .voxel-left,
+.hero-visual .voxel-right {
+  animation: floatY 4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+.hero-visual .voxel-left  { animation-delay: 0.15s; }
+.hero-visual .voxel-right { animation-delay: 0.3s; }
+.hero-visual .wire-top,
+.hero-visual .wire-left,
+.hero-visual .wire-right {
+  animation: floatY 4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+.hero-visual .wire-left  { animation-delay: 0.15s; }
+.hero-visual .wire-right { animation-delay: 0.3s; }
+.hero-visual .pulse-glow {
+  animation: pulseScale 5s ease-in-out infinite;
+}
+.hero-visual .grid-line {
+  animation: gridFade 3s ease-in-out infinite;
+}
+.hero-visual .build-ring {
+  animation: ringExpand 4.5s ease-in-out infinite;
 }
 .hero-badge {
   display: inline-flex;
@@ -926,7 +980,9 @@ main {
   }
   .nav.open { display: flex; }
   .menu-toggle { display: inline-flex; }
-  .hero-block { padding: 50px 0 40px; }
+  .hero-block { padding: 50px 0 40px; flex-direction: column; gap: 32px; }
+  .hero-left { text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .hero-right { display: none; }
   .showcase-grid { grid-template-columns: 1fr; }
   .stats-bar { grid-template-columns: 1fr; }
   .player-bar { flex-direction: column; align-items: flex-start; }

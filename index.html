@@ -54,35 +54,149 @@
 
   <main id="main">
     <section class="hero-block">
-      <div class="reveal">
-        <span class="hero-badge">Built with AI collaboration</span>
+      <div class="hero-left">
+        <div class="reveal">
+          <span class="hero-badge">Built with AI collaboration</span>
+        </div>
+        <h1 class="hero-headline reveal">
+          Worlds you <span class="highlight">can play.</span>
+        </h1>
+        <p class="hero-sub reveal">
+          Three game engines designed with AI, running inside one browser tab. No downloads, no installs — just load and play.
+        </p>
+        <div class="hero-actions reveal">
+          <a class="btn-cta" href="/ai-game-lab/play/">
+            Launch game hub
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m6 4 4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a class="btn-ghost" href="/ai-game-lab/showcase/">See creations</a>
+        </div>
+        <div class="stats-bar reveal">
+          <div class="stat-block">
+            <strong>3</strong>
+            <span>Playable worlds</span>
+          </div>
+          <div class="stat-block">
+            <strong>1</strong>
+            <span>Unified hub</span>
+          </div>
+          <div class="stat-block">
+            <strong>Live</strong>
+            <span>Iterating daily</span>
+          </div>
+        </div>
       </div>
-      <h1 class="hero-headline reveal">
-        Worlds you <span class="highlight">can play.</span>
-      </h1>
-      <p class="hero-sub reveal">
-        Three game engines designed with AI, running inside one browser tab. No downloads, no installs — just load and play.
-      </p>
-      <div class="hero-actions reveal">
-        <a class="btn-cta" href="/ai-game-lab/play/">
-          Launch game hub
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m6 4 4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
-        <a class="btn-ghost" href="/ai-game-lab/showcase/">See creations</a>
-      </div>
-      <div class="stats-bar reveal">
-        <div class="stat-block">
-          <strong>3</strong>
-          <span>Playable worlds</span>
-        </div>
-        <div class="stat-block">
-          <strong>1</strong>
-          <span>Unified hub</span>
-        </div>
-        <div class="stat-block">
-          <strong>Live</strong>
-          <span>Iterating daily</span>
-        </div>
+      <div class="hero-right reveal">
+        <svg class="hero-visual" viewBox="0 0 400 380" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="gTop" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#9b30ff"/>
+              <stop offset="100%" stop-color="#7b1fa2"/>
+            </linearGradient>
+            <linearGradient id="gLeft" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#7b1fa2"/>
+              <stop offset="100%" stop-color="#4a148c"/>
+            </linearGradient>
+            <linearGradient id="gRight" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#ab47bc"/>
+              <stop offset="100%" stop-color="#6a1b9a"/>
+            </linearGradient>
+            <radialGradient id="gGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="rgba(155,48,255,0.25)"/>
+              <stop offset="100%" stop-color="rgba(155,48,255,0)"/>
+            </radialGradient>
+            <filter id="neonGlow">
+              <feGaussianBlur stdDeviation="3" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          <!-- Center glow -->
+          <circle cx="180" cy="180" r="140" fill="url(#gGlow)" class="pulse-glow"/>
+
+          <!-- Floating grid lines -->
+          <g opacity="0.15" stroke="#9b30ff" stroke-width="0.5">
+            <line x1="40" y1="40" x2="40" y2="320" class="grid-line"/>
+            <line x1="90" y1="40" x2="90" y2="320" class="grid-line" style="animation-delay:1.2s"/>
+            <line x1="140" y1="40" x2="140" y2="320" class="grid-line" style="animation-delay:0.6s"/>
+            <line x1="190" y1="40" x2="190" y2="320" class="grid-line" style="animation-delay:1.8s"/>
+            <line x1="240" y1="40" x2="240" y2="320" class="grid-line" style="animation-delay:0.3s"/>
+            <line x1="290" y1="40" x2="290" y2="320" class="grid-line" style="animation-delay:1.5s"/>
+            <line x1="340" y1="40" x2="340" y2="320" class="grid-line" style="animation-delay:0.9s"/>
+            <line x1="40" y1="40" x2="340" y2="40" class="grid-line" style="animation-delay:2.1s"/>
+            <line x1="40" y1="320" x2="340" y2="320" class="grid-line" style="animation-delay:1.1s"/>
+          </g>
+
+          <!-- Isometric voxel block — top face (bright) -->
+          <g filter="url(#neonGlow)">
+            <polygon points="180,130 260,170 180,210 100,170" fill="url(#gTop)" opacity="0.9" class="voxel-top"/>
+            <!-- Left face -->
+            <polygon points="100,170 180,210 180,270 100,230" fill="url(#gLeft)" opacity="0.75" class="voxel-left"/>
+            <!-- Right face -->
+            <polygon points="180,210 260,170 260,230 180,270" fill="url(#gRight)" opacity="0.65" class="voxel-right"/>
+          </g>
+
+          <!-- Inner wireframe edge highlights -->
+          <polygon points="180,130 260,170 180,210 100,170" fill="none" stroke="#d4a0ff" stroke-width="1" opacity="0.5" class="wire-top"/>
+          <polygon points="100,170 180,210 180,270 100,230" fill="none" stroke="#d4a0ff" stroke-width="1" opacity="0.4" class="wire-left"/>
+          <polygon points="180,210 260,170 260,230 180,270" fill="none" stroke="#d4a0ff" stroke-width="1" opacity="0.3" class="wire-right"/>
+
+          <!-- Orbiting particles -->
+          <g class="orbit-group-1">
+            <circle r="4" fill="#9b30ff" opacity="0.8" filter="url(#neonGlow)">
+              <animateMotion dur="6s" repeatCount="indefinite" path="M180,220 C200,120 300,180 260,250 C220,320 160,290 180,220"/>
+            </circle>
+          </g>
+          <g class="orbit-group-2">
+            <circle r="3" fill="#00f0ff" opacity="0.7" filter="url(#neonGlow)">
+              <animateMotion dur="8s" repeatCount="indefinite" path="M150,200 C100,100 260,130 240,270 C220,340 130,300 150,200"/>
+            </circle>
+          </g>
+          <g class="orbit-group-3">
+            <circle r="3.5" fill="#d4a0ff" opacity="0.6" filter="url(#neonGlow)">
+              <animateMotion dur="10s" repeatCount="indefinite" path="M200,150 C280,100 320,200 250,280 C190,340 140,250 200,150"/>
+            </circle>
+          </g>
+
+          <!-- Sparkle dots -->
+          <g class="sparkles">
+            <circle cx="260" cy="155" r="1.5" fill="#fff" opacity="0">
+              <animate attributeName="opacity" values="0;0.9;0" dur="2s" repeatCount="indefinite" begin="0s"/>
+            </circle>
+            <circle cx="115" cy="185" r="1.5" fill="#fff" opacity="0">
+              <animate attributeName="opacity" values="0;0.9;0" dur="2s" repeatCount="indefinite" begin="0.7s"/>
+            </circle>
+            <circle cx="195" cy="125" r="1.5" fill="#fff" opacity="0">
+              <animate attributeName="opacity" values="0;0.9;0" dur="2s" repeatCount="indefinite" begin="1.4s"/>
+            </circle>
+            <circle cx="250" cy="220" r="1.5" fill="#fff" opacity="0">
+              <animate attributeName="opacity" values="0;0.9;0" dur="2.2s" repeatCount="indefinite" begin="0.3s"/>
+            </circle>
+            <circle cx="130" cy="245" r="1.2" fill="#fff" opacity="0">
+              <animate attributeName="opacity" values="0;0.8;0" dur="2.4s" repeatCount="indefinite" begin="1.1s"/>
+            </circle>
+            <circle cx="220" cy="260" r="1.2" fill="#fff" opacity="0">
+              <animate attributeName="opacity" values="0;0.8;0" dur="1.8s" repeatCount="indefinite" begin="0.5s"/>
+            </circle>
+          </g>
+
+          <!-- Build-up rings -->
+          <ellipse cx="180" cy="210" rx="90" ry="12" fill="none" stroke="rgba(155,48,255,0.2)" stroke-width="1" class="build-ring"/>
+          <ellipse cx="180" cy="210" rx="120" ry="18" fill="none" stroke="rgba(155,48,255,0.1)" stroke-width="0.8" class="build-ring" style="animation-delay:0.8s"/>
+
+          <!-- Data stream lines -->
+          <g class="datastream">
+            <line x1="360" y1="60" x2="220" y2="135" stroke="#9b30ff" stroke-width="0.7" opacity="0.25">
+              <animate attributeName="opacity" values="0.25;0.05;0.25" dur="3s" repeatCount="indefinite"/>
+            </line>
+            <line x1="50" y1="290" x2="160" y2="230" stroke="#00f0ff" stroke-width="0.7" opacity="0.2">
+              <animate attributeName="opacity" values="0.2;0.04;0.2" dur="3.5s" repeatCount="indefinite" begin="1s"/>
+            </line>
+            <line x1="340" y1="280" x2="240" y2="235" stroke="#d4a0ff" stroke-width="0.6" opacity="0.15">
+              <animate attributeName="opacity" values="0.15;0.03;0.15" dur="4s" repeatCount="indefinite" begin="2s"/>
+            </line>
+          </g>
+        </svg>
       </div>
     </section>
 
