@@ -243,6 +243,12 @@ document.addEventListener('click', function (e) {
 
   function clearIframe() {
     if (currentIframe) {
+      // Notify game stability patch to release resources before teardown
+      try {
+        if (currentIframe.contentWindow && currentIframe.contentWindow.__zombieCleanup) {
+          currentIframe.contentWindow.__zombieCleanup();
+        }
+      } catch (e) { /* cross-origin or already dead */ }
       currentIframe.remove();
       currentIframe = null;
     }
