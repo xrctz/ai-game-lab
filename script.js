@@ -316,21 +316,47 @@ document.addEventListener('click', function (e) {
   var canvas = document.getElementById('heroCanvas');
   if (!canvas) return;
 
-  var ctx = canvas.getContext('2d');
-  var dpr = Math.min(devicePixelRatio || 1, 2);
-  var w, h, cx, cy;
+  var ctx = canvas.getContext('2d', { alpha: true });
+  if (!ctx) return;
+
+  var w = 0;
+  var h = 0;
+  var cx = 0;
+  var cy = 0;
+  var lastW = -1;
+  var lastH = -1;
+
+  function getDpr() {
+    return Math.min(window.devicePixelRatio || 1, 2);
+  }
+
+  var lastDpr = -1;
 
   function resize() {
     var rect = canvas.getBoundingClientRect();
-    w = rect.width; h = rect.height;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
+    var nw = Math.floor(rect.width);
+    var nh = Math.floor(rect.height);
+    if (nw < 2 || nh < 2) return false;
+
+    var dpr = getDpr();
+    if (nw === lastW && nh === lastH && dpr === lastDpr) return true;
+
+    lastW = nw;
+    lastH = nh;
+    lastDpr = dpr;
+    w = nw;
+    h = nh;
+    cx = w / 2;
+    cy = h / 2;
+    canvas.width = Math.max(1, Math.floor(w * dpr));
+    canvas.height = Math.max(1, Math.floor(h * dpr));
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    cx = w / 2; cy = h / 2;
+    return true;
   }
 
   var time = 0;
   var lastTs = 0;
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function glowArc(x, y, r, a1, a2, color, alpha, width) {
     var grad = ctx.createRadialGradient(x, y, r * 0.7, x, y, r * 1.3);
@@ -474,55 +500,69 @@ document.addEventListener('click', function (e) {
   }
 
   function draw(ts) {
-    resize();
+    if (!resize()) {
+      lastTs = ts;
+      requestAnimationFrame(draw);
+      return;
+    }
+
     if (!lastTs) lastTs = ts;
-    var dt = (ts - lastTs) / 1000;
+    var dt = reduced ? 0 : (ts - lastTs) / 1000;
     lastTs = ts;
     time += dt;
 
     ctx.clearRect(0, 0, w, h);
 
     var size = Math.min(w, h);
+    if (size < 8) {
+      lastTs = ts;
+      requestAnimationFrame(draw);
+      return;
+    }
     var radius = size * 0.35;
 
-    // Center glow
     drawCenterGlow(cx, cy, radius * 1.2);
-
-    // Rays
     drawRays(cx, cy, radius * 1.4, 24);
-
-    // Outer ring
     drawRing(cx, cy, radius, 28, 'rgba(155, 48, 255, 0.8)', 'rgba(155, 48, 255, 0.25)', time * 0.4);
-
-    // Inner ring
     drawRing(cx, cy, radius * 0.55, 18, 'rgba(0, 240, 255, 0.7)', 'rgba(0, 240, 255, 0.2)', -time * 0.55);
-
-    // Middle sparse ring
     drawRing(cx, cy, radius * 0.78, 8, 'rgba(180, 80, 255, 0.6)', 'rgba(155, 48, 255, 0.15)', time * 0.32);
-
-    // Orbiting particles
     drawOrbitingParticle(cx, cy, radius * 0.85, time * 1.4, 3, 'rgba(155, 48, 255, 0.9)');
     drawOrbitingParticle(cx, cy, radius * 0.82, time * 1.4 + Math.PI, 3, 'rgba(155, 48, 255, 0.9)');
     drawOrbitingParticle(cx, cy, radius * 0.95, -time * 0.9 + Math.PI * 0.7, 2.5, 'rgba(0, 240, 255, 0.85)');
     drawOrbitingParticle(cx, cy, radius * 0.93, -time * 0.9 + Math.PI * 1.7, 2.5, 'rgba(0, 240, 255, 0.85)');
     drawOrbitingParticle(cx, cy, radius * 0.6, time * 1.7, 2, 'rgba(255, 255, 255, 0.6)');
-
-    // Inner core
     drawInnerCore(cx, cy, radius * 0.12);
-
-    // Glow arcs
     glowArc(cx, cy, radius, time * 0.8, time * 0.8 + Math.PI * 0.7, 'rgba(155, 48, 255, 0.4)', 0.6, 2);
     glowArc(cx, cy, radius, -time * 0.6, -time * 0.6 + Math.PI * 0.5, 'rgba(0, 240, 255, 0.35)', 0.5, 1.5);
 
     requestAnimationFrame(draw);
   }
 
-  resize();
-  requestAnimationFrame(draw);
+  var mqReduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (mqReduce.addEventListener) {
+    mqReduce.addEventListener('change', function () { reduced = mqReduce.matches; });
+  } else if (mqReduce.addListener) {
+    mqReduce.addListener(function () { reduced = mqReduce.matches; });
+  }
 
-  // Re-observe hero container for resize
-  var heroRight = canvas.parentElement;
-  if (!heroRight) return;
-  var ro = new ResizeObserver(function () { resize(); });
-  ro.observe(heroRight);
+  var started = false;
+  function startLoop() {
+    if (started) return;
+    started = true;
+    resize();
+    requestAnimationFrame(draw);
+  }
+
+  if (typeof ResizeObserver !== 'undefined') {
+    var ro = new ResizeObserver(function () { resize(); });
+    ro.observe(canvas);
+    if (canvas.parentElement) ro.observe(canvas.parentElement);
+  } else {
+    window.addEventListener('resize', function () { resize(); });
+  }
+
+  window.addEventListener('load', function () {
+    requestAnimationFrame(function () { startLoop(); });
+  });
+  requestAnimationFrame(function () { startLoop(); });
 })();
