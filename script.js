@@ -310,3 +310,219 @@ document.addEventListener('click', function (e) {
     btnClose.addEventListener('click', closeGame);
   }
 })();
+
+/* ---------- Hero canvas visual ---------- */
+(function initHeroCanvas() {
+  var canvas = document.getElementById('heroCanvas');
+  if (!canvas) return;
+
+  var ctx = canvas.getContext('2d');
+  var dpr = Math.min(devicePixelRatio || 1, 2);
+  var w, h, cx, cy;
+
+  function resize() {
+    var rect = canvas.getBoundingClientRect();
+    w = rect.width; h = rect.height;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cx = w / 2; cy = h / 2;
+  }
+
+  var time = 0;
+  var lastTs = 0;
+
+  function glowArc(x, y, r, a1, a2, color, alpha, width) {
+    var grad = ctx.createRadialGradient(x, y, r * 0.7, x, y, r * 1.3);
+    grad.addColorStop(0, color);
+    grad.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(x, y, r, a1, a2);
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = width;
+    ctx.globalAlpha = alpha;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  function drawRing(centerX, centerY, radius, segments, color1, color2, rot) {
+    var step = (Math.PI * 2) / segments;
+    for (var i = 0; i < segments; i++) {
+      var a = rot + i * step;
+      var nx = Math.cos(a);
+      var ny = Math.sin(a);
+      var x1 = centerX + nx * radius;
+      var y1 = centerY + ny * radius;
+      var x2 = centerX + nx * (radius * 0.35);
+      var y2 = centerY + ny * (radius * 0.35);
+
+      var prog = i / segments;
+      var alpha = 0.2 + 0.35 * Math.abs(Math.sin(prog * Math.PI * 3 + time * 1.5));
+      var r = radius * (0.2 + 0.15 * Math.sin(prog * 6 + time * 2));
+
+      // Glow dot
+      var g = ctx.createRadialGradient(x1, y1, 0, x1, y1, r * 2.5);
+      g.addColorStop(0, color1);
+      g.addColorStop(0.4, color2);
+      g.addColorStop(1, 'transparent');
+
+      ctx.beginPath();
+      ctx.arc(x1, y1, r * 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.globalAlpha = alpha;
+      ctx.fill();
+
+      // Connector line
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x1, y1);
+      ctx.strokeStyle = color2;
+      ctx.lineWidth = 0.6;
+      ctx.globalAlpha = alpha * 0.5;
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawOrbitingParticle(centerX, centerY, orbitR, angle, size, color) {
+    var x = centerX + Math.cos(angle) * orbitR;
+    var y = centerY + Math.sin(angle) * orbitR;
+    var g = ctx.createRadialGradient(x, y, 0, x, y, size * 5);
+    g.addColorStop(0, color);
+    g.addColorStop(0.3, color);
+    g.addColorStop(1, 'transparent');
+
+    ctx.beginPath();
+    ctx.arc(x, y, size * 5, 0, Math.PI * 2);
+    ctx.fillStyle = g;
+    ctx.globalAlpha = 0.7;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Trail
+    var trailAlpha = 0.08;
+    for (var i = 1; i <= 5; i++) {
+      var ta = angle - i * 0.15;
+      var tx = centerX + Math.cos(ta) * orbitR;
+      var ty = centerY + Math.sin(ta) * orbitR;
+      ctx.beginPath();
+      ctx.arc(tx, ty, size * (1 - i * 0.15), 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.globalAlpha = trailAlpha * (1 - i / 6);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawCenterGlow(x, y, r) {
+    var pulse = 1 + 0.15 * Math.sin(time * 1.3);
+    var g = ctx.createRadialGradient(x, y, 0, x, y, r * pulse);
+    g.addColorStop(0, 'rgba(155, 48, 255, 0.5)');
+    g.addColorStop(0.35, 'rgba(155, 48, 255, 0.15)');
+    g.addColorStop(0.7, 'rgba(0, 240, 255, 0.04)');
+    g.addColorStop(1, 'transparent');
+
+    ctx.beginPath();
+    ctx.arc(x, y, r * pulse, 0, Math.PI * 2);
+    ctx.fillStyle = g;
+    ctx.fill();
+  }
+
+  function drawInnerCore(x, y, r) {
+    // Diamond shape
+    var pulse = 1 + 0.08 * Math.sin(time * 2.5);
+    var g = ctx.createRadialGradient(x, y, 0, x, y, r * pulse);
+    g.addColorStop(0, 'rgba(180, 80, 255, 0.9)');
+    g.addColorStop(0.5, 'rgba(155, 48, 255, 0.4)');
+    g.addColorStop(1, 'rgba(155, 48, 255, 0)');
+
+    ctx.beginPath();
+    ctx.arc(x, y, r * pulse, 0, Math.PI * 2);
+    ctx.fillStyle = g;
+    ctx.fill();
+
+    // Bright center dot
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.15, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fill();
+  }
+
+  function drawRays(x, y, outerR, count) {
+    for (var i = 0; i < count; i++) {
+      var a = (i / count) * Math.PI * 2 + time * 0.3;
+      var len = outerR * (0.6 + 0.3 * Math.sin(time * 3 + i));
+      var startR = outerR * 0.08;
+      var x1 = x + Math.cos(a) * startR;
+      var y1 = y + Math.sin(a) * startR;
+      var x2 = x + Math.cos(a) * len;
+      var y2 = y + Math.sin(a) * len;
+
+      var g = ctx.createLinearGradient(x1, y1, x2, y2);
+      g.addColorStop(0, 'rgba(155, 48, 255, 0.25)');
+      g.addColorStop(1, 'transparent');
+
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.strokeStyle = g;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.35;
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function draw(ts) {
+    resize();
+    if (!lastTs) lastTs = ts;
+    var dt = (ts - lastTs) / 1000;
+    lastTs = ts;
+    time += dt;
+
+    ctx.clearRect(0, 0, w, h);
+
+    var size = Math.min(w, h);
+    var radius = size * 0.35;
+
+    // Center glow
+    drawCenterGlow(cx, cy, radius * 1.2);
+
+    // Rays
+    drawRays(cx, cy, radius * 1.4, 24);
+
+    // Outer ring
+    drawRing(cx, cy, radius, 28, 'rgba(155, 48, 255, 0.8)', 'rgba(155, 48, 255, 0.25)', time * 0.4);
+
+    // Inner ring
+    drawRing(cx, cy, radius * 0.55, 18, 'rgba(0, 240, 255, 0.7)', 'rgba(0, 240, 255, 0.2)', -time * 0.55);
+
+    // Middle sparse ring
+    drawRing(cx, cy, radius * 0.78, 8, 'rgba(180, 80, 255, 0.6)', 'rgba(155, 48, 255, 0.15)', time * 0.32);
+
+    // Orbiting particles
+    drawOrbitingParticle(cx, cy, radius * 0.85, time * 1.4, 3, 'rgba(155, 48, 255, 0.9)');
+    drawOrbitingParticle(cx, cy, radius * 0.82, time * 1.4 + Math.PI, 3, 'rgba(155, 48, 255, 0.9)');
+    drawOrbitingParticle(cx, cy, radius * 0.95, -time * 0.9 + Math.PI * 0.7, 2.5, 'rgba(0, 240, 255, 0.85)');
+    drawOrbitingParticle(cx, cy, radius * 0.93, -time * 0.9 + Math.PI * 1.7, 2.5, 'rgba(0, 240, 255, 0.85)');
+    drawOrbitingParticle(cx, cy, radius * 0.6, time * 1.7, 2, 'rgba(255, 255, 255, 0.6)');
+
+    // Inner core
+    drawInnerCore(cx, cy, radius * 0.12);
+
+    // Glow arcs
+    glowArc(cx, cy, radius, time * 0.8, time * 0.8 + Math.PI * 0.7, 'rgba(155, 48, 255, 0.4)', 0.6, 2);
+    glowArc(cx, cy, radius, -time * 0.6, -time * 0.6 + Math.PI * 0.5, 'rgba(0, 240, 255, 0.35)', 0.5, 1.5);
+
+    requestAnimationFrame(draw);
+  }
+
+  resize();
+  requestAnimationFrame(draw);
+
+  // Re-observe hero container for resize
+  var heroRight = canvas.parentElement;
+  if (!heroRight) return;
+  var ro = new ResizeObserver(function () { resize(); });
+  ro.observe(heroRight);
+})();
