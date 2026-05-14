@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" role="img" aria-label="DeadTakeover preview">
+  <defs>
+    <linearGradient id="sky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#12081a"/>
+      <stop offset="55%" stop-color="#1a0a22"/>
+      <stop offset="100%" stop-color="#08040c"/>
+    </linearGradient>
+    <radialGradient id="moon" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff5a6e"/>
+      <stop offset="70%" stop-color="#c41e3a"/>
+      <stop offset="100%" stop-color="#3a0610"/>
+    </radialGradient>
+    <linearGradient id="fog" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="rgba(155,48,255,0.45)"/>
+      <stop offset="40%" stop-color="rgba(80,20,60,0.15)"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#sky)"/>
+  <circle cx="1280" cy="220" r="110" fill="url(#moon)" filter="url(#glow)" opacity="0.95"/>
+  <path fill="#0d0512" d="M0 620 L120 520 L200 560 L320 480 L420 540 L560 460 L680 520 L820 440 L960 500 L1120 430 L1280 500 L1400 460 L1600 520 L1600 1000 L0 1000 Z"/>
+  <path fill="#160a1f" opacity="0.9" d="M0 680 L140 600 L260 640 L400 580 L520 630 L700 560 L860 620 L1020 570 L1180 640 L1340 590 L1500 650 L1600 610 L1600 1000 L0 1000 Z"/>
+  <g fill="#1e0f28" opacity="0.85">
+    <rect x="80" y="380" width="90" height="280"/><rect x="200" y="320" width="70" height="340"/>
+    <rect x="340" y="400" width="110" height="260"/><rect x="500" y="280" width="85" height="380"/>
+    <rect x="640" y="360" width="100" height="300"/><rect x="780" y="300" width="75" height="360"/>
+    <rect x="920" y="340" width="95" height="320"/><rect x="1080" y="260" width="120" height="400"/>
+    <rect x="1240" y="380" width="80" height="280"/><rect x="1380" y="420" width="100" height="240"/>
+  </g>
+  <g fill="#2a1535" opacity="0.35">
+    <rect x="110" y="410" width="16" height="16"/><rect x="140" y="450" width="16" height="16"/>
+    <rect x="530" y="320" width="14" height="14"/><rect x="1120" y="300" width="18" height="18"/>
+  </g>
+  <ellipse cx="800" cy="880" rx="900" ry="200" fill="url(#fog)"/>
+  <g opacity="0.55" stroke="#ff3b5c" stroke-width="2" fill="none" filter="url(#glow)">
+    <path d="M780 460 L820 460 M800 440 L800 480"/>
+  </g>
+  <g fill="#0a0508" opacity="0.7">
+    <ellipse cx="420" cy="720" rx="28" ry="70"/><ellipse cx="900" cy="710" rx="32" ry="72"/><ellipse cx="1180" cy="715" rx="26" ry="68"/>
+  </g>
+</svg>

@@ -442,44 +442,51 @@ main {
   overflow: hidden;
   background: var(--void-elevated);
 }
-.tile-screen .screen-bg {
+.tile-thumb {
   position: absolute;
   inset: 0;
-  opacity: 0.85;
-  transition: transform 0.6s var(--ease);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 0;
+  transition: transform 0.65s var(--ease), filter 0.65s var(--ease);
 }
-.game-tile:hover .tile-screen .screen-bg { transform: scale(1.05); }
-
-/* Abstract screenshot imagery (CSS-only gradients as placeholders) */
-.screen-bg.bg-a {
-  background:
-    radial-gradient(ellipse 80% 60% at 30% 40%, rgba(155, 48, 255, 0.3), transparent 50%),
-    radial-gradient(ellipse 60% 50% at 70% 60%, rgba(0, 240, 255, 0.2), transparent 50%),
-    linear-gradient(175deg, #0a0d1a, #0d1025 50%, #060810);
-}
-.screen-bg.bg-b {
-  background:
-    radial-gradient(ellipse 70% 50% at 60% 25%, rgba(255, 70, 100, 0.25), transparent 50%),
-    radial-gradient(ellipse 50% 40% at 25% 70%, rgba(155, 48, 255, 0.2), transparent 50%),
-    linear-gradient(175deg, #120a15, #0d0815 50%, #05050c);
-}
-.screen-bg.bg-c {
-  background:
-    radial-gradient(ellipse 60% 60% at 50% 35%, rgba(0, 240, 255, 0.25), transparent 55%),
-    radial-gradient(ellipse 50% 45% at 35% 65%, rgba(155, 48, 255, 0.18), transparent 55%),
-    linear-gradient(175deg, #050e15, #080f18 50%, #04080d);
-}
-
-/* Grid overlay on screenshots */
-.screen-bg::after {
+.tile-screen::before {
   content: '';
   position: absolute;
   inset: 0;
+  z-index: 1;
+  pointer-events: none;
   background-image:
-    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-  background-size: 50px 50px;
-  mask-image: radial-gradient(ellipse at center, black 20%, transparent 80%);
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at center, black 22%, transparent 78%);
+  opacity: 0.5;
+}
+.tile-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.42) 0%,
+    transparent 26%,
+    transparent 58%,
+    rgba(3, 4, 6, 0.68) 100%
+  );
+}
+.game-tile:hover .tile-thumb {
+  transform: scale(1.06);
+  filter: saturate(1.08) brightness(1.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile-thumb { transition: none; }
+  .game-tile:hover .tile-thumb { transform: none; filter: none; }
 }
 
 /* Category badge on screenshot */

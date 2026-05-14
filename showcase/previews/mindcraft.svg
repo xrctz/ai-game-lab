@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" role="img" aria-label="Mindcraft preview">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#020810"/>
+      <stop offset="100%" stop-color="#061a18"/>
+    </linearGradient>
+    <linearGradient id="frame" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00f0ff"/>
+      <stop offset="100%" stop-color="#006064"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="rgba(0,240,255,0.08)" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <rect width="1600" height="1000" fill="url(#grid)" opacity="0.6"/>
+  <rect x="120" y="100" width="1360" height="800" rx="16" fill="#030806" stroke="url(#frame)" stroke-width="4"/>
+  <rect x="160" y="140" width="1280" height="64" rx="8" fill="#041210" stroke="rgba(0,240,255,0.35)" stroke-width="1"/>
+  <text x="190" y="182" fill="#00f0ff" font-family="ui-monospace,Consolas,monospace" font-size="28" font-weight="700">mindcraft  agent deck</text>
+  <g font-family="ui-monospace,Consolas,monospace" font-size="22" fill="#7af0d0">
+    <text x="190" y="260">&gt; profile load sandbox & ok</text>
+    <text x="190" y="310">&gt; java runtime 21+ & detected</text>
+    <text x="190" y="360">&gt; bot fleet status & idle (3)</text>
+    <text x="190" y="410">&gt; stream events & listening</text>
+    <text x="190" y="460" fill="#00f0ff">&gt; <tspan fill="#fff">_</tspan></text>
+  </g>
+  <g opacity="0.15" stroke="#00f0ff" stroke-width="1">
+    <path d="M190 520 L1410 520"/><path d="M190 560 L1280 560"/><path d="M190 600 L1350 600"/><path d="M190 640 L1200 640"/>
+  </g>
+  <rect x="190" y="700" width="420" height="140" rx="10" fill="#041a16" stroke="rgba(0,240,255,0.25)" stroke-width="1"/>
+  <text x="220" y="750" fill="#4dd0c1" font-family="ui-monospace,Consolas,monospace" font-size="18">metrics</text>
+  <text x="220" y="785" fill="#b2fff5" font-family="ui-monospace,Consolas,monospace" font-size="16">tokens / min  420</text>
+  <text x="220" y="815" fill="#b2fff5" font-family="ui-monospace,Consolas,monospace" font-size="16">uptime  02:14:08</text>
+</svg>
