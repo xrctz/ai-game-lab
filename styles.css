@@ -449,7 +449,7 @@ main {
   height: 100%;
   object-fit: cover;
   object-position: center;
-  z-index: 0;
+  z-index: 2;
   transition: transform 0.65s var(--ease), filter 0.65s var(--ease);
 }
 .tile-screen::before {
@@ -459,11 +459,11 @@ main {
   z-index: 1;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
   background-size: 48px 48px;
-  mask-image: radial-gradient(ellipse at center, black 22%, transparent 78%);
-  opacity: 0.5;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 85%);
+  opacity: 0.28;
 }
 .tile-screen::after {
   content: '';
@@ -473,10 +473,10 @@ main {
   pointer-events: none;
   background: linear-gradient(
     180deg,
-    rgba(0, 0, 0, 0.42) 0%,
-    transparent 26%,
-    transparent 58%,
-    rgba(3, 4, 6, 0.68) 100%
+    rgba(0, 0, 0, 0.18) 0%,
+    transparent 22%,
+    transparent 62%,
+    rgba(3, 4, 6, 0.42) 100%
   );
 }
 .game-tile:hover .tile-thumb {
@@ -494,7 +494,7 @@ main {
   position: absolute;
   top: 14px;
   left: 14px;
-  z-index: 2;
+  z-index: 3;
   padding: 4px 12px;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.6);
