@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <defs>
+    <linearGradient id="bm" x1="6" y1="5" x2="26" y2="27" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9b30ff"/>
+      <stop offset="0.55" stop-color="#6b1fff"/>
+      <stop offset="1" stop-color="#00f0ff"/>
+    </linearGradient>
+    <linearGradient id="bmGlow" x1="16" y1="2" x2="16" y2="30" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9b30ff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#00f0ff" stop-opacity="0.2"/>
+    </linearGradient>
+  </defs>
+  <!-- Outer chip -->
+  <rect x="1.5" y="1.5" width="29" height="29" rx="7.5" fill="#07090f" stroke="url(#bm)" stroke-width="1.25"/>
+  <rect x="2.5" y="2.5" width="27" height="27" rx="6.5" stroke="url(#bmGlow)" stroke-width="1" opacity="0.9"/>
+  <!-- Stylized A + play vertex (lab / playable worlds) -->
+  <path
+    d="M16 8.5 22.2 23.5h-2.8l-1.25-3.55h-4.34L12.58 23.5H9.8L16 8.5z"
+    fill="url(#bm)"
+  />
+  <path
+    d="M16 13.35 14.2 18.6h3.6L16 13.35z"
+    fill="#07090f"
+  />
+  <!-- Spark / node (AI) -->
+  <circle cx="23.5" cy="9.5" r="2.35" fill="#00f0ff" opacity="0.95"/>
+  <circle cx="23.5" cy="9.5" r="3.6" stroke="#00f0ff" stroke-opacity="0.35" stroke-width="0.9"/>
+</svg>
