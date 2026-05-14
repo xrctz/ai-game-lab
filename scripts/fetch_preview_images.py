@@ -21,8 +21,8 @@ OUT = Path(__file__).resolve().parent.parent / "showcase" / "previews"
 SOURCES: dict[str, str] = {
     # Zombies in forest — horror / survival (Pexels)
     "deadtakeover": "https://images.pexels.com/photos/5435456/pexels-photo-5435456.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=1920",
-    # Colorful interlocking plastic blocks — sandbox / voxel vibe (Pexels)
-    "craftverse": "https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=1920",
+    # Grass + soil cross-section — terrain / block-world vibe (Pexels, not Mojang IP)
+    "craftverse": "https://images.pexels.com/photos/11255695/pexels-photo-11255695.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=1920",
     # Code on screen — dev / agent deck (Unsplash)
     "mindcraft": "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=max&w=1920&q=85",
 }
@@ -52,8 +52,12 @@ def fetch_one(name: str, url: str) -> None:
     im = Image.open(BytesIO(raw))
     im = cover_crop(im, W, H)
     OUT.mkdir(parents=True, exist_ok=True)
-    out_path = OUT / f"{name}.png"
-    im.save(out_path, "PNG", optimize=True)
+    if name == "craftverse":
+        out_path = OUT / "craftverse.jpg"
+        im.save(out_path, "JPEG", quality=86, optimize=True, progressive=True)
+    else:
+        out_path = OUT / f"{name}.png"
+        im.save(out_path, "PNG", optimize=True)
     print("Wrote", out_path, "from", url[:72], "...")
 
 

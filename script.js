@@ -337,24 +337,39 @@ document.addEventListener('click', function (e) {
 
   var mq = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-  function sync() {
+  function tryPlay() {
     if (mq.matches) {
       v.pause();
       try {
         v.currentTime = 0;
       } catch (e) {}
-    } else {
-      var p = v.play();
-      if (p && typeof p.catch === 'function') {
-        p.catch(function () {});
-      }
+      return;
+    }
+    v.muted = true;
+    var p = v.play();
+    if (p && typeof p.catch === 'function') {
+      p.catch(function () {});
     }
   }
 
-  sync();
+  function onFirstGesture() {
+    tryPlay();
+    document.removeEventListener('pointerdown', onFirstGesture);
+    document.removeEventListener('touchstart', onFirstGesture);
+  }
+
+  v.addEventListener('loadeddata', tryPlay);
+  v.addEventListener('canplay', tryPlay);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) tryPlay();
+  });
+  document.addEventListener('pointerdown', onFirstGesture, { passive: true });
+  document.addEventListener('touchstart', onFirstGesture, { passive: true });
+
+  tryPlay();
   if (mq.addEventListener) {
-    mq.addEventListener('change', sync);
+    mq.addEventListener('change', tryPlay);
   } else if (mq.addListener) {
-    mq.addListener(sync);
+    mq.addListener(tryPlay);
   }
 })();

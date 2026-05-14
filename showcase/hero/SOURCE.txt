@@ -2,5 +2,5 @@ Hero loop video (hero-loop.mp4) and poster (poster.jpg, first frame).
 
 Source: Pexels — "A neon light show in the dark" (abstract blue tunnel / light motion).
 Page: https://www.pexels.com/video/light-blue-abstract-tunnel-5680034/
-Downloaded variant: 5680034-sd_640_360_24fps.mp4
+Downloaded variant: 5680034-hd_1280_720_24fps.mp4 (720p for clearer motion than SD)
 License: https://www.pexels.com/license/
