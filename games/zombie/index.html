@@ -5,8 +5,49 @@
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DeadTakeover — Zombie Open World Game</title>
-    <!-- Stability patch: must load BEFORE the game bundle -->
-    <script src="./assets/stability-inject.js"></script>
+    <!-- Loading screen: displayed until the game bundle hides it -->
+    <style>
+      #game-loader{position:fixed;inset:0;z-index:99999;background:#0a0a0a;
+        display:flex;flex-direction:column;align-items:center;justify-content:center;
+        font-family:'Segoe UI',system-ui,sans-serif;color:#ccc;transition:opacity .4s;}
+      #game-loader.hidden{opacity:0;pointer-events:none;}
+      .loader-bar-wrap{width:280px;height:6px;background:#1a1a1a;border-radius:3px;margin-top:18px;overflow:hidden}
+      .loader-bar-fill{height:100%;width:0;background:linear-gradient(90deg,#9b30ff,#00f0ff);border-radius:3px;
+        transition:width .25s ease-out;}
+      .loader-text{font-size:14px;margin-top:10px;color:#888}
+    </style>
+    <script>
+      (function(){
+        var loader=document.createElement('div');
+        loader.id='game-loader';
+        loader.innerHTML='<h1 style="font-size:1.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase">DeadTakeover Protocol</h1>'
+          +'<div class="loader-bar-wrap"><div class="loader-bar-fill" id="loaderBar"></div></div>'
+          +'<div class="loader-text" id="loaderText">Loading assets&hellip;</div>';
+        document.body.insertBefore(loader,document.body.firstChild);
+        var bar=document.getElementById('loaderBar');
+        var text=document.getElementById('loaderText');
+        var started=Date.now();
+        function updateBar(){
+          var pct=Math.min(95,((Date.now()-started)/1000)*8+5);
+          bar.style.width=pct+'%';
+          if(pct<95)requestAnimationFrame(updateBar);
+          else text.textContent='Almost ready&hellip;';
+        }
+        requestAnimationFrame(updateBar);
+        window.__hideLoader=function(){
+          bar.style.width='100%';text.textContent='Ready.';
+          setTimeout(function(){loader.classList.add('hidden');},300);
+        };
+        var obs=new MutationObserver(function(){
+          var c=document.querySelector('canvas');
+          if(c&&c.width>0&&c.height>0){window.__hideLoader();obs.disconnect();}
+        });
+        setTimeout(function(){
+          obs.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['width','height']});
+        },500);
+        setTimeout(function(){obs.disconnect();window.__hideLoader();},28000);
+      })();
+    </script>
     <script type="module" crossorigin src="./assets/index-BMuMsKYH.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/three-DmS57Xe5.js">
     <link rel="stylesheet" crossorigin href="./assets/index-r1xQZ7Nn.css">
@@ -73,5 +114,6 @@
         </div>
       </div>
     </div>
+    <script src="./stability-inject.js"></script>
   </body>
 </html>

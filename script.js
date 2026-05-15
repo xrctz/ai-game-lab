@@ -11,6 +11,12 @@ document.addEventListener('mousemove', (e) => {
   document.body.style.setProperty('--cy', cy + '%');
 }, { passive: true });
 
+/* ---------- Service Worker registration ---------- */
+(function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('/ai-game-lab/sw.js', { scope: '/ai-game-lab/' }).catch(function () {});
+})();
+
 /* ---------- Particle background (Canvas) ---------- */
 (function initParticles() {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -21,6 +27,8 @@ document.addEventListener('mousemove', (e) => {
   surfaceEl.insertAdjacentElement('afterend', canvas);
   const ctx = canvas.getContext('2d');
   let w, h, particles = [];
+  let rafId = null;
+  let paused = false;
 
   function resize() { w = canvas.width = innerWidth; h = canvas.height = innerHeight; }
   function create() {
@@ -39,6 +47,7 @@ document.addEventListener('mousemove', (e) => {
 
   let last = 0;
   function draw(ts) {
+    if (paused) { rafId = null; return; }
     const dt = Math.min((ts - last) / 16, 2);
     last = ts;
     ctx.clearRect(0, 0, w, h);
@@ -54,13 +63,24 @@ document.addEventListener('mousemove', (e) => {
       ctx.fillStyle = 'rgba(155,48,255,' + p.o + ')';
       ctx.fill();
     }
-    requestAnimationFrame(draw);
+    rafId = requestAnimationFrame(draw);
   }
+
+  // Pause particles when a game iframe is active to save CPU/GPU
+  window.__particlePause = function () {
+    paused = true;
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  };
+  window.__particleResume = function () {
+    if (!paused) return;
+    paused = false;
+    rafId = requestAnimationFrame(draw);
+  };
 
   addEventListener('resize', () => { resize(); create(); });
   resize();
   create();
-  requestAnimationFrame(draw);
+  rafId = requestAnimationFrame(draw);
 })();
 
 /* ---------- Theme toggle ---------- */
@@ -272,6 +292,8 @@ document.addEventListener('click', function (e) {
       showToast('Unknown game: ' + game);
       return;
     }
+    // Pause background particles while game is loaded
+    if (window.__particlePause) window.__particlePause();
     // Show loader, hide empty
     clearIframe();
     if (playerEmpty) playerEmpty.style.display = 'none';
@@ -312,6 +334,7 @@ document.addEventListener('click', function (e) {
     currentGame = null;
     setStatus(false, null);
     if (playerEmpty) playerEmpty.style.display = '';
+    if (window.__particleResume) window.__particleResume();
     showToast('Game closed');
   }
 

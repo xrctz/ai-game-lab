@@ -94,9 +94,8 @@
     var rafId;
     function measured(ts) {
       if (contextLost) {
-        // Don't call cb during context loss to prevent render errors
-        // Re-queue so we resume when context is restored
-        if (!contextLost) return; // Already restored
+        // Skip render callbacks during context loss to prevent WebGL errors.
+        // Re-queue so the loop resumes automatically when the context is restored.
         rafId = _origRaf(measured);
         RAF_IDS.add(rafId);
         return;
