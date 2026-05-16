@@ -18,23 +18,26 @@ This upload keeps the existing site structure, but improves the embedded zombie 
 - To force the lightest mode, open the game with `?quality=low`. Supported modes are `low`, `balanced`, and `high`.
 - Press the backtick key while the game is open to show the lightweight performance overlay.
 
-## Deep startup fix pass
+## Streaming stutter fix pass v6
 
-This pass targets the short lag spike that still happened right after opening/starting the zombie game.
+This pass targets the remaining hitching while distant terrain/objects stream in during gameplay.
 
-Changes made:
+Main fixes:
 
-- Removed eager loading of the 9.9 MB AK47 GLB, 8.8 MB shotgun GLB, and pistol GLB during boot. The game now uses its existing lightweight procedural gun models for startup/teammates.
-- Replaced the Outbreak City high-detail building bootstrap with lightweight procedural instanced building templates so selecting that map does not block on GLB decoding.
-- Kept real-time shadows disabled instead of re-enabling them on Start. This removes a major first-gameplay GPU spike.
-- Reduced the initial chunk-building burst from 20 chunks to 8 chunks on normal maps and from 10 chunks to 6 chunks in Outbreak City.
-- Reduced active chunk radius from 4 to 3 on normal maps and from 3 to 2 in Outbreak City to reduce startup draw calls.
-- Shortened shader prewarm timeout from 2500ms to 900ms so Start does not stall as long.
-- Lowered weather particle count and texture anisotropy.
-- Downscaled/recompressed zombie textures in `games/zombie/assets` to reduce browser image decode time and GPU upload memory.
-- Bumped the service-worker cache names again so GitHub Pages fetches the new files.
+- Changed terrain chunks from 24x24 subdivisions to 8x8 subdivisions, cutting CPU terrain deformation per chunk dramatically.
+- Reduced active stream radius to 3 chunks on normal maps and 2 chunks in Outbreak City.
+- Replaced burst chunk building with frame-aware chunk streaming: the game now builds at most one chunk at a time and skips chunk building after slow frames.
+- Lowered initial chunk queue sizes so Start does not create a huge backlog.
+- Reduced per-chunk tree and structure density.
+- Disabled Outbreak City prop scatter during streaming; this avoids background GLB/model loads while moving.
+- Kept lightweight procedural Outbreak City buildings instead of high-detail building GLBs.
+- Kept cosmetic weapon GLB startup loading disabled; procedural weapon models are used instead.
+- Kept real-time shadow maps disabled permanently to avoid periodic shadow refresh spikes.
+- Reduced weather particles and texture anisotropy.
+- Added `games/zombie/streaming-mode.js` for a small diagnostic hook: open the console and run `window.__zombieGetStreamingStats()` to see pending chunk work.
+- Added a new cache-busting zombie bundle name: `assets/index-streamfix-v6.js`.
+- Bumped service-worker cache names to `v6-streamfix`.
 
-Notes:
+Why this was still stuttering on high-end hardware:
 
-- This intentionally prioritizes smooth startup over maximum visual detail. The gameplay systems, controls, save data, UI, maps, and weapons are left intact.
-- If a browser still feels choppy after uploading, hard-refresh once or unregister the old service worker because GitHub Pages may keep the older cached game bundle.
+The browser was not simply running out of GPU power. The stutter came from synchronous JavaScript work on the main thread: terrain mesh generation, object/collider creation, and model/texture upload scheduling. A fast GPU cannot render frames while the main JS thread is blocked, so the fix is to reduce and throttle streaming work rather than only lowering graphics quality.

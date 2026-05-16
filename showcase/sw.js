@@ -3,8 +3,8 @@
  * Cache-first for versioned assets, stale-while-revalidate for HTML.
  * Cuts subsequent page loads from ~100MB download to near-zero.
  */
-const CACHE_HUB = 'ai-game-lab-hub-v4-deepfix';
-const CACHE_GAMES = 'ai-game-lab-games-v4-deepfix';
+const CACHE_HUB = 'ai-game-lab-hub-v6-streamfix';
+const CACHE_GAMES = 'ai-game-lab-games-v6-streamfix';
 
 // Shell assets that make the hub work offline
 const HUB_SHELL = [
