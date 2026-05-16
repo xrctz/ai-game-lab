@@ -1,244 +1,162 @@
 /* ================================================================
-   AI Game Lab — Script
-   Theme, nav, reveal, particles, spotlight, player, showcase
+   AI Game Lab v7 — site interactions and safe game player
    ================================================================ */
+(function cursorSpotlight(){
+  document.addEventListener('mousemove', function(e){
+    document.body.style.setProperty('--cx', ((e.clientX / innerWidth) * 100).toFixed(2) + '%');
+    document.body.style.setProperty('--cy', ((e.clientY / innerHeight) * 100).toFixed(2) + '%');
+  }, { passive: true });
+})();
 
-/* ---------- Cursor spotlight ---------- */
-document.addEventListener('mousemove', (e) => {
-  const cx = (e.clientX / window.innerWidth) * 100;
-  const cy = (e.clientY / window.innerHeight) * 100;
-  document.body.style.setProperty('--cx', cx + '%');
-  document.body.style.setProperty('--cy', cy + '%');
-}, { passive: true });
-
-/* ---------- Service Worker registration ---------- */
-(function registerSW() {
+(function registerSW(){
   if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.register('/ai-game-lab/showcase/sw.js', { scope: '/ai-game-lab/' }).catch(function () {});
+  navigator.serviceWorker.register('/ai-game-lab/showcase/sw.js', { scope: '/ai-game-lab/' }).catch(function(){});
 })();
 
-/* ---------- Particle background (Canvas) ---------- */
-(function initParticles() {
+(function initParticles(){
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const canvas = document.createElement('canvas');
-  const existingAmbient = document.querySelector('.ambient');
-  const surfaceEl = existingAmbient || document.body;
-  canvas.style.cssText = 'position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0.65;';
-  surfaceEl.insertAdjacentElement('afterend', canvas);
-  const ctx = canvas.getContext('2d');
-  let w, h, particles = [];
-  let rafId = null;
-  let paused = false;
-
-  function resize() { w = canvas.width = innerWidth; h = canvas.height = innerHeight; }
-  function create() {
-    particles = [];
-    for (let i = 0; i < 35; i++) {
-      particles.push({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.25,
-        vy: (Math.random() - 0.5) * 0.25 - 0.08,
-        r: Math.random() * 1.5 + 0.5,
-        o: Math.random() * 0.13 + 0.12
-      });
-    }
-  }
-
-  let last = 0;
-  function draw(ts) {
-    if (paused) { rafId = null; return; }
-    const dt = Math.min((ts - last) / 16, 2);
-    last = ts;
-    ctx.clearRect(0, 0, w, h);
-    for (const p of particles) {
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      if (p.x < -10) p.x = w + 10;
-      if (p.x > w + 10) p.x = -10;
-      if (p.y < -10) p.y = h + 10;
-      if (p.y > h + 10) p.y = -10;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(155,48,255,' + p.o + ')';
-      ctx.fill();
-    }
-    rafId = requestAnimationFrame(draw);
-  }
-
-  // Pause particles when a game iframe is active to save CPU/GPU
-  window.__particlePause = function () {
-    paused = true;
-    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-  };
-  window.__particleResume = function () {
-    if (!paused) return;
-    paused = false;
-    rafId = requestAnimationFrame(draw);
-  };
-
-  addEventListener('resize', () => { resize(); create(); });
-  resize();
-  create();
-  rafId = requestAnimationFrame(draw);
-})();
-
-/* ---------- Theme toggle ---------- */
-(function initTheme() {
-  const saved = localStorage.getItem('theme');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const theme = saved || (prefersDark ? 'dark' : 'light');
-  document.documentElement.setAttribute('data-theme', theme);
-
-  const btn = document.getElementById('themeBtn');
-  if (btn) {
-    btn.addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-theme');
-      const next = current === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('theme', next);
+  var canvas = document.createElement('canvas');
+  canvas.setAttribute('aria-hidden', 'true');
+  canvas.style.cssText = 'position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.38;';
+  document.body.appendChild(canvas);
+  var ctx = canvas.getContext('2d');
+  var w = 0, h = 0, particles = [], raf = null, paused = false;
+  function resize(){ w = canvas.width = innerWidth; h = canvas.height = innerHeight; }
+  function create(){
+    var count = Math.min(30, Math.max(14, Math.round(innerWidth / 55)));
+    particles = Array.from({ length: count }, function(){
+      return { x: Math.random()*w, y: Math.random()*h, vx:(Math.random()-.5)*.18, vy:(Math.random()-.5)*.18, r:Math.random()*1.4+.45, o:Math.random()*.13+.08 };
     });
   }
+  var last = 0;
+  function draw(ts){
+    if (paused) { raf = null; return; }
+    var dt = Math.min((ts - last) / 16 || 1, 2); last = ts;
+    ctx.clearRect(0,0,w,h);
+    for (var i=0;i<particles.length;i++){
+      var p = particles[i]; p.x += p.vx*dt; p.y += p.vy*dt;
+      if (p.x < -8) p.x = w + 8; if (p.x > w + 8) p.x = -8; if (p.y < -8) p.y = h + 8; if (p.y > h + 8) p.y = -8;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fillStyle = 'rgba(53,231,255,' + p.o + ')'; ctx.fill();
+    }
+    raf = requestAnimationFrame(draw);
+  }
+  window.__particlePause = function(){ paused = true; if (raf) cancelAnimationFrame(raf); raf = null; };
+  window.__particleResume = function(){ if (!paused) return; paused = false; raf = requestAnimationFrame(draw); };
+  addEventListener('resize', function(){ resize(); create(); }, { passive: true });
+  resize(); create(); raf = requestAnimationFrame(draw);
 })();
 
-/* ---------- Toast ---------- */
-function showToast(msg, duration) {
-  duration = duration || 2200;
+(function initTheme(){
+  var saved = localStorage.getItem('theme');
+  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
+  var btn = document.getElementById('themeBtn');
+  if (!btn) return;
+  btn.addEventListener('click', function(){
+    var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+  });
+})();
+
+function showToast(msg, duration){
   var toast = document.getElementById('toast');
   if (!toast) return;
   toast.textContent = msg;
   toast.classList.add('show');
   clearTimeout(toast._timeout);
-  toast._timeout = setTimeout(function () { toast.classList.remove('show'); }, duration);
+  toast._timeout = setTimeout(function(){ toast.classList.remove('show'); }, duration || 2200);
 }
 
-/* ---------- Copy to clipboard ---------- */
-document.addEventListener('click', function (e) {
-  var btn = e.target.closest('[data-copy]');
-  if (!btn) return;
-  var text = btn.getAttribute('data-copy');
-  navigator.clipboard.writeText(text).then(function () {
-    showToast('Copied to clipboard');
-  }).catch(function () {
-    showToast('Failed to copy');
+(function initCopy(){
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-copy]');
+    if (!btn || !navigator.clipboard) return;
+    navigator.clipboard.writeText(btn.getAttribute('data-copy') || '').then(function(){ showToast('Copied to clipboard'); }).catch(function(){ showToast('Copy failed'); });
   });
-});
+})();
 
-/* ---------- Scroll-to-top ---------- */
-(function initScrollTop() {
+(function initScrollTop(){
   var btn = document.getElementById('scrollTop');
   if (!btn) return;
   var ticking = false;
-  function update() { btn.hidden = window.scrollY < 400; }
-  addEventListener('scroll', function () {
-    if (!ticking) { requestAnimationFrame(function () { update(); ticking = false; }); ticking = true; }
-  }, { passive: true });
-  btn.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  function update(){ btn.hidden = window.scrollY < 440; }
+  addEventListener('scroll', function(){ if (!ticking) requestAnimationFrame(function(){ update(); ticking = false; }); ticking = true; }, { passive: true });
+  btn.addEventListener('click', function(){ window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  update();
 })();
 
-/* ---------- Reveal on scroll ---------- */
-(function initReveal() {
-  var reveals = document.querySelectorAll('.reveal');
-  if (!reveals.length) return;
-  var observer = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.15 });
-  reveals.forEach(function (el) { observer.observe(el); });
+(function initReveal(){
+  var items = document.querySelectorAll('.reveal');
+  if (!items.length) return;
+  if (!('IntersectionObserver' in window)) { items.forEach(function(el){ el.classList.add('visible'); }); return; }
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){ if (entry.isIntersecting) { entry.target.classList.add('visible'); obs.unobserve(entry.target); } });
+  }, { threshold: .12 });
+  items.forEach(function(el){ obs.observe(el); });
 })();
 
-/* ---------- Hamburger menu ---------- */
-(function initMenu() {
+(function initMenu(){
   var toggle = document.getElementById('menuToggle');
   var nav = document.getElementById('siteNav');
   if (!toggle || !nav) return;
-  toggle.addEventListener('click', function () {
-    var isOpen = nav.classList.toggle('open');
-    toggle.setAttribute('aria-expanded', isOpen);
+  toggle.addEventListener('click', function(){
+    var open = nav.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', String(open));
   });
-  document.addEventListener('click', function (e) {
+  document.addEventListener('click', function(e){
     if (!nav.classList.contains('open')) return;
-    if (!nav.contains(e.target) && e.target !== toggle && !toggle.contains(e.target)) {
-      nav.classList.remove('open');
-      toggle.setAttribute('aria-expanded', 'false');
-    }
+    if (!nav.contains(e.target) && !toggle.contains(e.target)) { nav.classList.remove('open'); toggle.setAttribute('aria-expanded', 'false'); }
   });
 })();
 
-/* ---------- Active nav highlight ---------- */
-(function highlightNav() {
+(function highlightNav(){
   var nav = document.getElementById('siteNav');
   if (!nav) return;
-  var links = nav.querySelectorAll('a');
   var path = location.pathname.replace(/\/$/, '') || '/';
-  links.forEach(function (a) {
-    var href = new URL(a.href, location.origin);
-    var linkPath = href.pathname.replace(/\/$/, '') || '/';
-    if (linkPath === path) {
-      a.setAttribute('aria-current', 'page');
-    } else {
-      a.removeAttribute('aria-current');
-    }
+  nav.querySelectorAll('a').forEach(function(a){
+    var linkPath = new URL(a.href, location.origin).pathname.replace(/\/$/, '') || '/';
+    if (path === linkPath) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
 })();
 
-/* ---------- Dynamic copyright year ---------- */
-(function setYear() {
+(function setYear(){
   var el = document.getElementById('copyrightYear');
   if (el) el.textContent = new Date().getFullYear();
 })();
 
-/* ---------- Prefetch Play hub on hover (once) ---------- */
-(function prefetchPlayHub() {
-  var path = '/ai-game-lab/play/';
-  var done = false;
-  function addPrefetch() {
-    if (done) return;
-    done = true;
-    var link = document.createElement('link');
-    link.rel = 'prefetch';
-    link.href = path;
-    link.as = 'document';
-    document.head.appendChild(link);
-  }
-  document.querySelectorAll('a[href="' + path + '"]').forEach(function (a) {
-    a.addEventListener('mouseenter', addPrefetch, { once: true });
-    a.addEventListener('focus', addPrefetch, { once: true });
-  });
-})();
-
-/* ---------- Showcase filter ---------- */
-(function initFilter() {
+(function initFilter(){
   var buttons = document.querySelectorAll('.filter-btn');
   if (!buttons.length) return;
   var cards = document.querySelectorAll('.game');
   var note = document.getElementById('resultsNote');
-
-  buttons.forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      buttons.forEach(function (b) { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
-      btn.classList.add('active');
-      btn.setAttribute('aria-selected', 'true');
-
+  buttons.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      buttons.forEach(function(b){ b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+      btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
       var filter = btn.getAttribute('data-filter');
       var count = 0;
-      cards.forEach(function (card) {
+      cards.forEach(function(card){
         var match = filter === 'all' || card.getAttribute('data-category') === filter;
-        card.style.display = match ? '' : 'none';
-        if (match) count++;
+        card.style.display = match ? '' : 'none'; if (match) count++;
       });
-      if (note) note.textContent = count + ' project' + (count !== 1 ? 's' : '');
+      if (note) note.textContent = count + ' project' + (count === 1 ? '' : 's');
     });
   });
 })();
 
-/* ---------- Game player ---------- */
-(function initPlayer() {
+(function prefetchPlay(){
+  var done = false;
+  function go(){
+    if (done) return; done = true;
+    var link = document.createElement('link'); link.rel = 'prefetch'; link.href = '/ai-game-lab/play/'; link.as = 'document'; document.head.appendChild(link);
+  }
+  document.querySelectorAll('a[href^="/ai-game-lab/play/"]').forEach(function(a){ a.addEventListener('mouseenter', go, { once: true }); a.addEventListener('focus', go, { once: true }); });
+})();
+
+(function initPlayer(){
   var playerScreen = document.getElementById('playerScreen');
+  if (!playerScreen) return;
   var playerName = document.getElementById('playerName');
   var playerEmpty = document.getElementById('playerEmpty');
   var playerLoader = document.getElementById('playerLoader');
@@ -247,146 +165,107 @@ document.addEventListener('click', function (e) {
   var btnClose = document.getElementById('btnClose');
 
   var GAME_URLS = {
-    zombie:   '/ai-game-lab/games/zombie/index.html',
-    minecraft:'/ai-game-lab/games/craftverse/index.html',
-    mindcraft:'/ai-game-lab/games/mindcraft/index.html'
+    zombie: '/ai-game-lab/games/zombie/index.html',
+    voxel: '/ai-game-lab/games/voxel/index.html',
+    minecraft: '/ai-game-lab/games/voxel/index.html'
   };
-
   var GAME_NAMES = {
-    zombie:   'DeadTakeover Protocol',
-    minecraft:'CraftVerse Engine',
-    mindcraft:'Mindcraft Control Deck'
+    zombie: 'DeadTakeover Protocol',
+    voxel: 'CraftVerse Engine',
+    minecraft: 'CraftVerse Engine',
+    mindcraft: 'Mindcraft Control Deck'
   };
-
   var currentGame = null;
   var currentIframe = null;
 
-  function clearIframe() {
+  function clearPanel(){
+    playerScreen.querySelectorAll('.info-panel').forEach(function(el){ el.remove(); });
+  }
+  function clearIframe(){
     if (currentIframe) {
-      // Notify game stability patch to release resources before teardown
-      try {
-        if (currentIframe.contentWindow && currentIframe.contentWindow.__zombieCleanup) {
-          currentIframe.contentWindow.__zombieCleanup();
-        }
-      } catch (e) { /* cross-origin or already dead */ }
-      currentIframe.remove();
-      currentIframe = null;
+      try { if (currentIframe.contentWindow && currentIframe.contentWindow.__zombieCleanup) currentIframe.contentWindow.__zombieCleanup(); } catch(e) {}
+      currentIframe.remove(); currentIframe = null;
     }
+    clearPanel();
     if (playerLoader) playerLoader.classList.remove('visible');
   }
-
-  function setStatus(loaded, game) {
-    if (!liveDot) return;
-    if (loaded && game) {
-      liveDot.classList.add('active');
-      if (playerName) playerName.textContent = GAME_NAMES[game] || game;
-    } else {
-      liveDot.classList.remove('active');
-      if (playerName) playerName.textContent = 'No game loaded';
-    }
+  function setStatus(active, game){
+    if (liveDot) liveDot.classList.toggle('active', !!active);
+    if (playerName) playerName.textContent = active && game ? (GAME_NAMES[game] || game) : 'No game loaded';
   }
-
-  function loadGame(game) {
+  function showMindcraft(){
+    if (window.__particleResume) window.__particleResume();
+    clearIframe(); currentGame = 'mindcraft';
+    if (playerEmpty) playerEmpty.style.display = 'none';
+    var panel = document.createElement('div');
+    panel.className = 'info-panel';
+    panel.innerHTML = '<div><span class="hero-kicker"><span class="pulse-dot"></span> Local launcher</span><h3>Mindcraft runs on your machine.</h3><p>GitHub Pages can only host static files, so this hub shows setup info instead of trying to iframe a missing local Java/Node app.</p><div class="hero-actions"><a class="btn btn-primary" href="https://github.com/xrctz/mindcraft" target="_blank" rel="noopener noreferrer">Open repo</a><a class="btn btn-secondary" href="/ai-game-lab/mindcraft-info.html">Setup notes</a></div></div>';
+    playerScreen.appendChild(panel);
+    setStatus(true, 'mindcraft');
+    showToast('Mindcraft setup panel opened');
+  }
+  function loadGame(game){
+    if (game === 'mindcraft') { showMindcraft(); return; }
     var url = GAME_URLS[game];
-    if (!url) {
-      showToast('Unknown game: ' + game);
-      return;
-    }
-    // Pause background particles while game is loaded
+    if (!url) { showToast('Unknown game: ' + game); return; }
     if (window.__particlePause) window.__particlePause();
-    // Show loader, hide empty
     clearIframe();
     if (playerEmpty) playerEmpty.style.display = 'none';
     if (playerLoader) playerLoader.classList.add('visible');
     setStatus(false, null);
-
     var iframe = document.createElement('iframe');
     iframe.src = url;
-    iframe.allow = 'autoplay; fullscreen';
+    iframe.allow = 'autoplay; fullscreen; gamepad; pointer-lock';
     iframe.title = GAME_NAMES[game] || game;
-
-    // Once iframe is done loading, hide loader
-    iframe.addEventListener('load', function () {
+    iframe.addEventListener('load', function(){
       if (playerLoader) playerLoader.classList.remove('visible');
       if (playerEmpty) playerEmpty.style.display = 'none';
-      setStatus(true, game);
-      currentGame = game;
-      showToast(GAME_NAMES[game] + ' loaded');
+      currentGame = game; setStatus(true, game); showToast((GAME_NAMES[game] || game) + ' loaded');
     });
-
-    // If iframe fails to load within 15s, show empty
-    setTimeout(function () {
-      if (playerLoader && playerLoader.classList.contains('visible')) {
-        playerLoader.classList.remove('visible');
-        if (playerEmpty) playerEmpty.style.display = '';
-        setStatus(false, null);
-        showToast('Game timed out. Try refreshing.');
-        currentGame = null;
+    setTimeout(function(){
+      if (currentIframe === iframe && playerLoader && playerLoader.classList.contains('visible')) {
+        playerLoader.classList.remove('visible'); showToast('Still loading. Large games can take longer on first cache.');
       }
-    }, 18000);
-
+    }, 16000);
     currentIframe = iframe;
     playerScreen.appendChild(iframe);
   }
-
-  function closeGame() {
-    clearIframe();
-    currentGame = null;
-    setStatus(false, null);
+  function closeGame(){
+    clearIframe(); currentGame = null; setStatus(false, null);
     if (playerEmpty) playerEmpty.style.display = '';
     if (window.__particleResume) window.__particleResume();
-    showToast('Game closed');
+    showToast('Player closed');
   }
-
-  // Delegate clicks on play buttons
-  document.addEventListener('click', function (e) {
-    var playBtn = e.target.closest('[data-play]');
-    if (!playBtn) return;
-    var game = playBtn.getAttribute('data-play');
-    if (!game) return;
-    loadGame(game);
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-play]');
+    if (!btn) return;
+    loadGame(btn.getAttribute('data-play'));
   });
-
-  if (btnRefresh) {
-    btnRefresh.addEventListener('click', function () {
-      if (!currentGame) return;
-      loadGame(currentGame);
-    });
-  }
-
-  if (btnClose) {
-    btnClose.addEventListener('click', closeGame);
-  }
+  if (btnRefresh) btnRefresh.addEventListener('click', function(){ if (currentGame) loadGame(currentGame); });
+  if (btnClose) btnClose.addEventListener('click', closeGame);
+  var requested = new URLSearchParams(location.search).get('game');
+  if (requested) setTimeout(function(){ loadGame(requested); }, 250);
 })();
 
-/* ---------- Hero loop video (replaces canvas) ---------- */
 (function initHeroVideo() {
   var v = document.getElementById('heroVideo');
   if (!v) return;
-
   var mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-
   function tryPlay() {
     if (mq.matches) {
       v.pause();
-      try {
-        v.currentTime = 0;
-      } catch (e) {}
+      try { v.currentTime = 0; } catch (e) {}
       return;
     }
     v.muted = true;
     var p = v.play();
-    if (p && typeof p.catch === 'function') {
-      p.catch(function () {});
-    }
+    if (p && typeof p.catch === 'function') p.catch(function () {});
   }
-
   function onFirstGesture() {
     tryPlay();
     document.removeEventListener('pointerdown', onFirstGesture);
     document.removeEventListener('touchstart', onFirstGesture);
   }
-
   v.addEventListener('loadeddata', tryPlay);
   v.addEventListener('canplay', tryPlay);
   document.addEventListener('visibilitychange', function () {
@@ -394,11 +273,7 @@ document.addEventListener('click', function (e) {
   });
   document.addEventListener('pointerdown', onFirstGesture, { passive: true });
   document.addEventListener('touchstart', onFirstGesture, { passive: true });
-
   tryPlay();
-  if (mq.addEventListener) {
-    mq.addEventListener('change', tryPlay);
-  } else if (mq.addListener) {
-    mq.addListener(tryPlay);
-  }
+  if (mq.addEventListener) mq.addEventListener('change', tryPlay);
+  else if (mq.addListener) mq.addListener(tryPlay);
 })();

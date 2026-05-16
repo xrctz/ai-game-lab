@@ -3,33 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="AI Game Lab — A hub for playable game experiments built with AI. Voxel sandbox, open-world FPS, and an AI agent launcher." />
-  <meta name="theme-color" content="#030406" />
+  <meta name="description" content="AI Game Lab is a playable browser game laboratory featuring DeadTakeover Protocol, CraftVerse Engine, and Mindcraft Control Deck." />
+  <meta name="theme-color" content="#070914" />
   <meta name="color-scheme" content="dark light" />
   <meta property="og:title" content="AI Game Lab" />
-  <meta property="og:description" content="Playable game worlds designed with AI — voxel sandbox, open-world FPS, and AI agent launcher." />
+  <meta property="og:description" content="A polished browser hub for AI-built playable worlds, experiments, and game systems." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://xrctz.github.io/ai-game-lab/" />
   <meta property="og:image" content="https://xrctz.github.io/ai-game-lab/showcase/previews/deadtakeover.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="https://xrctz.github.io/ai-game-lab/showcase/previews/deadtakeover.png" />
   <link rel="canonical" href="https://xrctz.github.io/ai-game-lab/" />
-  <title>AI Game Lab</title>
+  <title>AI Game Lab — Playable Worlds Built With AI</title>
 
-  <link rel="icon" type="image/svg+xml" href="/ai-game-lab/showcase/favicon.svg?v=3" />
-  <link rel="manifest" href="/ai-game-lab/showcase/manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="/ai-game-lab/showcase/favicon.svg?v=7" />
+  <link rel="manifest" href="/ai-game-lab/manifest.json" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Orbitron:wght@600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="/ai-game-lab/styles.css" />
+  <link rel="stylesheet" href="/ai-game-lab/styles.css?v=7" />
 </head>
 <body>
-  <div class="ambient" aria-hidden="true">
-    <div class="orb"></div>
-    <div class="orb"></div>
-    <div class="orb"></div>
+  <div class="site-backdrop" aria-hidden="true">
+    <div class="grid-plane"></div>
+    <div class="glow glow-a"></div>
+    <div class="glow glow-b"></div>
+    <div class="noise-layer"></div>
   </div>
 
   <a class="skip" href="#main">Skip to content</a>
@@ -37,75 +38,91 @@
   <header class="topbar" role="banner">
     <div class="topbar-inner">
       <a class="brand" href="/ai-game-lab/" aria-label="AI Game Lab home">
-        <img class="brand-mark" src="/ai-game-lab/showcase/brand-mark.svg?v=3" alt="" width="28" height="28" decoding="async" aria-hidden="true" />
-        <span class="brand-name">AI Game Lab</span>
+        <img class="brand-mark" src="/ai-game-lab/showcase/brand-mark.svg?v=7" alt="" width="34" height="34" decoding="async" aria-hidden="true" />
+        <span class="brand-copy">
+          <strong>AI Game Lab</strong>
+          <small>Playable browser systems</small>
+        </span>
       </a>
-      <nav id="siteNav" class="nav" aria-label="Site">
+      <nav id="siteNav" class="nav" aria-label="Site navigation">
         <a href="/ai-game-lab/">Home</a>
         <a href="/ai-game-lab/showcase/">Showcase</a>
         <a href="/ai-game-lab/play/">Play</a>
         <a href="/ai-game-lab/story/">Story</a>
       </nav>
-      <button id="menuToggle" class="menu-toggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="siteNav">
-        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </button>
-      <button id="themeBtn" type="button" aria-label="Toggle theme">
-        <svg class="ico-moon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-        <svg class="ico-sun" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M15 8h-2M3 8H1M13.07 2.93l-1.42 1.42M4.34 11.66l-1.41 1.41M13.07 13.07l-1.42-1.42M4.34 4.34 2.93 2.93" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </button>
+      <div class="topbar-actions">
+        <a class="github-pill" href="https://github.com/xrctz/ai-game-lab" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <button id="themeBtn" class="icon-btn" type="button" aria-label="Toggle theme">
+          <svg class="ico-moon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          <svg class="ico-sun" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M15 8h-2M3 8H1M13.07 2.93l-1.42 1.42M4.34 11.66l-1.41 1.41M13.07 13.07l-1.42-1.42M4.34 4.34 2.93 2.93" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <button id="menuToggle" class="menu-toggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="siteNav">
+          <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </button>
+      </div>
     </div>
   </header>
 
   <main id="main">
-    <section class="hero-block">
-      <div class="hero-left">
-        <div class="reveal">
-          <span class="hero-badge">Built with AI collaboration</span>
-        </div>
-        <h1 class="hero-headline reveal">
-          Worlds you <span class="highlight">can play.</span>
-        </h1>
-        <p class="hero-sub reveal">
-          Three game engines designed with AI, running inside one browser tab. No downloads, no installs — just load and play.
-        </p>
+    <section class="hero-shell">
+      <div class="hero-copy">
+        <div class="hero-kicker reveal"><span class="pulse-dot"></span> Live lab build · v7 website revamp</div>
+        <h1 class="hero-title reveal">A game lab that feels like a <span>real launch deck.</span></h1>
+        <p class="hero-lead reveal">Play browser-native worlds, inspect the projects, and jump between AI-built game systems from one polished command center.</p>
         <div class="hero-actions reveal">
-          <a class="btn-cta" href="/ai-game-lab/play/">
-            Launch game hub
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m6 4 4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </a>
-          <a class="btn-ghost" href="/ai-game-lab/showcase/">See creations</a>
+          <a class="btn btn-primary" href="/ai-game-lab/play/?game=zombie">Play DeadTakeover</a>
+          <a class="btn btn-secondary" href="/ai-game-lab/showcase/">View showcase</a>
         </div>
-        <div class="stats-bar reveal">
-          <div class="stat-block">
-            <strong>3</strong>
-            <span>Playable worlds</span>
-          </div>
-          <div class="stat-block">
-            <strong>1</strong>
-            <span>Unified hub</span>
-          </div>
-          <div class="stat-block">
-            <strong>Live</strong>
-            <span>Iterating daily</span>
-          </div>
+        <div class="metric-row reveal" aria-label="Project stats">
+          <div><strong>2</strong><span>Playable embeds</span></div>
+          <div><strong>3</strong><span>Featured systems</span></div>
+          <div><strong>v6</strong><span>Zombie stream fix</span></div>
         </div>
       </div>
-      <div class="hero-right reveal">
-        <!-- Hero loop: Pexels video 5680034 (see showcase/hero/SOURCE.txt) -->
-        <div class="hero-visual" aria-hidden="true">
+
+      <div class="hero-console reveal" aria-label="AI Game Lab status panel">
+        <div class="hero-visual">
           <video
             id="heroVideo"
             class="hero-video"
             width="420"
             height="420"
-            poster="/ai-game-lab/showcase/hero/poster.jpg?v=3"
+            poster="/ai-game-lab/showcase/hero/poster.jpg?v=7"
             muted
             loop
             playsinline
             preload="auto"
+            aria-hidden="true"
           >
-            <source src="/ai-game-lab/showcase/hero/hero-loop.mp4?v=3" type="video/mp4" />
+            <source src="/ai-game-lab/showcase/hero/hero-loop.mp4?v=7" type="video/mp4" />
           </video>
+        </div>
+        <div class="console-top">
+          <span></span><span></span><span></span>
+          <strong>lab.status</strong>
+        </div>
+        <div class="console-grid">
+          <div class="console-card wide">
+            <span class="label">featured runtime</span>
+            <strong>DeadTakeover Protocol</strong>
+            <p>Optimized Three.js zombie survival build with throttled world streaming.</p>
+          </div>
+          <div class="console-card">
+            <span class="label">route</span>
+            <strong>/play</strong>
+            <p>Load games inside the browser hub.</p>
+          </div>
+          <div class="console-card">
+            <span class="label">render target</span>
+            <strong>WebGL</strong>
+            <p>No installer required.</p>
+          </div>
+        </div>
+        <div class="terminal-lines" aria-hidden="true">
+          <code>&gt; boot ai-game-lab</code>
+          <code>&gt; mount games/zombie/index.html</code>
+          <code>&gt; mount games/voxel/index.html</code>
+          <code>&gt; status: playable</code>
         </div>
       </div>
     </section>
@@ -113,92 +130,76 @@
     <section class="section-block">
       <div class="section-head reveal">
         <span class="eyebrow">Featured builds</span>
-        <h2>Three engines, one lab.</h2>
-        <p>Each game is a different genre and stack — all running in the browser.</p>
+        <h2>Choose a system.</h2>
+        <p>Every card is designed to look like a product panel, not a default template.</p>
       </div>
-
-      <div class="showcase-grid">
-        <a class="game-tile reveal" href="/ai-game-lab/showcase/">
-          <div class="tile-screen">
-            <img class="tile-thumb" src="/ai-game-lab/showcase/previews/deadtakeover.png" alt="DeadTakeover Protocol preview art" width="640" height="400" loading="eager" fetchpriority="high" decoding="async" />
-            <span class="screen-badge">Playable · v2.0</span>
+      <div class="feature-grid">
+        <article class="feature-card reveal spotlight-card">
+          <div class="media-frame">
+            <img src="/ai-game-lab/showcase/previews/deadtakeover.png" alt="DeadTakeover Protocol city preview" width="720" height="450" loading="eager" fetchpriority="high" decoding="async" />
+            <span class="screen-badge hot">Playable</span>
           </div>
-          <div class="tile-info">
+          <div class="card-body">
+            <p class="card-kicker">Open-world FPS</p>
             <h3>DeadTakeover Protocol</h3>
-            <p class="desc">Browser zombie survival FPS with twelve maps, special infected, loot progression, and horde siege events.</p>
-            <div class="tile-tags">
-              <span class="tag accent">Open-world FPS</span>
-              <span class="tag">Three.js</span>
-              <span class="tag">WebGL</span>
-            </div>
+            <p>Zombie survival, map rotation, loot progression, horde pressure, and browser-friendly streaming fixes.</p>
+            <div class="tag-row"><span>Three.js</span><span>WebGL</span><span>Optimized</span></div>
+            <a class="btn btn-card" href="/ai-game-lab/play/?game=zombie">Launch game</a>
           </div>
-        </a>
+        </article>
 
-        <a class="game-tile reveal" href="/ai-game-lab/showcase/">
-          <div class="tile-screen">
-            <img class="tile-thumb" src="/ai-game-lab/showcase/previews/craftverse.jpg?v=3" alt="CraftVerse Engine preview art - grass and soil terrain" width="640" height="400" loading="eager" fetchpriority="high" decoding="async" />
-            <span class="screen-badge">Playable · v1.0</span>
+        <article class="feature-card reveal">
+          <div class="media-frame">
+            <img src="/ai-game-lab/showcase/previews/craftverse.jpg?v=7" alt="CraftVerse voxel landscape preview" width="720" height="450" loading="lazy" decoding="async" />
+            <span class="screen-badge">Playable</span>
           </div>
-          <div class="tile-info">
+          <div class="card-body">
+            <p class="card-kicker">Voxel sandbox</p>
             <h3>CraftVerse Engine</h3>
-            <p class="desc">Voxel sandbox with infinite terrain, biome blending, survival loops, and multiplayer-ready architecture.</p>
-            <div class="tile-tags">
-              <span class="tag accent">Voxel Sandbox</span>
-              <span class="tag">Three.js</span>
-              <span class="tag">Noise</span>
-            </div>
+            <p>Block-world terrain, sandbox mechanics, and a lightweight voxel build served from the real `games/voxel` folder.</p>
+            <div class="tag-row"><span>Voxel</span><span>Sandbox</span><span>Browser</span></div>
+            <a class="btn btn-card" href="/ai-game-lab/play/?game=voxel">Launch game</a>
           </div>
-        </a>
+        </article>
 
-        <a class="game-tile reveal" href="/ai-game-lab/showcase/">
-          <div class="tile-screen">
-            <img class="tile-thumb" src="/ai-game-lab/showcase/previews/mindcraft.png" alt="Mindcraft Control Deck preview art" width="640" height="400" loading="eager" fetchpriority="high" decoding="async" />
-            <span class="screen-badge">Tool · v2.0</span>
+        <article class="feature-card reveal">
+          <div class="media-frame">
+            <img src="/ai-game-lab/showcase/previews/mindcraft.png" alt="Mindcraft Control Deck preview" width="720" height="450" loading="lazy" decoding="async" />
+            <span class="screen-badge tool">Local tool</span>
           </div>
-          <div class="tile-info">
+          <div class="card-body">
+            <p class="card-kicker">AI agent ops</p>
             <h3>Mindcraft Control Deck</h3>
-            <p class="desc">Local AI agent launcher with Java runtime setup, profile lifecycle, and bot ops.</p>
-            <div class="tile-tags">
-              <span class="tag">AI Launcher</span>
-              <span class="tag">Java</span>
-              <span class="tag">Node.js</span>
-            </div>
+            <p>Local AI agent launcher for bot workflows. The hosted site now shows the proper launcher notes instead of a broken iframe.</p>
+            <div class="tag-row"><span>Java</span><span>Node.js</span><span>Localhost</span></div>
+            <a class="btn btn-card" href="/ai-game-lab/mindcraft-info.html">Read setup</a>
           </div>
-        </a>
+        </article>
       </div>
     </section>
 
-    <section class="section-block explore-block">
-      <div class="section-head reveal">
-        <span class="eyebrow">Explore</span>
-        <h2>Jump in anywhere.</h2>
-        <p>Open the player, browse the gallery, or read how the lab came together.</p>
+    <section class="lab-strip reveal">
+      <div>
+        <span class="eyebrow">What changed</span>
+        <h2>Cleaner shell. Safer game loading.</h2>
       </div>
-      <div class="explore-grid">
-        <a class="explore-card reveal" href="/ai-game-lab/play/">
-          <span class="explore-icon" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M8 5v14l11-7-11-7Z" fill="currentColor"/></svg>
-          </span>
-          <h3>Play hub</h3>
-          <p>Load DeadTakeover, CraftVerse, or Mindcraft in one place.</p>
-          <span class="explore-cta">Open player</span>
-        </a>
-        <a class="explore-card reveal" href="/ai-game-lab/showcase/">
-          <span class="explore-icon" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h10M4 18h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          </span>
-          <h3>Showcase</h3>
-          <p>Specs, tags, and filters for every build in the lab.</p>
-          <span class="explore-cta">View gallery</span>
-        </a>
-        <a class="explore-card reveal" href="/ai-game-lab/story/">
-          <span class="explore-icon" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6 4h9l3 3v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.75"/><path d="M9 12h6M9 16h4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
-          </span>
-          <h3>Story</h3>
-          <p>Why this hub exists and what ships next.</p>
-          <span class="explore-cta">Read more</span>
-        </a>
+      <div class="strip-grid">
+        <div><strong>Fixed routes</strong><span>CraftVerse points to `games/voxel`.</span></div>
+        <div><strong>No broken embeds</strong><span>Mindcraft is treated as a local tool.</span></div>
+        <div><strong>Cache bumped</strong><span>Service worker version updated for GitHub Pages.</span></div>
+      </div>
+    </section>
+
+    <section class="section-block split-section">
+      <div class="section-head reveal">
+        <span class="eyebrow">Build flow</span>
+        <h2>From prototype to public hub.</h2>
+        <p>The site is now built around a clear visitor path: discover, launch, learn, and return.</p>
+      </div>
+      <div class="timeline-grid">
+        <div class="timeline-card reveal"><span>01</span><h3>Discover</h3><p>Landing page explains the lab fast with stronger visuals and project stats.</p></div>
+        <div class="timeline-card reveal"><span>02</span><h3>Launch</h3><p>The Play page keeps game iframes isolated and pauses background effects while playing.</p></div>
+        <div class="timeline-card reveal"><span>03</span><h3>Understand</h3><p>Showcase and Story pages now feel connected to the same brand instead of separate templates.</p></div>
       </div>
     </section>
 
@@ -208,25 +209,26 @@
   </main>
 
   <footer class="footer-block">
-    <div class="inner">
-      <div class="footer-top">
-        <a class="brand" href="/ai-game-lab/" aria-label="AI Game Lab home">
-          <img class="brand-mark" src="/ai-game-lab/showcase/brand-mark.svg?v=3" alt="" width="28" height="28" decoding="async" aria-hidden="true" />
-          <span>AI Game Lab</span>
+    <div class="footer-inner">
+      <div>
+        <a class="brand footer-brand" href="/ai-game-lab/" aria-label="AI Game Lab home">
+          <img class="brand-mark" src="/ai-game-lab/showcase/brand-mark.svg?v=7" alt="" width="32" height="32" decoding="async" aria-hidden="true" />
+          <span class="brand-copy"><strong>AI Game Lab</strong><small>Design · test · ship</small></span>
         </a>
-        <nav class="footer-nav" aria-label="Footer">
-          <a href="/ai-game-lab/">Home</a>
-          <a href="/ai-game-lab/showcase/">Showcase</a>
-          <a href="/ai-game-lab/play/">Play</a>
-          <a href="/ai-game-lab/story/">Story</a>
-          <a href="https://github.com/xrctz/ai-game-lab" target="_blank" rel="noopener noreferrer">GitHub</a>
-        </nav>
+        <p>Playable experiments built with AI-assisted development and tuned for browser delivery.</p>
       </div>
-      <p class="footer-copy">© <span id="copyrightYear">2026</span> · Design, test, and ship playable ideas.</p>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="/ai-game-lab/">Home</a>
+        <a href="/ai-game-lab/showcase/">Showcase</a>
+        <a href="/ai-game-lab/play/">Play</a>
+        <a href="/ai-game-lab/story/">Story</a>
+        <a href="https://github.com/xrctz/ai-game-lab" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </nav>
     </div>
+    <p class="footer-copy">© <span id="copyrightYear">2026</span> AI Game Lab. Built to look better without breaking the games.</p>
   </footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script src="/ai-game-lab/script.js"></script>
+  <script src="/ai-game-lab/script.js?v=7"></script>
 </body>
 </html>

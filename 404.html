@@ -3,80 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#030406" />
-  <meta name="color-scheme" content="dark light" />
+  <meta name="robots" content="noindex" />
   <title>404 — AI Game Lab</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-
-  <link rel="stylesheet" href="/ai-game-lab/styles.css" />
+  <link rel="icon" type="image/svg+xml" href="/ai-game-lab/showcase/favicon.svg?v=7" />
+  <link rel="stylesheet" href="/ai-game-lab/styles.css?v=7" />
 </head>
 <body>
-  <div class="ambient" aria-hidden="true">
-    <div class="orb"></div>
-    <div class="orb"></div>
-    <div class="orb"></div>
-  </div>
-
-  <a class="skip" href="#main">Skip to content</a>
-
-  <header class="topbar" role="banner">
-    <div class="topbar-inner">
-      <a class="brand" href="/ai-game-lab/" aria-label="AI Game Lab home">
-        <img class="brand-mark" src="/ai-game-lab/showcase/brand-mark.svg?v=3" alt="" width="28" height="28" decoding="async" aria-hidden="true" />
-        <span class="brand-name">AI Game Lab</span>
-      </a>
-      <nav id="siteNav" class="nav" aria-label="Site">
-        <a href="/ai-game-lab/">Home</a>
-        <a href="/ai-game-lab/showcase/">Showcase</a>
-        <a href="/ai-game-lab/play/">Play</a>
-        <a href="/ai-game-lab/story/">Story</a>
-      </nav>
-      <button id="menuToggle" class="menu-toggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="siteNav">
-        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </button>
-      <button id="themeBtn" type="button" aria-label="Toggle theme">
-        <svg class="ico-moon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-        <svg class="ico-sun" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M15 8h-2M3 8H1M13.07 2.93l-1.42 1.42M4.34 11.66l-1.41 1.41M13.07 13.07l-1.42-1.42M4.34 4.34 2.93 2.93" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </button>
-    </div>
-  </header>
-
-  <main id="main">
-    <div class="lost">
-      <h1 class="lost-code reveal">404</h1>
-      <p class="lost-sub reveal">This page drifted out of bounds. The render distance doesn't go this far.</p>
-      <div class="hero-actions reveal">
-        <a class="btn-cta" href="/ai-game-lab/">
-          Back to base
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m10 4-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
-      </div>
-    </div>
+  <div class="site-backdrop" aria-hidden="true"><div class="grid-plane"></div><div class="glow glow-a"></div><div class="glow glow-b"></div></div>
+  <main id="main" class="center-page">
+    <section class="error-card reveal visible">
+      <span class="hero-kicker"><span class="pulse-dot"></span> Route missing</span>
+      <h1 class="hero-title">404: lab door sealed.</h1>
+      <p class="hero-lead">That path does not exist in this build. Head back to the hub or open the player.</p>
+      <div class="hero-actions"><a class="btn btn-primary" href="/ai-game-lab/">Back home</a><a class="btn btn-secondary" href="/ai-game-lab/play/">Open player</a></div>
+    </section>
   </main>
-
-  <footer class="footer-block">
-    <div class="inner">
-      <div class="footer-top">
-        <a class="brand" href="/ai-game-lab/" aria-label="AI Game Lab home">
-          <img class="brand-mark" src="/ai-game-lab/showcase/brand-mark.svg?v=3" alt="" width="28" height="28" decoding="async" aria-hidden="true" />
-          <span>AI Game Lab</span>
-        </a>
-        <nav class="footer-nav" aria-label="Footer">
-          <a href="/ai-game-lab/">Home</a>
-          <a href="/ai-game-lab/showcase/">Showcase</a>
-          <a href="/ai-game-lab/play/">Play</a>
-          <a href="/ai-game-lab/story/">Story</a>
-          <a href="https://github.com/xrctz/ai-game-lab" target="_blank" rel="noopener noreferrer">GitHub</a>
-        </nav>
-      </div>
-      <p class="footer-copy">© <span id="copyrightYear">2026</span> · Design, test, and ship playable ideas.</p>
-    </div>
-  </footer>
-
-  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script src="/ai-game-lab/script.js"></script>
 </body>
 </html>
