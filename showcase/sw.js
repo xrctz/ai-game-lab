@@ -1,15 +1,15 @@
 /**
- * AI Game Lab v8 — Service Worker
+ * AI Game Lab v9 — Service Worker
  * HTML uses network-first so GitHub Pages updates show quickly.
  * Static assets use cache-first with background refresh.
  */
-const CACHE_HUB = 'ai-game-lab-hub-v8-expansion';
-const CACHE_GAMES = 'ai-game-lab-games-v8-expansion';
+const CACHE_HUB = 'ai-game-lab-hub-v9-systems';
+const CACHE_GAMES = 'ai-game-lab-games-v9-systems';
 const HUB_SHELL = [
   '/ai-game-lab/',
   '/ai-game-lab/index.html',
-  '/ai-game-lab/styles.css?v=8',
-  '/ai-game-lab/script.js?v=8',
+  '/ai-game-lab/styles.css?v=9',
+  '/ai-game-lab/script.js?v=9',
   '/ai-game-lab/manifest.json',
   '/ai-game-lab/showcase/',
   '/ai-game-lab/showcase/index.html',
@@ -17,9 +17,11 @@ const HUB_SHELL = [
   '/ai-game-lab/play/index.html',
   '/ai-game-lab/story/',
   '/ai-game-lab/story/index.html',
+  '/ai-game-lab/updates/',
+  '/ai-game-lab/updates/index.html',
   '/ai-game-lab/mindcraft-info.html',
-  '/ai-game-lab/showcase/brand-mark.svg?v=8',
-  '/ai-game-lab/showcase/favicon.svg?v=8'
+  '/ai-game-lab/showcase/brand-mark.svg?v=9',
+  '/ai-game-lab/showcase/favicon.svg?v=9'
 ];
 self.addEventListener('install', function(e){
   e.waitUntil(caches.open(CACHE_HUB).then(function(cache){ return cache.addAll(HUB_SHELL).catch(function(){}); }).then(function(){ return self.skipWaiting(); }));

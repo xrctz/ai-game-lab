@@ -1,11 +1,11 @@
 
 /**
- * DeadTakeover Lab+ v8 overlay.
+ * DeadTakeover Lab+ v9 overlay.
  * Adds quality controls, field guide, and safe UI extras without touching saves.
  */
 (function(){
   'use strict';
-  window.__deadTakeoverLabPlus = 'v8';
+  window.__deadTakeoverLabPlus = 'v9';
   function $(id){ return document.getElementById(id); }
   function createStyles(){
     var style = document.createElement('style');
@@ -21,7 +21,7 @@
   function buildGuide(){
     var guide = document.createElement('div');
     guide.id = 'dt-field-guide';
-    guide.innerHTML = '<div id="dt-field-card"><button id="dt-close-guide" type="button">Close</button><h2>DeadTakeover Lab+ Field Guide</h2><p>v8 adds a starter kit and unlocks the bonus weapons so testing and surviving feels better immediately. Press <b>I</b> anytime to toggle this guide.</p><div class="grid"><section><h3>Starter kit</h3><ul><li>Bonus weapons unlocked from the start.</li><li>Extra grenades, traps, turret, noise maker, and crafting materials.</li><li>Two skill points ready for early upgrades.</li></ul></section><section><h3>Survival loop</h3><ul><li>Loot zombies and supply drops for materials.</li><li>Use B/N to build and cycle barricade types.</li><li>Use Tab for inventory and U near benches for weapon upgrades.</li></ul></section><section><h3>Performance</h3><ul><li>Quality mode is controlled by the hub Play page or console.</li><li>Use Low mode if distant streaming still hitches.</li><li>Use the Perf button for a quick FPS/render-scale snapshot.</li></ul></section><section><h3>Hotkeys</h3><ul><li>WASD move, Shift sprint, C crouch.</li><li>Q/E swap, 1-7 weapon slots, R reload.</li><li>G/J/K/L/V tools, P pause, M audio.</li></ul></section></div></div>';
+    guide.innerHTML = '<div id="dt-field-card"><button id="dt-close-guide" type="button">Close</button><h2>DeadTakeover Lab+ Field Guide</h2><p>v9 adds a starter kit, director tools, and smoother streaming defaults and unlocks the bonus weapons so testing and surviving feels better immediately. Press <b>I</b> anytime to toggle this guide.</p><div class="grid"><section><h3>Starter kit</h3><ul><li>Bonus weapons unlocked from the start.</li><li>Extra grenades, traps, turret, noise maker, and crafting materials.</li><li>Two skill points ready for early upgrades.</li></ul></section><section><h3>Survival loop</h3><ul><li>Loot zombies and supply drops for materials.</li><li>Use B/N to build and cycle barricade types.</li><li>Use Tab for inventory and U near benches for weapon upgrades.</li></ul></section><section><h3>Performance</h3><ul><li>Quality mode is controlled by the hub Play page or console.</li><li>Use Low mode if distant streaming still hitches.</li><li>Use the Perf button for a quick FPS/render-scale snapshot.</li></ul></section><section><h3>Hotkeys</h3><ul><li>WASD move, Shift sprint, C crouch.</li><li>Q/E swap, 1-7 weapon slots, R reload.</li><li>G/J/K/L/V tools, P pause, M audio.</li></ul></section></div></div>';
     document.body.appendChild(guide);
     $('dt-close-guide').addEventListener('click', function(){ guide.classList.remove('open'); });
     guide.addEventListener('click', function(e){ if(e.target === guide) guide.classList.remove('open'); });
@@ -42,7 +42,7 @@
     var help = document.querySelector('.menu-help');
     if (help && !help.dataset.labplus) {
       help.dataset.labplus = '1';
-      help.innerHTML = '<strong>Lab+ v8:</strong> bonus weapons unlocked, starter materials added, and in-game guide available with <kbd>I</kbd>. ' + help.innerHTML;
+      help.innerHTML = '<strong>Lab+ v9:</strong> bonus weapons unlocked, starter materials added, and in-game guide available with <kbd>I</kbd>. ' + help.innerHTML;
     }
     var panel = document.createElement('div');
     panel.id = 'dt-lab-panel';
@@ -55,7 +55,7 @@
     document.addEventListener('keydown', function(e){
       if (e.code === 'KeyI' && !e.repeat) { e.preventDefault(); guide.classList.toggle('open'); }
     }, true);
-    console.log('[DeadTakeover Lab+] v8 overlay active');
+    console.log('[DeadTakeover Lab+] v9 overlay active');
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

@@ -13,9 +13,9 @@
   localStorage.setItem(settingsKey, requested);
 
   var caps = {
-    low:      { min: 0.34, max: 0.48, target: 48 },
-    balanced: { min: 0.42, max: 0.62, target: 46 },
-    high:     { min: 0.56, max: 0.78, target: 45 }
+    low:      { min: 0.30, max: 0.44, target: 52 },
+    balanced: { min: 0.36, max: 0.56, target: 50 },
+    high:     { min: 0.48, max: 0.68, target: 48 }
   }[requested];
 
   var currentRatio = 0;

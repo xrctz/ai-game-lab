@@ -1,5 +1,5 @@
 /* ================================================================
-   AI Game Lab v8 — site interactions, launcher, and safe game player
+   AI Game Lab v9 — site interactions, launcher, and safe game player
    ================================================================ */
 (function cursorSpotlight(){
   document.addEventListener('mousemove', function(e){
@@ -308,9 +308,10 @@ function showToast(msg, duration){
   var commands = [
     {title:'Home', detail:'Return to the launch deck', href:'/ai-game-lab/', tag:'page'},
     {title:'Showcase', detail:'Browse all project cards', href:'/ai-game-lab/showcase/', tag:'page'},
-    {title:'Play DeadTakeover Lab+', detail:'Boot the zombie game with v8 extras', href:'/ai-game-lab/play/?game=zombie', tag:'game'},
+    {title:'Play DeadTakeover Lab+', detail:'Boot the zombie game with v9 extras', href:'/ai-game-lab/play/?game=zombie', tag:'game'},
     {title:'Play CraftVerse', detail:'Boot the voxel sandbox', href:'/ai-game-lab/play/?game=voxel', tag:'game'},
     {title:'Story', detail:'Read the project origin log', href:'/ai-game-lab/story/', tag:'page'},
+    {title:'Updates', detail:'Read release notes and runtime status', href:'/ai-game-lab/updates/', tag:'page'},
     {title:'Mindcraft Setup', detail:'Open local AI tool notes', href:'/ai-game-lab/mindcraft-info.html', tag:'tool'},
     {title:'GitHub Repo', detail:'Open source repository', href:'https://github.com/xrctz/ai-game-lab', tag:'external'}
   ];
@@ -351,6 +352,61 @@ function showToast(msg, duration){
     if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(0, active - 1); render(); }
     if (e.key === 'Enter') { e.preventDefault(); var item = list.querySelector('.command-item.active[data-href]'); if (item) launch(item.getAttribute('data-href')); }
   });
+})();
+
+
+(function initV9PlayerTools(){
+  var lastKey = 'aigl_last_game';
+  document.addEventListener('click', function(e){
+    var play = e.target.closest('[data-play]');
+    if (play) localStorage.setItem(lastKey, play.getAttribute('data-play'));
+  });
+  var lastBtn = document.getElementById('btnLastGame');
+  if (lastBtn) lastBtn.addEventListener('click', function(){
+    var game = localStorage.getItem(lastKey) || 'zombie';
+    var target = document.querySelector('[data-play="' + game + '"]');
+    if (target) target.click(); else location.href = '/ai-game-lab/play/?game=' + encodeURIComponent(game);
+  });
+  var clearBtn = document.getElementById('btnClearGameCache');
+  if (clearBtn) clearBtn.addEventListener('click', function(){
+    if (!('caches' in window)) { showToast('Browser cache API unavailable'); return; }
+    caches.keys().then(function(keys){
+      return Promise.all(keys.filter(function(k){ return k.indexOf('ai-game-lab') !== -1; }).map(function(k){ return caches.delete(k); }));
+    }).then(function(){ showToast('Site cache refreshed. Reloading…'); setTimeout(function(){ location.reload(); }, 650); });
+  });
+  var checks = [
+    ['zombie','/ai-game-lab/games/zombie/index.html'],
+    ['voxel','/ai-game-lab/games/voxel/index.html']
+  ];
+  checks.forEach(function(item){
+    var el = document.querySelector('[data-route-check="' + item[0] + '"]');
+    if (!el) return;
+    fetch(item[1], { method:'HEAD', cache:'no-store' }).then(function(res){
+      el.classList.toggle('ok', res.ok); el.classList.toggle('warn', !res.ok);
+      el.textContent = (item[0] === 'zombie' ? 'Zombie' : 'Voxel') + ' route: ' + (res.ok ? 'ready' : 'missing');
+    }).catch(function(){ el.classList.add('warn'); el.textContent = (item[0] === 'zombie' ? 'Zombie' : 'Voxel') + ' route: offline'; });
+  });
+})();
+
+(function initV9InstallPrompt(){
+  var deferred = null;
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault(); deferred = e;
+    if (document.querySelector('.install-toast')) return;
+    var box = document.createElement('div');
+    box.className = 'install-toast show';
+    box.innerHTML = '<strong>Install AI Game Lab?</strong><p>Add the hub like an app for faster launching.</p><div class="install-actions"><button class="btn-small primary" id="installAIGL" type="button">Install</button><button class="btn-small" id="dismissAIGL" type="button">Not now</button></div>';
+    document.body.appendChild(box);
+    box.querySelector('#dismissAIGL').addEventListener('click', function(){ box.remove(); });
+    box.querySelector('#installAIGL').addEventListener('click', function(){
+      if (!deferred) return; deferred.prompt(); deferred.userChoice.finally(function(){ deferred = null; box.remove(); });
+    });
+  });
+})();
+
+(function initV9PageBadges(){
+  document.documentElement.dataset.build = 'v9';
+  window.__aiGameLabBuild = { version:'v9', zombieBundle:'index-labplus-v9.js', updated:'systems expansion' };
 })();
 
 (function initHeroVideo() {

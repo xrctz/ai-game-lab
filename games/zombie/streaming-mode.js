@@ -5,7 +5,8 @@
 (function(){
   'use strict';
   var lastLog=0;
-  window.__zombieStreamingMode='v6-main-thread-throttle';
+  window.__zombieStreamingMode='v9-main-thread-director-throttle';
+  window.__zombieStreamingTuning={cityRadius:1,normalRadius:2,minIntervalMs:210,slowFrameMs:24};
   window.__zombieGetStreamingStats=function(){
     return Object.assign({mode:window.__zombieStreamingMode}, window.__zombieChunkStats||{});
   };
