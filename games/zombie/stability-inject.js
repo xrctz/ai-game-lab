@@ -1,16 +1,6 @@
 /**
- * DeadTakeover Stability Injection — loaded BEFORE the minified game bundle.
- *
- * Patches runtime hazards found via static analysis (222 KB bundle):
- *   1. 24 addEventListener, 0 removeEventListener — listener leak
- *   2. No WebGL context loss / restore handling — black screen hangs
- *   3. No cancelAnimationFrame — orphaned rAF loops
- *   4. Leaking setInterval calls — never cleared on restart
- *   5. No frame-time visibility — can't see when GC spikes hit
- *
- * NON-INVASIVE: Only tracks resources. Does NOT alter game timing or behavior.
- * All tracked resources are cleaned on beforeunload or window.__zombieCleanup().
- * Press backtick to toggle a performance overlay.
+ * DeadTakeover stability helpers.
+ * Lightweight cleanup + context-loss handling + optional debug overlay.
  */
 (function () {
   'use strict';
@@ -18,21 +8,22 @@
   var LISTENERS = [];
   var INTERVALS = new Set();
   var TIMEOUTS = new Set();
-  var RAF_IDS = new Set();
-  var contextLost = false;
-  var perfOverlay = null;
-  var frameSamples = [];
   var overlayVisible = false;
+  var perfOverlay = null;
+  var contextLost = false;
 
-  /* ================================================================== */
-  /* 1.  Event listener tracking (non-invasive)                          */
-  /* ================================================================== */
-  var _origAdd = EventTarget.prototype.addEventListener;
-  var _origRemove = EventTarget.prototype.removeEventListener;
+  var origAdd = EventTarget.prototype.addEventListener;
+  var origRemove = EventTarget.prototype.removeEventListener;
+  var origSetInterval = window.setInterval.bind(window);
+  var origClearInterval = window.clearInterval.bind(window);
+  var origSetTimeout = window.setTimeout.bind(window);
+  var origClearTimeout = window.clearTimeout.bind(window);
 
   EventTarget.prototype.addEventListener = function (type, handler, opts) {
-    LISTENERS.push({ target: this, type: type, handler: handler, opts: opts });
-    return _origAdd.call(this, type, handler, opts);
+    if (typeof handler === 'function' || (handler && typeof handler.handleEvent === 'function')) {
+      LISTENERS.push({ target: this, type: type, handler: handler, opts: opts });
+    }
+    return origAdd.call(this, type, handler, opts);
   };
 
   EventTarget.prototype.removeEventListener = function (type, handler, opts) {
@@ -43,88 +34,38 @@
         break;
       }
     }
-    return _origRemove.call(this, type, handler, opts);
+    return origRemove.call(this, type, handler, opts);
   };
 
-  /* ================================================================== */
-  /* 2.  setInterval / setTimeout tracking                               */
-  /* ================================================================== */
-  var _origSetInterval = window.setInterval.bind(window);
-  var _origClearInterval = window.clearInterval.bind(window);
-  var _origSetTimeout = window.setTimeout.bind(window);
-  var _origClearTimeout = window.clearTimeout.bind(window);
-
   window.setInterval = function (fn, ms) {
-    var rest = Array.prototype.slice.call(arguments, 2);
-    var id = _origSetInterval.apply(null, [fn, ms].concat(rest));
+    var id = origSetInterval.apply(null, arguments);
     INTERVALS.add(id);
     return id;
   };
 
   window.clearInterval = function (id) {
     INTERVALS.delete(id);
-    return _origClearInterval(id);
+    return origClearInterval(id);
   };
 
   window.setTimeout = function (fn, ms) {
-    var rest = Array.prototype.slice.call(arguments, 2);
-    var id;
-    function wrapper() {
+    var args = Array.prototype.slice.call(arguments, 2);
+    var id = origSetTimeout(function () {
       TIMEOUTS.delete(id);
-      return fn.apply(this, arguments);
-    }
-    id = _origSetTimeout.apply(null, [wrapper, ms].concat(rest));
+      if (typeof fn === 'function') return fn.apply(this, args);
+    }, ms);
     TIMEOUTS.add(id);
     return id;
   };
 
   window.clearTimeout = function (id) {
     TIMEOUTS.delete(id);
-    return _origClearTimeout(id);
+    return origClearTimeout(id);
   };
 
-  /* ================================================================== */
-  /* 3.  requestAnimationFrame tracking (+ perf sampling, non-invasive)  */
-  /* ================================================================== */
-  var _origRaf = window.requestAnimationFrame.bind(window);
-  var _origCaf = window.cancelAnimationFrame.bind(window);
-
-  var lastOverlayTs = 0;
-  window.requestAnimationFrame = function (cb) {
-    var rafId;
-    function wrapped(ts) {
-      if (contextLost) {
-        rafId = _origRaf(wrapped);
-        RAF_IDS.add(rafId);
-        return;
-      }
-      if (overlayVisible && lastOverlayTs) {
-        var elapsed = ts - lastOverlayTs;
-        if (elapsed > 0 && elapsed < 500) {
-          frameSamples.push(elapsed);
-          if (frameSamples.length > 240) frameSamples.shift();
-          if (frameSamples.length % 30 === 0) updateOverlay();
-        }
-      }
-      lastOverlayTs = ts;
-      RAF_IDS.delete(rafId);
-      cb(ts);
-    }
-    rafId = _origRaf(wrapped);
-    RAF_IDS.add(rafId);
-    return rafId;
-  };
-
-  window.cancelAnimationFrame = function (id) {
-    RAF_IDS.delete(id);
-    return _origCaf(id);
-  };
-
-  /* ================================================================== */
-  /* 4.  WebGL context-loss recovery                                     */
-  /* ================================================================== */
   function attachContextLossHandler(canvas) {
-    if (!canvas) return;
+    if (!canvas || canvas.__stabWatched) return;
+    canvas.__stabWatched = true;
     canvas.addEventListener('webglcontextlost', function (e) {
       contextLost = true;
       e.preventDefault();
@@ -138,10 +79,7 @@
 
   function findAndWatchCanvas() {
     var canvas = document.getElementById('game') || document.querySelector('canvas');
-    if (canvas) {
-      attachContextLossHandler(canvas);
-      return;
-    }
+    if (canvas) return attachContextLossHandler(canvas);
     var obs = new MutationObserver(function () {
       var c = document.getElementById('game') || document.querySelector('canvas');
       if (c) {
@@ -150,18 +88,9 @@
       }
     });
     obs.observe(document.body || document.documentElement, { childList: true, subtree: true });
-    setTimeout(function () { obs.disconnect(); }, 15000);
+    origSetTimeout(function () { obs.disconnect(); }, 15000);
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', findAndWatchCanvas);
-  } else {
-    findAndWatchCanvas();
-  }
-
-  /* ================================================================== */
-  /* 5.  Performance overlay (press Backtick key to toggle)             */
-  /* ================================================================== */
   function ensureOverlay() {
     if (perfOverlay) return;
     perfOverlay = document.createElement('div');
@@ -170,26 +99,20 @@
       'position:fixed;top:8px;left:8px;z-index:99999;' +
       'background:rgba(0,0,0,0.85);color:#0f0;font:11px monospace;' +
       'padding:8px 10px;border-radius:6px;pointer-events:none;display:none;' +
-      'border:1px solid rgba(0,255,0,0.3);max-width:320px;line-height:1.5';
+      'border:1px solid rgba(0,255,0,0.3);max-width:340px;line-height:1.5;white-space:pre';
     document.body.appendChild(perfOverlay);
   }
 
   function updateOverlay() {
-    if (!perfOverlay || !overlayVisible) return;
-    var count = frameSamples.length;
-    if (count === 0) return;
-    var sorted = frameSamples.slice().sort(function (a, b) { return a - b; });
-    var avg = sorted.reduce(function (s, v) { return s + v; }, 0) / count;
-    var p50 = sorted[Math.floor(count * 0.5)] || 0;
-    var p95 = sorted[Math.floor(count * 0.95)] || 0;
-    var worst = sorted[count - 1] || 0;
-    var fps = avg > 0 ? Math.round(1000 / avg) : 0;
-
+    if (!overlayVisible || !perfOverlay) return;
+    var snap = window.__zombiePerfSnapshot ? window.__zombiePerfSnapshot() : null;
     perfOverlay.textContent =
-      'FPS: ' + fps + '  avg: ' + avg.toFixed(1) + 'ms  p50: ' + p50.toFixed(1) +
-      'ms  p95: ' + p95.toFixed(1) + 'ms  worst: ' + worst.toFixed(1) + 'ms\n' +
-      'listeners: ' + LISTENERS.length + '  rAFs: ' + RAF_IDS.size +
-      '  intv: ' + INTERVALS.size + '  timeouts: ' + TIMEOUTS.size +
+      'FPS: ' + (snap ? snap.fps : '...') +
+      '  avg: ' + (snap ? snap.avgMs.toFixed(1) + 'ms' : '...') +
+      '  scale: ' + (snap ? snap.ratio.toFixed(2) : '...') +
+      '\nquality: ' + (snap ? snap.quality : '...') +
+      '  listeners: ' + LISTENERS.length +
+      '  timers: ' + (INTERVALS.size + TIMEOUTS.size) +
       '  ctx: ' + (contextLost ? 'LOST' : 'OK');
   }
 
@@ -199,45 +122,32 @@
       overlayVisible = !overlayVisible;
       ensureOverlay();
       perfOverlay.style.display = overlayVisible ? 'block' : 'none';
+      updateOverlay();
     }
   });
+  origSetInterval(updateOverlay, 500);
 
-  /* ================================================================== */
-  /* 6.  Cleanup API                                                     */
-  /* ================================================================== */
   window.__zombieCleanup = function () {
     for (var i = LISTENERS.length - 1; i >= 0; i--) {
-      try {
-        _origRemove.call(LISTENERS[i].target, LISTENERS[i].type, LISTENERS[i].handler, LISTENERS[i].opts);
-      } catch (e) {}
+      try { origRemove.call(LISTENERS[i].target, LISTENERS[i].type, LISTENERS[i].handler, LISTENERS[i].opts); } catch (e) {}
     }
     LISTENERS.length = 0;
 
-    INTERVALS.forEach(function (id) {
-      try { _origClearInterval(id); } catch (e) {}
-    });
+    INTERVALS.forEach(function (id) { try { origClearInterval(id); } catch (e) {} });
     INTERVALS.clear();
-
-    TIMEOUTS.forEach(function (id) {
-      try { _origClearTimeout(id); } catch (e) {}
-    });
+    TIMEOUTS.forEach(function (id) { try { origClearTimeout(id); } catch (e) {} });
     TIMEOUTS.clear();
 
-    RAF_IDS.forEach(function (id) {
-      try { _origCaf(id); } catch (e) {}
-    });
-    RAF_IDS.clear();
-
     contextLost = false;
-    frameSamples.length = 0;
     if (perfOverlay) perfOverlay.textContent = '';
-
     console.log('[stability] Cleanup complete');
   };
 
-  window.addEventListener('beforeunload', function () {
-    window.__zombieCleanup();
-  });
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', findAndWatchCanvas);
+  } else {
+    findAndWatchCanvas();
+  }
 
-  console.log('[stability] DeadTakeover patch active | press backtick to toggle perf overlay');
+  window.addEventListener('beforeunload', window.__zombieCleanup);
 })();

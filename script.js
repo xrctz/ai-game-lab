@@ -14,7 +14,7 @@ document.addEventListener('mousemove', (e) => {
 /* ---------- Service Worker registration ---------- */
 (function registerSW() {
   if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.register('/ai-game-lab/sw.js', { scope: '/ai-game-lab/' }).catch(function () {});
+  navigator.serviceWorker.register('/ai-game-lab/showcase/sw.js', { scope: '/ai-game-lab/' }).catch(function () {});
 })();
 
 /* ---------- Particle background (Canvas) ---------- */
