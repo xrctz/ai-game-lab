@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DeadTakeover — Zombie Open World Game</title>
+    <title>DeadTakeover Lab+ — Zombie Open World Game</title>
     <!-- Loading screen: displayed until the game bundle hides it -->
     <style>
       #game-loader{position:fixed;inset:0;z-index:99999;background:#0a0a0a;
@@ -21,13 +21,14 @@
     <script src="./stability-inject.js"></script>
     <script src="./performance-mode.js"></script>
     <script src="./streaming-mode.js"></script>
+    <script src="./gameplus-mode.js"></script>
     <script>
       (function(){
         var loader=document.createElement('div');
         loader.id='game-loader';
-        loader.innerHTML='<h1 style="font-size:1.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase">DeadTakeover Protocol</h1>'
+        loader.innerHTML='<h1 style="font-size:1.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase">DeadTakeover Lab+</h1>'
           +'<div class="loader-bar-wrap"><div class="loader-bar-fill" id="loaderBar"></div></div>'
-          +'<div class="loader-text" id="loaderText">Loading assets&hellip;</div>';
+          +'<div class="loader-text" id="loaderText">Loading Lab+ assets&hellip;</div>';
         document.body.insertBefore(loader,document.body.firstChild);
         window.__hideLoader=function(){
           var bar=document.getElementById('loaderBar');
@@ -50,7 +51,7 @@
         });
       })();
     </script>
-    <script type="module" crossorigin src="./assets/index-streamfix-v6.js"></script>
+    <script type="module" crossorigin src="./assets/index-labplus-v8.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/three-DmS57Xe5.js">
     <link rel="stylesheet" crossorigin href="./assets/index-r1xQZ7Nn.css">
   </head>
@@ -60,8 +61,8 @@
       <div id="sky-vignette"></div>
       <div id="menu-overlay">
         <div class="menu-card">
-          <h1 id="menu-title">DeadTakeover</h1>
-          <p id="menu-subtitle">Survive the open world with your team.</p>
+          <h1 id="menu-title">DeadTakeover Lab+</h1>
+          <p id="menu-subtitle">Survive the open world with your team — Lab+ starter kit enabled.</p>
           <div id="map-select" class="map-select">
             <div class="map-select-label">Choose map</div>
             <div id="map-grid" class="map-grid"></div>
@@ -73,7 +74,7 @@
             <button id="btn-restart" class="is-hidden">Restart Run</button>
             <button id="btn-audio">Audio: On</button>
           </div>
-            <p class="menu-help">WASD Move · Shift Sprint · C Crouch · Space Jump · Click/LMB Shoot · RMB Aim Down Sights · R Reload · 1-7 Weapon Slots · Q/E Swap Weapon · G Grenade · J Molotov · K Land Mine · L Spike Trap · V Noise Maker · F Melee Knife / Enter Vehicle · B Build Barricade · N Switch Build Type · U Weapon Upgrade Bench · Tab Inventory · T Team Swap · P Pause · M Audio. Scavenge materials from zombies! Craft items at your inventory! Build wood/metal barricades! Upgrade weapons at benches! Watch for ★ Supply Drops! Special Zombies: Spitter (acid), Hunter (pounces), Charger (charges), Crawler (low)! Corpses revive if not headshot!</p>
+            <p class="menu-help">Lab+ v8: bonus weapons unlocked · Press I for field guide · WASD Move · Shift Sprint · C Crouch · Space Jump · Click/LMB Shoot · RMB Aim Down Sights · R Reload · 1-7 Weapon Slots · Q/E Swap Weapon · G Grenade · J Molotov · K Land Mine · L Spike Trap · V Noise Maker · F Melee Knife / Enter Vehicle · B Build Barricade · N Switch Build Type · U Weapon Upgrade Bench · Tab Inventory · T Team Swap · P Pause · M Audio. Scavenge materials from zombies! Craft items at your inventory! Build wood/metal barricades! Upgrade weapons at benches! Watch for ★ Supply Drops! Special Zombies: Spitter (acid), Hunter (pounces), Charger (charges), Crawler (low)! Corpses revive if not headshot!</p>
           <p class="menu-credits">Buildings &amp; street atlas: Kenney.nl (CC0). Pistol GLB: Webaverse (github.com/webaverse/pistol). Music: Kevin MacLeod (incompetech.com) — Title: Floating Cities; maps + Outbreak City: Movement Proposition, Darkest Child, Frost Waltz, Crossing the Chasm, Volatile Reaction, District Four. CC BY — see incompetech.com.</p>
         </div>
       </div>

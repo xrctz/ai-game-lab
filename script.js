@@ -1,5 +1,5 @@
 /* ================================================================
-   AI Game Lab v7 — site interactions and safe game player
+   AI Game Lab v8 — site interactions, launcher, and safe game player
    ================================================================ */
 (function cursorSpotlight(){
   document.addEventListener('mousemove', function(e){
@@ -178,6 +178,22 @@ function showToast(msg, duration){
   var currentGame = null;
   var currentIframe = null;
 
+  function getGameUrl(game){
+    var url = GAME_URLS[game];
+    if (game === 'zombie') {
+      var qualityEl = document.getElementById('zombieQuality');
+      var debugEl = document.getElementById('zombieDebug');
+      var quality = (qualityEl && qualityEl.value) || localStorage.getItem('zombieQuality') || 'balanced';
+      if (!/^(low|balanced|high)$/.test(quality)) quality = 'balanced';
+      localStorage.setItem('zombieQuality', quality);
+      var params = new URLSearchParams();
+      params.set('quality', quality);
+      if (debugEl && debugEl.checked) params.set('debug', '1');
+      return url + '?' + params.toString();
+    }
+    return url;
+  }
+
   function clearPanel(){
     playerScreen.querySelectorAll('.info-panel').forEach(function(el){ el.remove(); });
   }
@@ -206,7 +222,7 @@ function showToast(msg, duration){
   }
   function loadGame(game){
     if (game === 'mindcraft') { showMindcraft(); return; }
-    var url = GAME_URLS[game];
+    var url = getGameUrl(game);
     if (!url) { showToast('Unknown game: ' + game); return; }
     if (window.__particlePause) window.__particlePause();
     clearIframe();
@@ -215,6 +231,7 @@ function showToast(msg, duration){
     setStatus(false, null);
     var iframe = document.createElement('iframe');
     iframe.src = url;
+    iframe.loading = 'eager';
     iframe.allow = 'autoplay; fullscreen; gamepad; pointer-lock';
     iframe.title = GAME_NAMES[game] || game;
     iframe.addEventListener('load', function(){
@@ -245,6 +262,95 @@ function showToast(msg, duration){
   if (btnClose) btnClose.addEventListener('click', closeGame);
   var requested = new URLSearchParams(location.search).get('game');
   if (requested) setTimeout(function(){ loadGame(requested); }, 250);
+})();
+
+
+(function initV8QualityControls(){
+  var q = document.getElementById('zombieQuality');
+  var d = document.getElementById('zombieDebug');
+  if (q) {
+    q.value = localStorage.getItem('zombieQuality') || 'balanced';
+    q.addEventListener('change', function(){ localStorage.setItem('zombieQuality', q.value); showToast('DeadTakeover quality set to ' + q.value); });
+  }
+  if (d) d.checked = localStorage.getItem('zombieDebug') === '1';
+  if (d) d.addEventListener('change', function(){ localStorage.setItem('zombieDebug', d.checked ? '1' : '0'); });
+})();
+
+(function initRuntimeChecks(){
+  var checks = {
+    webgl2: function(){ try { return !!document.createElement('canvas').getContext('webgl2'); } catch(e){ return false; } },
+    sw: function(){ return 'serviceWorker' in navigator; },
+    motion: function(){ return !window.matchMedia('(prefers-reduced-motion: reduce)').matches; },
+    pointer: function(){ return 'pointerLockElement' in document || 'mozPointerLockElement' in document; }
+  };
+  Object.keys(checks).forEach(function(key){
+    var el = document.querySelector('[data-check="' + key + '"]');
+    if (!el) return;
+    var ok = checks[key]();
+    el.classList.add(ok ? 'ok' : 'warn');
+    var label = el.textContent.split(':')[0];
+    el.textContent = label + ': ' + (ok ? 'ready' : 'limited');
+  });
+  if (!document.querySelector('.runtime-strip') && document.body.classList) {
+    var main = document.getElementById('main');
+    if (!main || !document.querySelector('.hero-shell')) return;
+    var strip = document.createElement('div');
+    strip.className = 'runtime-strip reveal visible';
+    var items = [
+      ['WebGL2', checks.webgl2()], ['Service Worker', checks.sw()], ['Motion FX', checks.motion()], ['Pointer Lock', checks.pointer()]
+    ];
+    strip.innerHTML = items.map(function(item){ return '<span class="runtime-chip ' + (item[1] ? 'ok' : 'warn') + '">' + item[0] + ': ' + (item[1] ? 'ready' : 'limited') + '</span>'; }).join('');
+    main.insertBefore(strip, main.firstChild);
+  }
+})();
+
+(function initCommandPalette(){
+  var commands = [
+    {title:'Home', detail:'Return to the launch deck', href:'/ai-game-lab/', tag:'page'},
+    {title:'Showcase', detail:'Browse all project cards', href:'/ai-game-lab/showcase/', tag:'page'},
+    {title:'Play DeadTakeover Lab+', detail:'Boot the zombie game with v8 extras', href:'/ai-game-lab/play/?game=zombie', tag:'game'},
+    {title:'Play CraftVerse', detail:'Boot the voxel sandbox', href:'/ai-game-lab/play/?game=voxel', tag:'game'},
+    {title:'Story', detail:'Read the project origin log', href:'/ai-game-lab/story/', tag:'page'},
+    {title:'Mindcraft Setup', detail:'Open local AI tool notes', href:'/ai-game-lab/mindcraft-info.html', tag:'tool'},
+    {title:'GitHub Repo', detail:'Open source repository', href:'https://github.com/xrctz/ai-game-lab', tag:'external'}
+  ];
+  var shell = document.createElement('div');
+  shell.className = 'command-shell';
+  shell.setAttribute('role','dialog');
+  shell.setAttribute('aria-modal','true');
+  shell.setAttribute('aria-label','Command launcher');
+  shell.innerHTML = '<div class="command-palette"><div class="command-head"><span>Ctrl+K</span><input id="commandSearch" type="search" placeholder="Launch a page or game…" autocomplete="off" /></div><div class="command-list" id="commandList"></div></div>';
+  document.body.appendChild(shell);
+  var orb = document.createElement('button');
+  orb.className = 'launch-orb';
+  orb.type = 'button';
+  orb.innerHTML = '<span>Ctrl+K</span> Launcher';
+  orb.setAttribute('aria-label','Open command launcher');
+  document.body.appendChild(orb);
+  var input = shell.querySelector('#commandSearch');
+  var list = shell.querySelector('#commandList');
+  var active = 0;
+  function matches(cmd, q){ return !q || (cmd.title + ' ' + cmd.detail + ' ' + cmd.tag).toLowerCase().indexOf(q) !== -1; }
+  function render(){
+    var q = (input.value || '').trim().toLowerCase();
+    var shown = commands.filter(function(c){ return matches(c, q); });
+    if (active >= shown.length) active = 0;
+    list.innerHTML = shown.map(function(c, i){ return '<button class="command-item ' + (i === active ? 'active' : '') + '" type="button" data-href="' + c.href + '"><span><strong>' + c.title + '</strong><small>' + c.detail + '</small></span><em>' + c.tag + '</em></button>'; }).join('') || '<div class="command-item"><span><strong>No match</strong><small>Try play, zombie, story, or GitHub.</small></span></div>';
+  }
+  function open(){ shell.classList.add('open'); active = 0; render(); setTimeout(function(){ input.focus(); input.select(); }, 20); }
+  function close(){ shell.classList.remove('open'); }
+  function launch(href){ if (!href) return; if (/^https?:/.test(href)) window.open(href, '_blank', 'noopener'); else location.href = href; }
+  orb.addEventListener('click', open);
+  shell.addEventListener('click', function(e){ if (e.target === shell) close(); var item = e.target.closest('.command-item[data-href]'); if (item) launch(item.getAttribute('data-href')); });
+  input.addEventListener('input', function(){ active = 0; render(); });
+  document.addEventListener('keydown', function(e){
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); shell.classList.contains('open') ? close() : open(); return; }
+    if (!shell.classList.contains('open')) return;
+    if (e.key === 'Escape') { e.preventDefault(); close(); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); active++; render(); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(0, active - 1); render(); }
+    if (e.key === 'Enter') { e.preventDefault(); var item = list.querySelector('.command-item.active[data-href]'); if (item) launch(item.getAttribute('data-href')); }
+  });
 })();
 
 (function initHeroVideo() {

@@ -26,3 +26,8 @@ This pass focuses on the public-facing website shell, not the internal game code
 - Bumped website CSS/JS references to `?v=7`.
 - Bumped the service worker cache names to `ai-game-lab-hub-v7-revamp` and `ai-game-lab-games-v7-revamp`.
 - Updated the GitHub Pages workflow so root files like `sw.js`, `manifest.json`, `404.html`, and icons are copied into `_site`.
+
+
+## v8 follow-up
+
+The v8 expansion supersedes the cache/file references below for the latest upload. See `WEBSITE_GAME_EXPANSION_V8.md` for the current website and game additions.
