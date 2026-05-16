@@ -311,7 +311,7 @@ function showToast(msg, duration){
     {title:'Play DeadTakeover Lab+', detail:'Boot the zombie game with v9 extras', href:'/ai-game-lab/play/?game=zombie', tag:'game'},
     {title:'Play CraftVerse', detail:'Boot the voxel sandbox', href:'/ai-game-lab/play/?game=voxel', tag:'game'},
     {title:'Story', detail:'Read the project origin log', href:'/ai-game-lab/story/', tag:'page'},
-    {title:'Updates', detail:'Read release notes and runtime status', href:'/ai-game-lab/updates/', tag:'page'},
+    {title:'Updates', detail:'Read release notes and runtime status', href:'/ai-game-lab/showcase/updates/', tag:'page'},
     {title:'Mindcraft Setup', detail:'Open local AI tool notes', href:'/ai-game-lab/mindcraft-info.html', tag:'tool'},
     {title:'GitHub Repo', detail:'Open source repository', href:'https://github.com/xrctz/ai-game-lab', tag:'external'}
   ];

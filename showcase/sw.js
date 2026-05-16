@@ -17,8 +17,8 @@ const HUB_SHELL = [
   '/ai-game-lab/play/index.html',
   '/ai-game-lab/story/',
   '/ai-game-lab/story/index.html',
-  '/ai-game-lab/updates/',
-  '/ai-game-lab/updates/index.html',
+  '/ai-game-lab/showcase/updates/',
+  '/ai-game-lab/showcase/updates/index.html',
   '/ai-game-lab/mindcraft-info.html',
   '/ai-game-lab/showcase/brand-mark.svg?v=9',
   '/ai-game-lab/showcase/favicon.svg?v=9'
