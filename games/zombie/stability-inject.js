@@ -89,27 +89,28 @@
   var _origRaf = window.requestAnimationFrame.bind(window);
   var _origCaf = window.cancelAnimationFrame.bind(window);
 
+  var lastOverlayTs = 0;
   window.requestAnimationFrame = function (cb) {
-    var start = performance.now();
     var rafId;
-    function measured(ts) {
+    function wrapped(ts) {
       if (contextLost) {
-        // Skip render callbacks during context loss to prevent WebGL errors.
-        // Re-queue so the loop resumes automatically when the context is restored.
-        rafId = _origRaf(measured);
+        rafId = _origRaf(wrapped);
         RAF_IDS.add(rafId);
         return;
       }
-      var elapsed = performance.now() - start;
-      frameSamples.push(elapsed);
-      if (frameSamples.length > 240) frameSamples.shift();
-      if (overlayVisible && frameSamples.length % 30 === 0) {
-        updateOverlay();
+      if (overlayVisible && lastOverlayTs) {
+        var elapsed = ts - lastOverlayTs;
+        if (elapsed > 0 && elapsed < 500) {
+          frameSamples.push(elapsed);
+          if (frameSamples.length > 240) frameSamples.shift();
+          if (frameSamples.length % 30 === 0) updateOverlay();
+        }
       }
+      lastOverlayTs = ts;
       RAF_IDS.delete(rafId);
       cb(ts);
     }
-    rafId = _origRaf(measured);
+    rafId = _origRaf(wrapped);
     RAF_IDS.add(rafId);
     return rafId;
   };

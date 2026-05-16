@@ -13,9 +13,12 @@
       #game-loader.hidden{opacity:0;pointer-events:none;}
       .loader-bar-wrap{width:280px;height:6px;background:#1a1a1a;border-radius:3px;margin-top:18px;overflow:hidden}
       .loader-bar-fill{height:100%;width:0;background:linear-gradient(90deg,#9b30ff,#00f0ff);border-radius:3px;
-        transition:width .25s ease-out;}
+        animation:loader-progress 12s ease-out forwards;}
+      @keyframes loader-progress{0%{width:8%}100%{width:92%}}
       .loader-text{font-size:14px;margin-top:10px;color:#888}
     </style>
+    <script src="./startup-optimize.js"></script>
+    <script src="./stability-inject.js"></script>
     <script>
       (function(){
         var loader=document.createElement('div');
@@ -24,31 +27,28 @@
           +'<div class="loader-bar-wrap"><div class="loader-bar-fill" id="loaderBar"></div></div>'
           +'<div class="loader-text" id="loaderText">Loading assets&hellip;</div>';
         document.body.insertBefore(loader,document.body.firstChild);
-        var bar=document.getElementById('loaderBar');
-        var text=document.getElementById('loaderText');
-        var started=Date.now();
-        function updateBar(){
-          var pct=Math.min(95,((Date.now()-started)/1000)*8+5);
-          bar.style.width=pct+'%';
-          if(pct<95)requestAnimationFrame(updateBar);
-          else text.textContent='Almost ready&hellip;';
-        }
-        requestAnimationFrame(updateBar);
         window.__hideLoader=function(){
-          bar.style.width='100%';text.textContent='Ready.';
-          setTimeout(function(){loader.classList.add('hidden');},300);
+          var bar=document.getElementById('loaderBar');
+          var text=document.getElementById('loaderText');
+          if(bar){bar.style.animation='none';bar.style.width='100%';}
+          if(text)text.textContent='Ready.';
+          setTimeout(function(){loader.classList.add('hidden');},280);
         };
-        var obs=new MutationObserver(function(){
-          var c=document.querySelector('canvas');
-          if(c&&c.width>0&&c.height>0){window.__hideLoader();obs.disconnect();}
+        window.addEventListener('load',function(){
+          setTimeout(function(){
+            if(!loader.classList.contains('hidden'))window.__hideLoader();
+          },600);
         });
-        setTimeout(function(){
+        document.addEventListener('DOMContentLoaded',function(){
+          var obs=new MutationObserver(function(){
+            var c=document.getElementById('game');
+            if(c&&c.width>0&&c.height>0){window.__hideLoader();obs.disconnect();}
+          });
           obs.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['width','height']});
-        },500);
-        setTimeout(function(){obs.disconnect();window.__hideLoader();},28000);
+        });
       })();
     </script>
-    <script type="module" crossorigin src="./assets/index-BMuMsKYH.js"></script>
+    <script type="module" crossorigin src="./assets/index-B6KvhqxH.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/three-DmS57Xe5.js">
     <link rel="stylesheet" crossorigin href="./assets/index-r1xQZ7Nn.css">
   </head>
@@ -114,6 +114,5 @@
         </div>
       </div>
     </div>
-    <script src="./stability-inject.js"></script>
   </body>
 </html>
