@@ -1,5 +1,5 @@
 /* ================================================================
-   AI Game Lab v9 — site interactions, launcher, and safe game player
+   AI Game Lab v10 — site interactions, launcher, and safe game player
    ================================================================ */
 (function cursorSpotlight(){
   document.addEventListener('mousemove', function(e){
@@ -352,7 +352,7 @@ function showToast(msg, duration){
   var commands = [
     {title:'Home', detail:'Return to the launch deck', href:'/ai-game-lab/', tag:'page'},
     {title:'Showcase', detail:'Browse all project cards', href:'/ai-game-lab/showcase/', tag:'page'},
-    {title:'Play DeadTakeover Lab+', detail:'Boot the zombie game with v9 extras', href:'/ai-game-lab/play/?game=zombie', tag:'game'},
+    {title:'Play DeadTakeover Lab+', detail:'Boot the zombie game with v10 visual effects and director HUD', href:'/ai-game-lab/play/?game=zombie', tag:'game'},
     {title:'Play CraftVerse', detail:'Boot the voxel sandbox', href:'/ai-game-lab/play/?game=voxel', tag:'game'},
     {title:'Story', detail:'Read the project origin log', href:'/ai-game-lab/story/', tag:'page'},
     {title:'Updates', detail:'Read release notes and runtime status', href:'/ai-game-lab/showcase/updates/', tag:'page'},
@@ -449,8 +449,8 @@ function showToast(msg, duration){
 })();
 
 (function initV9PageBadges(){
-  document.documentElement.dataset.build = 'v9';
-  window.__aiGameLabBuild = { version:'v9', zombieBundle:'index-labplus-v9.js', updated:'systems expansion' };
+  document.documentElement.dataset.build = 'v10';
+  window.__aiGameLabBuild = { version:'v10', zombieBundle:'index-labplus-v9.js', updated:'visual overhaul' };
 })();
 
 (function initHeroVideo() {
