@@ -1,7 +1,7 @@
 /* ================================================================
    AI Game Lab v12-kawaii — site interactions, launcher, and safe game player
    ================================================================ */
-var AIGL_ASSET_BUILD = '15-kawaii';
+var AIGL_ASSET_BUILD = '16-kawaii';
 var AIGL_STYLE_HREF = '/ai-game-lab/styles.css?v=' + AIGL_ASSET_BUILD;
 
 (function initThemeGuard(){
@@ -556,8 +556,8 @@ function showToast(msg, duration){
 })();
 
 (function initV9PageBadges(){
-  document.documentElement.dataset.build = 'v15-kawaii';
-  window.__aiGameLabBuild = { version:'v15-kawaii', assets:AIGL_ASSET_BUILD, zombieBundle:'index-labplus-v9.js', updated:'kawaii pink anime visual overhaul' };
+  document.documentElement.dataset.build = 'v16-kawaii';
+  window.__aiGameLabBuild = { version:'v16-kawaii', assets:AIGL_ASSET_BUILD, zombieBundle:'index-labplus-v9.js', updated:'kawaii pink anime visual overhaul' };
 })();
 
 (function initHeroVideo() {

@@ -1,31 +1,13 @@
 /**
- * AI Game Lab v14-kawaii — Service Worker
- * Hub HTML/CSS/JS: network-only (no stale blue theme from cache).
+ * AI Game Lab v15-kawaii — Service Worker
+ * Hub HTML/CSS/JS: network-only (never serve stale blue shell).
  * Game assets: cache-first with background refresh.
  */
-const BUILD = '15-kawaii';
-const CACHE_HUB = 'ai-game-lab-hub-v14-kawaii';
-const CACHE_GAMES = 'ai-game-lab-games-v14-kawaii';
+const BUILD = '16-kawaii';
+const CACHE_HUB = 'ai-game-lab-hub-v15-kawaii';
+const CACHE_GAMES = 'ai-game-lab-games-v15-kawaii';
 const HUB_STYLE = '/ai-game-lab/styles.css?v=' + BUILD;
 const HUB_SCRIPT = '/ai-game-lab/script.js?v=' + BUILD;
-const HUB_SHELL = [
-  '/ai-game-lab/',
-  '/ai-game-lab/index.html',
-  HUB_STYLE,
-  HUB_SCRIPT,
-  '/ai-game-lab/manifest.json',
-  '/ai-game-lab/showcase/',
-  '/ai-game-lab/showcase/index.html',
-  '/ai-game-lab/play/',
-  '/ai-game-lab/play/index.html',
-  '/ai-game-lab/story/',
-  '/ai-game-lab/story/index.html',
-  '/ai-game-lab/showcase/updates/',
-  '/ai-game-lab/showcase/updates/index.html',
-  '/ai-game-lab/mindcraft-info.html',
-  '/ai-game-lab/showcase/brand-mark.svg?v=12-kawaii',
-  '/ai-game-lab/showcase/favicon.svg?v=12-kawaii'
-];
 
 function isHubAsset(url) {
   return /\/styles\.css$/.test(url.pathname) || /\/script\.js$/.test(url.pathname);
@@ -37,18 +19,6 @@ function isHubDocument(url, request) {
 
 function networkOnly(request) {
   return fetch(request, { cache: 'no-store' });
-}
-
-function networkFirstDoc(request) {
-  return fetch(request, { cache: 'no-store' }).then(function (response) {
-    if (response && response.ok) {
-      var copy = response.clone();
-      caches.open(CACHE_HUB).then(function (cache) { cache.put(request, copy); });
-    }
-    return response;
-  }).catch(function () {
-    return caches.match(request);
-  });
 }
 
 function purgeLegacyHubEntries() {
@@ -63,6 +33,7 @@ function purgeLegacyHubEntries() {
               var q = new URL(req.url).search;
               if (q.indexOf(BUILD) === -1) return cache.delete(req);
             }
+            if (path.endsWith('.html') || path.endsWith('/')) return cache.delete(req);
             return Promise.resolve();
           }));
         });
@@ -72,11 +43,7 @@ function purgeLegacyHubEntries() {
 }
 
 self.addEventListener('install', function (e) {
-  e.waitUntil(
-    caches.open(CACHE_HUB).then(function (cache) {
-      return cache.addAll(HUB_SHELL).catch(function () {});
-    }).then(function () { return self.skipWaiting(); })
-  );
+  e.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener('activate', function (e) {
@@ -99,12 +66,7 @@ self.addEventListener('fetch', function (e) {
   var url = new URL(e.request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (isHubDocument(url, e.request)) {
-    e.respondWith(networkFirstDoc(e.request));
-    return;
-  }
-
-  if (isHubAsset(url)) {
+  if (isHubDocument(url, e.request) || isHubAsset(url)) {
     e.respondWith(networkOnly(e.request));
     return;
   }
