@@ -10,7 +10,27 @@
 
 (function registerSW(){
   if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.register('/ai-game-lab/showcase/sw.js', { scope: '/ai-game-lab/' }).catch(function(){});
+  var reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function(){
+    if (reloaded) return;
+    reloaded = true;
+    location.reload();
+  });
+  navigator.serviceWorker.register('/ai-game-lab/showcase/sw.js', { scope: '/ai-game-lab/', updateViaCache: 'none' })
+    .then(function(reg){
+      reg.update();
+      if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      reg.addEventListener('updatefound', function(){
+        var worker = reg.installing;
+        if (!worker) return;
+        worker.addEventListener('statechange', function(){
+          if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+            worker.postMessage({ type: 'SKIP_WAITING' });
+          }
+        });
+      });
+    })
+    .catch(function(){});
 })();
 
 (function initParticles(){
