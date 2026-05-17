@@ -1,3 +1,21 @@
 .DS_Store
 Thumbs.db
 *.log
+
+# Secrets and local env
+.env
+.env.*
+!.env.example
+
+# Dependencies and build artifacts
+node_modules/
+dist/
+*.local
+
+# Editor / agent session files (may contain local paths or notes)
+.cursor/
+CLAUDE_MEMORY.md
+*.pem
+*.key
+id_rsa*
+credentials.json
