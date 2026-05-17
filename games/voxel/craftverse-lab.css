@@ -1,0 +1,147 @@
+/* ============================================================
+   CraftVerse Lab — inject layer styles
+   Scope: games/voxel/ only.  Prefix: cv-lab-
+   ============================================================ */
+
+/* ── Embed mode body adjustments ── */
+body.cv-embedded {
+  /* Remove any outer margin that the hub Play page might add */
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+body.cv-embedded #title-screen {
+  /* Slightly compact title in embed */
+  padding-top: 6vh;
+}
+body.cv-embedded #title-main h1 {
+  font-size: clamp(1.6rem, 5vw, 2.8rem);
+}
+body.cv-embedded .title-hint {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+/* ── Click-to-play overlay ── */
+#cv-lab-click-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  opacity: 1;
+  transition: opacity 0.35s ease;
+  pointer-events: auto;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: #fff;
+  user-select: none;
+}
+#cv-lab-click-overlay.cv-lab-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+#cv-lab-click-overlay .cv-lab-overlay-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 0 12px rgba(255,255,255,0.3));
+}
+#cv-lab-click-overlay .cv-lab-overlay-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+#cv-lab-click-overlay .cv-lab-overlay-sub {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.65);
+  max-width: 320px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* ── Pointer-lock error / Esc message ── */
+#cv-lab-lock-msg {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100001;
+  background: rgba(18, 18, 30, 0.92);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.85rem;
+  text-align: center;
+  max-width: 440px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+#cv-lab-lock-msg.cv-lab-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+#cv-lab-lock-msg a {
+  color: #7cb8ff;
+  text-decoration: underline;
+  cursor: pointer;
+}
+#cv-lab-lock-msg a:hover {
+  color: #a8d4ff;
+}
+
+/* ── Mobile banner ── */
+#cv-lab-mobile-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 99999;
+  background: linear-gradient(135deg, #1a0a2e, #0a0a1a);
+  color: #e0d0ff;
+  padding: 10px 16px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.8rem;
+  text-align: center;
+  display: none;
+}
+body.cv-embedded #cv-lab-mobile-banner.cv-lab-show-mobile {
+  display: block;
+}
+#cv-lab-mobile-banner .cv-lab-mob-icon {
+  margin-right: 6px;
+}
+
+/* ── Branding badge (optional, bottom-right) ── */
+#cv-lab-brand {
+  position: fixed;
+  bottom: 8px;
+  right: 10px;
+  z-index: 99998;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.2);
+  pointer-events: none;
+  letter-spacing: 0.04em;
+}
+body.cv-embedded #cv-lab-brand {
+  color: rgba(255,255,255,0.15);
+}
+
+/* ── Title screen contrast boost in embed ── */
+body.cv-embedded #title-screen {
+  background: radial-gradient(ellipse at 50% 30%, rgba(10, 10, 30, 0.92), rgba(0, 0, 0, 0.96) 80%);
+}
+body.cv-embedded #title-main h1 span {
+  color: rgba(200, 200, 255, 0.55);
+}
+body.cv-embedded .menu-btn {
+  border-color: rgba(100, 180, 255, 0.35);
+}

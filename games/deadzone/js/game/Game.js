@@ -77,6 +77,10 @@ export class Game {
 
         this.gameState._purchaseUpgrade = (index) => this._purchaseUpgrade(index);
 
+        this.embedded = false;
+        try { this.embedded = window.self !== window.top; } catch(e) { this.embedded = true; }
+        if (/[?&]embed=1(?:&|$)/.test(location.search)) this.embedded = true;
+
         this._bindEvents();
     }
 
@@ -621,6 +625,10 @@ export class Game {
         this.audio.startAmbient();
 
         this.input.requestPointerLock(this.canvas);
+
+        // Hide embed overlay on game start
+        var embedOverlay = document.getElementById('embed-overlay');
+        if (embedOverlay) embedOverlay.style.display = 'none';
 
         this.waveManager.startWave(this.zombieManager, this.level.getSpawnPoints());
         this.ui.showWaveAnnounce(1, 'SURVIVE THE HORDE');

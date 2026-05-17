@@ -1,5 +1,5 @@
 /* ================================================================
-   AI Game Lab v10 — site interactions, launcher, and safe game player
+   AI Game Lab v11 — site interactions, launcher, and safe game player
    ================================================================ */
 (function cursorSpotlight(){
   document.addEventListener('mousemove', function(e){
@@ -197,11 +197,32 @@ function showToast(msg, duration){
       if (debugEl && debugEl.checked) params.set('debug', '1');
       return url + '?' + params.toString();
     }
+    if (game === 'deadzone' || game === 'voxel') {
+      return url + '?embed=1';
+    }
     return url;
   }
 
   function clearPanel(){
     playerScreen.querySelectorAll('.info-panel').forEach(function(el){ el.remove(); });
+  }
+  function clearPlayerOverlay(){
+    var existing = playerScreen.querySelector('.player-click-overlay');
+    if (existing) existing.remove();
+  }
+  function showPlayerOverlay(){
+    clearPlayerOverlay();
+    if (!currentIframe) return;
+    var overlay = document.createElement('div');
+    overlay.className = 'player-click-overlay';
+    overlay.innerHTML = '<div class="pco-inner"><div class="pco-icon">🎯</div><strong>Click to capture mouse</strong><span>Click anywhere to start playing. Press <kbd>Esc</kbd> to release.</span></div>';
+    overlay.addEventListener('click', function(){
+      if (currentIframe && currentIframe.contentWindow) {
+        try { currentIframe.focus(); } catch(e) {}
+        overlay.remove();
+      }
+    });
+    playerScreen.appendChild(overlay);
   }
   function clearIframe(){
     if (currentIframe) {
@@ -209,6 +230,7 @@ function showToast(msg, duration){
       currentIframe.remove(); currentIframe = null;
     }
     clearPanel();
+    clearPlayerOverlay();
     if (playerLoader) playerLoader.classList.remove('visible');
   }
   function setStatus(active, game){
@@ -240,10 +262,13 @@ function showToast(msg, duration){
     iframe.loading = 'eager';
     iframe.allow = 'autoplay; fullscreen; gamepad; pointer-lock';
     iframe.title = GAME_NAMES[game] || game;
+    iframe.tabIndex = -1;
     iframe.addEventListener('load', function(){
       if (playerLoader) playerLoader.classList.remove('visible');
       if (playerEmpty) playerEmpty.style.display = 'none';
       currentGame = game; setStatus(true, game); showToast((GAME_NAMES[game] || game) + ' loaded');
+      try { iframe.focus(); } catch(e) {}
+      showPlayerOverlay();
     });
     setTimeout(function(){
       if (currentIframe === iframe && playerLoader && playerLoader.classList.contains('visible')) {
@@ -354,7 +379,7 @@ function showToast(msg, duration){
   var commands = [
     {title:'Home', detail:'Return to the launch deck', href:'/ai-game-lab/', tag:'page'},
     {title:'Showcase', detail:'Browse all project cards', href:'/ai-game-lab/showcase/', tag:'page'},
-    {title:'Play DeadTakeover Lab+', detail:'Boot the zombie game with v10 visual effects and director HUD', href:'/ai-game-lab/play/?game=zombie', tag:'game'},
+    {title:'Play DeadTakeover Lab+', detail:'Boot the zombie game with visual effects and director HUD', href:'/ai-game-lab/play/?game=zombie', tag:'game'},
     {title:'Play Dead Zone: Evacuation', detail:'3D squad FPS with two maps and 15 waves', href:'/ai-game-lab/play/?game=deadzone', tag:'game'},
     {title:'Play CraftVerse', detail:'Boot the voxel sandbox', href:'/ai-game-lab/play/?game=voxel', tag:'game'},
     {title:'Story', detail:'Read the project origin log', href:'/ai-game-lab/story/', tag:'page'},
@@ -454,8 +479,8 @@ function showToast(msg, duration){
 })();
 
 (function initV9PageBadges(){
-  document.documentElement.dataset.build = 'v10';
-  window.__aiGameLabBuild = { version:'v10', zombieBundle:'index-labplus-v9.js', updated:'visual overhaul' };
+  document.documentElement.dataset.build = 'v11';
+  window.__aiGameLabBuild = { version:'v11', zombieBundle:'index-labplus-v9.js', updated:'pointer-lock overhaul' };
 })();
 
 (function initHeroVideo() {

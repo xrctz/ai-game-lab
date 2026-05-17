@@ -3,13 +3,13 @@
  * HTML uses network-first so GitHub Pages updates show quickly.
  * Static assets use cache-first with background refresh.
  */
-const CACHE_HUB = 'ai-game-lab-hub-v11-deadzone';
-const CACHE_GAMES = 'ai-game-lab-games-v11-deadzone';
+const CACHE_HUB = 'ai-game-lab-hub-v11-pointerlock';
+const CACHE_GAMES = 'ai-game-lab-games-v11-pointerlock';
 const HUB_SHELL = [
   '/ai-game-lab/',
   '/ai-game-lab/index.html',
-  '/ai-game-lab/styles.css?v=9',
-  '/ai-game-lab/script.js?v=9',
+  '/ai-game-lab/styles.css?v=11',
+  '/ai-game-lab/script.js?v=11',
   '/ai-game-lab/manifest.json',
   '/ai-game-lab/showcase/',
   '/ai-game-lab/showcase/index.html',

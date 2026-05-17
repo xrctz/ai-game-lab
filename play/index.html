@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Orbitron:wght@600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/ai-game-lab/styles.css?v=10" />
+  <link rel="stylesheet" href="/ai-game-lab/styles.css?v=11" />
 </head>
 <body>
   <div class="site-backdrop" aria-hidden="true"><div class="grid-plane"></div><div class="glow glow-a"></div><div class="glow glow-b"></div><div class="noise-layer"></div></div>
@@ -46,7 +46,7 @@
           </div>
           <div class="player-loader" id="playerLoader"><span class="spinner-ring" aria-label="Loading"></span><p>Booting runtime…</p></div>
         </div>
-        <div class="player-hint">Click the game to capture mouse · <kbd>F</kbd> or the expand button for fullscreen · <kbd>Esc</kbd> exits fullscreen · In-game: <kbd>O</kbd> Director · <kbd>I</kbd> guide</div>
+        <div class="player-hint">Click the game overlay to capture mouse · <kbd>F</kbd> or the expand button for fullscreen · <kbd>Esc</kbd> exits fullscreen · If pointer lock fails, click "Open in new tab" · In-game: <kbd>O</kbd> Director · <kbd>I</kbd> guide</div>
       </div>
 
       <aside class="boot-panel reveal" aria-label="Game selection">
@@ -84,7 +84,7 @@
             <span data-route-check="voxel">Voxel route: checking</span>
           </div>
         </div>
-        <div class="boot-note"><strong>Hub boot:</strong> DeadTakeover (Lab+ v10), Dead Zone (squad FPS), and CraftVerse load in the player. Click the game to capture the mouse; use fullscreen for a cleaner view.</div>
+        <div class="boot-note"><strong>Hub boot:</strong> DeadTakeover (Lab+ v11), Dead Zone (squad FPS), and CraftVerse load in the player. A click-to-play overlay appears on each game — click to capture your mouse. Use fullscreen for a cleaner view. If pointer lock fails, each game shows an "open in new tab" link.</div>
       </aside>
     </section>
 
@@ -109,11 +109,11 @@ mode   setup info</pre></article>
 
 
     <section class="section-block release-strip">
-      <div class="section-head reveal"><span class="eyebrow">Player upgrades</span><h2>v10 play tools.</h2><p>Quality controls, cache refresh, route health, fullscreen mode, embed-aware director, and remembered last-game launch are all part of the player shell.</p></div>
+      <div class="section-head reveal"><span class="eyebrow">Player upgrades</span><h2>v11 play tools.</h2><p>Click-to-play overlays, pointer-lock error fallback, quality controls, cache refresh, route health, fullscreen mode, and remembered last-game launch.</p></div>
       <div class="release-grid">
-        <article class="release-card reveal"><strong>Last game memory</strong><span>Returns players to their most recent runtime faster.</span></article>
+        <article class="release-card reveal"><strong>Click to play</strong><span>Every game shows a click-to-play overlay so pointer lock works cleanly from the hub iframe.</span></article>
+        <article class="release-card reveal"><strong>Pointer-lock fallback</strong><span>If the browser blocks cross-document lock, each game shows an "open in new tab" option.</span></article>
         <article class="release-card reveal"><strong>Route health</strong><span>Checks zombie, Dead Zone, and voxel routes before launch.</span></article>
-        <article class="release-card reveal"><strong>Cache refresh</strong><span>Helps GitHub Pages visitors pull the newest site shell after an upload.</span></article>
       </div>
     </section>
 
@@ -122,6 +122,6 @@ mode   setup info</pre></article>
 
   <footer class="footer-block"><div class="footer-inner"><div><a class="brand footer-brand" href="/ai-game-lab/"><img class="brand-mark" src="/ai-game-lab/showcase/brand-mark.svg?v=9" alt="" width="32" height="32" decoding="async" aria-hidden="true" /><span class="brand-copy"><strong>AI Game Lab</strong><small>Design · test · ship</small></span></a><p>Game loading stays isolated from the website shell.</p></div><nav class="footer-nav" aria-label="Footer navigation"><a href="/ai-game-lab/">Home</a><a href="/ai-game-lab/showcase/">Showcase</a><a href="/ai-game-lab/play/">Play</a><a href="/ai-game-lab/story/">Story</a><a href="/ai-game-lab/showcase/updates/">Updates</a><a href="https://github.com/xrctz/ai-game-lab" target="_blank" rel="noopener noreferrer">GitHub</a></nav></div><p class="footer-copy">© <span id="copyrightYear">2026</span> AI Game Lab.</p></footer>
   <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script src="/ai-game-lab/script.js?v=10"></script>
+  <script src="/ai-game-lab/script.js?v=11"></script>
 </body>
 </html>

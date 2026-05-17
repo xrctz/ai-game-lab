@@ -422,6 +422,12 @@ class Input {
         this.mouseButtonsJustPressed = {};
         this.mouseButtonsJustReleased = {};
         this.locked = false;
+        this.embedded = false;
+        this._lockRetryCount = 0;
+        this._lockRetryMax = 1;
+
+        try { this.embedded = window.self !== window.top; } catch(e) { this.embedded = true; }
+        if (/[?&]embed=1(?:&|$)/.test(location.search)) this.embedded = true;
 
         this._onKeyDown = this._onKeyDown.bind(this);
         this._onKeyUp = this._onKeyUp.bind(this);
@@ -429,6 +435,7 @@ class Input {
         this._onMouseDown = this._onMouseDown.bind(this);
         this._onMouseUp = this._onMouseUp.bind(this);
         this._onLockChange = this._onLockChange.bind(this);
+        this._onLockError = this._onLockError.bind(this);
 
         document.addEventListener('keydown', this._onKeyDown);
         document.addEventListener('keyup', this._onKeyUp);
@@ -436,6 +443,7 @@ class Input {
         document.addEventListener('mousedown', this._onMouseDown);
         document.addEventListener('mouseup', this._onMouseUp);
         document.addEventListener('pointerlockchange', this._onLockChange);
+        document.addEventListener('pointerlockerror', this._onLockError);
 
         this.sensitivity = 0.002;
     }
@@ -445,11 +453,35 @@ class Input {
     }
 
     requestPointerLock(element) {
-        element.requestPointerLock();
+        this._lockRetryCount = 0;
+        this._attemptLock(element);
+    }
+
+    _attemptLock(element) {
+        try {
+            var promise = element.requestPointerLock();
+            if (promise && typeof promise.catch === 'function') {
+                promise.catch(function(err) {
+                    console.warn('[Dead Zone] Pointer lock failed:', err);
+                });
+            }
+        } catch(e) {
+            console.warn('[Dead Zone] Pointer lock error:', e);
+        }
     }
 
     exitPointerLock() {
-        document.exitPointerLock();
+        try { document.exitPointerLock(); } catch(e) {}
+    }
+
+    _onLockError() {
+        console.warn('[Dead Zone] pointerlockerror fired');
+        if (this.embedded) {
+            var overlay = document.getElementById('embed-overlay');
+            var lockError = document.getElementById('embed-lock-error');
+            if (overlay) overlay.style.display = 'grid';
+            if (lockError) lockError.style.display = 'block';
+        }
     }
 
     _onKeyDown(e) {
@@ -7712,6 +7744,10 @@ class Game {
 
         this.gameState._purchaseUpgrade = (index) => this._purchaseUpgrade(index);
 
+        this.embedded = false;
+        try { this.embedded = window.self !== window.top; } catch(e) { this.embedded = true; }
+        if (/[?&]embed=1(?:&|$)/.test(location.search)) this.embedded = true;
+
         this._bindEvents();
     }
 
@@ -8251,6 +8287,10 @@ class Game {
         this.audio.startAmbient();
 
         this.input.requestPointerLock(this.canvas);
+
+        // Hide embed overlay on game start
+        var embedOverlay = document.getElementById('embed-overlay');
+        if (embedOverlay) embedOverlay.style.display = 'none';
 
         this.waveManager.startWave(this.zombieManager, this.level.getSpawnPoints());
         this.ui.showWaveAnnounce(1, 'SURVIVE THE HORDE');

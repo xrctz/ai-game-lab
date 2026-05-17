@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Orbitron:wght@600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="/ai-game-lab/styles.css?v=9" />
+  <link rel="stylesheet" href="/ai-game-lab/styles.css?v=11" />
 </head>
 <body>
   <div class="site-backdrop" aria-hidden="true">
@@ -66,17 +66,18 @@
   <main id="main">
     <section class="hero-shell">
       <div class="hero-copy">
-        <div class="hero-kicker reveal"><span class="pulse-dot"></span> Live lab build · v9 systems expansion</div>
+        <div class="hero-kicker reveal"><span class="pulse-dot"></span> Live lab build · v11 pointer-lock overhaul</div>
         <h1 class="hero-title reveal">A browser game lab with a <span>full systems-deck feel.</span></h1>
         <p class="hero-lead reveal">Play browser-native worlds, inspect upgrades, launch builds fast, track release changes, and jump between AI-built game systems from one polished command center.</p>
         <div class="hero-actions reveal">
           <a class="btn btn-primary" href="/ai-game-lab/play/?game=zombie">Play DeadTakeover</a>
+          <a class="btn btn-secondary" href="/ai-game-lab/play/?game=deadzone">Play Dead Zone</a>
           <a class="btn btn-secondary" href="/ai-game-lab/showcase/">View showcase</a>
         </div>
         <div class="metric-row reveal" aria-label="Project stats">
-          <div><strong>2</strong><span>Playable embeds</span></div>
-          <div><strong>3</strong><span>Featured systems</span></div>
-          <div><strong>v9</strong><span>Systems expansion</span></div>
+          <div><strong>3</strong><span>Playable embeds</span></div>
+          <div><strong>4</strong><span>Featured systems</span></div>
+          <div><strong>v11</strong><span>Pointer-lock overhaul</span></div>
         </div>
       </div>
 
@@ -125,7 +126,7 @@
           <code>&gt; mount games/deadzone/index.html</code>
           <code>&gt; status: playable</code>
           <code>&gt; press Ctrl+K for command launcher</code>
-          <code>&gt; v9 systems layer: online</code>
+          <code>&gt; v11 pointer-lock layer: online</code>
         </div>
       </div>
     </section>
@@ -198,9 +199,9 @@
 
     <section class="section-block expansion-panel">
       <div class="section-head reveal">
-        <span class="eyebrow">v9 expansion</span>
+        <span class="eyebrow">v11 overhaul</span>
         <h2>More than a landing page.</h2>
-        <p>This update adds a faster site launcher, runtime checks, gameplay extras, and clearer build notes while keeping the game folders isolated.</p>
+        <p>This update adds pointer-lock fixes for all games, click-to-play UX, Dead Zone embed support, and polished copy across every page.</p>
       </div>
       <div class="ops-grid">
         <article class="ops-card reveal">
@@ -231,28 +232,28 @@
 
     <section class="section-block v9-systems-panel">
       <div class="section-head reveal">
-        <span class="eyebrow">v9 systems layer</span>
+        <span class="eyebrow">v11 systems layer</span>
         <h2>The hub now feels more alive.</h2>
-        <p>New release tracking, smarter play controls, route health checks, and DeadTakeover’s in-game director overlay make the site feel closer to a real product page.</p>
+        <p>Pointer-lock overhaul, click-to-play overlays, Dead Zone embed mode, and polished site-wide copy make every game playable from the hub without issues.</p>
       </div>
       <div class="systems-grid">
         <article class="system-card reveal">
           <span class="system-icon">▣</span>
-          <h3>Release center</h3>
-          <p>A dedicated Updates page now explains what changed between builds, what is playable, and what was optimized.</p>
-          <a href="/ai-game-lab/showcase/updates/">Open updates</a>
+          <h3>Pointer-lock overhaul</h3>
+          <p>All three games now handle pointer lock properly in the hub iframe, with click-to-play overlays and "open in new tab" fallbacks when browsers block cross-document lock.</p>
+          <a href="/ai-game-lab/play/">Open player</a>
         </article>
         <article class="system-card reveal">
           <span class="system-icon">⌁</span>
           <h3>Smarter player</h3>
-          <p>The Play page now remembers the last game, shows route health, and has a clearer quality/debug tool area.</p>
+          <p>The Play page now remembers the last game, shows route health, focuses iframes on load, and has click-to-play overlays per game.</p>
           <a href="/ai-game-lab/play/">Open player</a>
         </article>
         <article class="system-card reveal">
           <span class="system-icon">◇</span>
-          <h3>Game director</h3>
-          <p>DeadTakeover gets a lightweight v9 overlay for tips, live session readouts, HUD tools, and performance buttons.</p>
-          <a href="/ai-game-lab/play/?game=zombie">Try DeadTakeover</a>
+          <h3>Dead Zone embed</h3>
+          <p>Dead Zone: Evacuation now supports hub iframe mode with pointer-lock error handling, "open in new tab" fallback, and clean pause/escape behavior.</p>
+          <a href="/ai-game-lab/play/?game=deadzone">Try Dead Zone</a>
         </article>
       </div>
     </section>
@@ -263,9 +264,9 @@
         <h2>Cleaner shell. Safer game loading.</h2>
       </div>
       <div class="strip-grid">
-        <div><strong>Fast launcher</strong><span>Ctrl+K opens the new command palette.</span></div>
-        <div><strong>Game extras</strong><span>DeadTakeover gets Lab+ starter content and a v9 director overlay.</span></div>
-        <div><strong>Cache bumped</strong><span>Service worker updated for the v9 files.</span></div>
+        <div><strong>Click to play</strong><span>Every game shows a click-to-play overlay so pointer lock works cleanly from the hub.</span></div>
+        <div><strong>Dead Zone embed</strong><span>Dead Zone now supports hub iframe mode with pointer-lock error fallback.</span></div>
+        <div><strong>Cache bumped</strong><span>Service worker updated to v11 for all new assets and pages.</span></div>
       </div>
     </section>
 
@@ -308,6 +309,6 @@
   </footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script src="/ai-game-lab/script.js?v=9"></script>
+  <script src="/ai-game-lab/script.js?v=11"></script>
 </body>
 </html>
