@@ -210,9 +210,16 @@ function showToast(msg, duration){
     var existing = playerScreen.querySelector('.player-click-overlay');
     if (existing) existing.remove();
   }
-  function showPlayerOverlay(){
+  function showPlayerOverlay(game){
     clearPlayerOverlay();
     if (!currentIframe) return;
+    if (game === 'voxel') {
+      try {
+        currentIframe.focus();
+        currentIframe.contentWindow.postMessage({ type: 'cv-lab-request-lock' }, '*');
+      } catch(e) {}
+      return;
+    }
     var overlay = document.createElement('div');
     overlay.className = 'player-click-overlay';
     overlay.innerHTML = '<div class="pco-inner"><div class="pco-icon">🎯</div><strong>Click to capture mouse</strong><span>Click anywhere to start playing. Press <kbd>Esc</kbd> to release.</span></div>';
@@ -268,7 +275,7 @@ function showToast(msg, duration){
       if (playerEmpty) playerEmpty.style.display = 'none';
       currentGame = game; setStatus(true, game); showToast((GAME_NAMES[game] || game) + ' loaded');
       try { iframe.focus(); } catch(e) {}
-      showPlayerOverlay();
+      showPlayerOverlay(game);
     });
     setTimeout(function(){
       if (currentIframe === iframe && playerLoader && playerLoader.classList.contains('visible')) {

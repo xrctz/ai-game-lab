@@ -33,16 +33,26 @@ body.cv-embedded .title-hint {
   justify-content: center;
   background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(4px);
-  cursor: pointer;
+  cursor: default;
   opacity: 1;
   transition: opacity 0.35s ease;
-  pointer-events: auto;
+  /* pointer-events set per state below */
+  pointer-events: none;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   color: #fff;
   user-select: none;
 }
+/* When hidden (not in-world or pointer locked): fully invisible */
 #cv-lab-click-overlay.cv-lab-hidden {
   opacity: 0;
+  pointer-events: none;
+}
+/* When visible (in-world, no pointer lock): visual-only overlay.
+   pointer-events:none lets the user's real click pass through to the
+   canvas, where the bundle's own listener fires requestPointerLock().
+   This is the ONLY way to get a trusted user gesture for pointer lock
+   inside an iframe. */
+#cv-lab-click-overlay:not(.cv-lab-hidden) {
   pointer-events: none;
 }
 #cv-lab-click-overlay .cv-lab-overlay-icon {
