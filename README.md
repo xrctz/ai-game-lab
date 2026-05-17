@@ -1,138 +1,101 @@
-# AI Game Lab
+<p align="center">
+  <img src="https://xrctz.github.io/ai-game-lab/showcase/previews/deadtakeover.png" alt="AI Game Lab — playable browser games" width="720" />
+</p>
 
-AI Game Lab is a polished browser hub that showcases multiple playable game projects in one place.  
-It is designed as a public-facing launchpad for experiments, prototypes, and production-ready game systems created with AI-assisted workflows.
+<h1 align="center">AI Game Lab</h1>
 
-**Live site:** https://xrctz.github.io/ai-game-lab/
+<p align="center">
+  A polished public hub for browser-native games, prototypes, and launch workflows built with AI-assisted development.
+</p>
 
-## What Viewers See
+<p align="center">
+  <a href="https://xrctz.github.io/ai-game-lab/"><strong>Launch site</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://xrctz.github.io/ai-game-lab/play/">Play</a>
+  &nbsp;·&nbsp;
+  <a href="https://xrctz.github.io/ai-game-lab/showcase/">Showcase</a>
+  &nbsp;·&nbsp;
+  <a href="https://xrctz.github.io/ai-game-lab/showcase/updates/">Updates</a>
+</p>
 
-- A modern single-page game showcase experience
-- Embedded play area for supported games
-- Quick launch commands for local development
-- Story/context section explaining the project vision
-
-## Included Projects
-
-- **CraftVerse Engine** (`voxel`) - Minecraft-style voxel sandbox systems
-- **DeadTakeover** (`zombie`) - Open-world zombie survival FPS
-- **Mindcraft Control Deck** (`mindcraft`) - Local launcher/orchestration tool (runs separately on localhost)
+<p align="center">
+  <a href="https://xrctz.github.io/ai-game-lab/"><img src="https://img.shields.io/badge/site-live-ff6eb4?style=for-the-badge&logo=githubpages&logoColor=white" alt="Live on GitHub Pages" /></a>
+  <a href="https://github.com/xrctz/ai-game-lab/actions"><img src="https://img.shields.io/badge/deploy-GitHub%20Pages-2a1228?style=for-the-badge&logo=github" alt="GitHub Pages deploy" /></a>
+  <img src="https://img.shields.io/badge/stack-HTML%20·%20CSS%20·%20JS-ffb7d5?style=for-the-badge" alt="HTML CSS JavaScript" />
+</p>
 
 ---
 
-## DeadTakeover v10 — Visual Overhaul (2025-05-17)
+## What this is
 
-The zombie FPS received a complete two-wave visual overhaul. All improvements work through the injectable JS layer — no changes to the minified Vite game bundle (`index-labplus-v9.js`) were required.
+**AI Game Lab** is the hosted front door for multiple playable projects. Visitors can browse featured builds, read release notes, and launch games in an embedded player without installing anything.
 
-### Wave 1 — UI & HUD Redesign
+| Project | Route | Description |
+| --- | --- | --- |
+| **DeadTakeover Protocol** | [`/play/?game=zombie`](https://xrctz.github.io/ai-game-lab/play/?game=zombie) | Open-world zombie survival FPS ([source repo](https://github.com/xrctz/DeadTakeover)) |
+| **Dead Zone: Evacuation** | [`/play/?game=deadzone`](https://xrctz.github.io/ai-game-lab/play/?game=deadzone) | Squad tactical FPS with wave survival |
+| **CraftVerse Engine** | [`/play/?game=voxel`](https://xrctz.github.io/ai-game-lab/play/?game=voxel) | Voxel sandbox playground |
+| **Mindcraft Control Deck** | [Setup notes](https://xrctz.github.io/ai-game-lab/mindcraft-info.html) | Local AI agent launcher (runs on your machine) |
 
-- **Loading Screen** — Animated gradient backdrop with pulsing loader ring and version indicator
-- **Main Menu** — Glassmorphism overlay with glow accents, Orbitron display font, gradient CTA button
-- **In-Game HUD** — Complete restyle of health bar, ammo counter, kill stats, and wave indicator using the DeadTakeover design system (`--dt-cyan`, `--dt-violet`, `--dt-lime`, etc.)
-- **Crosshair** — Redesigned with animated hit confirm flash (red on hit, gold on headshot)
-- **Hit Marker** — Upgraded to a crisp animated X marker with CSS-only fade
-- **Director Overlay** (`director-v9.js`) — Full rewrite with live canvas FPS graph (60-frame history), 4-stat readout grid (World / Combat / Resources / Streaming), 14 rotating gameplay tips, quality buttons (Low / Balanced / High), compact HUD toggle, photo mode, minimize with `O` key
-- **Lab+ Field Guide** (`gameplus-mode.js`) — Complete 4-section field guide (Starter Kit, Survival Loop, Combat Tips, Performance), full 10-weapon arsenal grid with ammo/mag/damage stats, 5 enemy type cards with descriptions, kill feed integration
-- **Streaming Diagnostics** (`streaming-mode.js`) — 120-frame timing tracker, hitch counter (>33ms frames), P95 frame time, colored console logging, reset on tab hide
-- **Debug Overlay** (`stability-inject.js`) — Glassmorphism redesign with Orbitron headers, color-coded FPS, streaming stats, context loss indicator (toggle with backtick key)
-- **Performance Mode** (`performance-mode.js`) — Enhanced console output with quality caps JSON
+## Features
 
-### Wave 2 — Combat Effects & Visual Juice
+- **Unified hub** — Home, showcase, play, story, and updates share one design system
+- **Embedded player** — Click-to-play overlays, pointer-lock handling, and per-game quality controls
+- **Command launcher** — Press `Ctrl+K` to jump between pages and games
+- **GitHub Pages ready** — Static deploy with automated workflow on `main`
 
-- **Floating Damage Numbers** (`visual-effects.js`) — 5 types: normal (white), crit (red), headshot (gold), heal (green), miss (gray). Spawns at crosshair position with CSS keyframe float-up animation. Hard-capped at 20 active numbers for performance
-- **Wave Announcement** — Full-screen overlay with scale-in number animation and subtitle text
-- **Kill Streak System** — 5 tiers: Killing Spree (3), Rampage (5), Unstoppable (8), Legendary (12), GODLIKE (20). Streak banner with color-coded glow
-- **Low Health Vignette** — Two-stage overlay: amber warning at 35% HP, red critical pulse at 15% HP
-- **Weapon HUD** — Ammo display parsed from game stats via MutationObserver on `#stats-meta`
-- **Crosshair Feedback** — Red flash on hit, gold flash on headshot, integrated with damage number system
-- **Screen Shake** — CSS-based: light (150ms) and heavy (300ms) intensity presets
-- **Atmospheric Vignette** — Subtle edge darkening for cinematic immersion
-
-### Architecture
-
-All zombie game improvements follow the injectable layer pattern:
-
-```
-startup-optimize.js  →  stability-inject.js  →  performance-mode.js  →  streaming-mode.js
-→  gameplus-mode.js  →  director-v9.js  →  visual-effects.js  →  index-labplus-v9.js (Vite bundle)
-```
-
-The Vite bundle is minified and treated as immutable. New features detect game events by observing HUD DOM elements (`#stats-meta`, `#world-stats`, `#health-fill`) via `MutationObserver` rather than hooking internal game APIs. Performance-sensitive systems use CSS animations over JS-driven loops, with hard caps on active elements (20 damage numbers, 4 kill feed items).
-
-## Local Run
-
-Serve the hub locally:
+## Quick start (local)
 
 ```bash
-chmod +x serve.sh sync-games.sh
+git clone https://github.com/xrctz/ai-game-lab.git
+cd ai-game-lab
+chmod +x serve.sh sync-games.sh   # macOS / Linux
 ./serve.sh
 ```
 
-Then open: `http://127.0.0.1:8080/`
+Open **http://127.0.0.1:8080/** (or the URL printed by `serve.sh`).
 
-### Useful Options
+| Variable | Effect |
+| --- | --- |
+| `SKIP_SYNC=1 ./serve.sh` | Skip rebuilding sibling game folders |
+| `NO_OPEN=1 ./serve.sh` | Do not auto-open the browser |
 
-- Skip rebuild/sync before serving:
-  ```bash
-  SKIP_SYNC=1 ./serve.sh
-  ```
-- Do not auto-open browser:
-  ```bash
-  NO_OPEN=1 ./serve.sh
-  ```
-
-## How Build Sync Works
-
-`sync-games.sh` rebuilds and embeds game outputs into:
-
-- `games/voxel`
-- `games/zombie`
-
-This keeps the hub synchronized with your latest local builds from sibling project folders.
-
-## Project Structure
+## Repository layout
 
 ```text
-.
-├── index.html                # Main landing/showcase page
-├── script.js                 # Theme, player controls, session logic
-├── styles.css                # Site styling and visual identity
-├── serve.sh                  # Local server + optional auto-start/sync
-├── sync-games.sh             # Rebuilds and copies game dist outputs
-├── games/
-│   ├── zombie/               # DeadTakeover — open-world zombie FPS
-│   │   ├── index.html        # Game shell (loader, menu, HUD, CSS)
-│   │   ├── index-labplus-v9.js   # Vite bundle (immutable, 220KB)
-│   │   ├── startup-optimize.js   # Cold-start audio/fetch deferral
-│   │   ├── stability-inject.js   # Listener tracking, context-loss, debug overlay
-│   │   ├── performance-mode.js   # Adaptive render resolution scaler
-│   │   ├── streaming-mode.js     # Frame timing diagnostics
-│   │   ├── gameplus-mode.js      # Lab+ overlay, field guide, weapon data
-│   │   ├── director-v9.js        # Director HUD, FPS graph, tips, controls
-│   │   ├── visual-effects.js     # Combat VFX: damage numbers, streaks, vignette
-│   │   └── assets/               # 3D models, textures, audio
-│   ├── voxel/                # CraftVerse Engine — voxel sandbox
-│   └── mindcraft/            # Mindcraft Control Deck assets
-├── play/                     # Play route assets/content
-├── showcase/                 # Showcase route assets/content
-└── story/                    # Narrative/about route assets/content
+ai-game-lab/
+├── index.html          # Landing page
+├── play/               # Game player shell
+├── showcase/           # Project catalog & previews
+├── story/              # Project narrative
+├── games/              # Built game bundles (zombie, voxel, deadzone, …)
+├── styles.css          # Hub design system
+├── script.js           # Theme, player, command palette
+└── docs/               # Internal change logs & dev notes
 ```
 
-## Publishing Notes
+Game source for **DeadTakeover** lives in a separate repository: [xrctz/DeadTakeover](https://github.com/xrctz/DeadTakeover). Use `sync-games.sh` to copy fresh builds into `games/zombie/` when developing locally.
 
-- This repository currently stores built/static assets directly for fast deploys.
-- Mindcraft is a local app (`127.0.0.1:43110`) and cannot be universally embedded on hosted HTTPS pages.
-- The zombie game uses 7 injectable JS files loaded before the Vite bundle — these are the only files that should be edited for game-level improvements.
+## Deploy
 
-## Roadmap Ideas
+Pushes to `main` deploy to GitHub Pages via [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml).
 
-- Add screenshots/GIF previews in the README
-- Add automated checks for broken local links and embed health
-- Add audio feedback for kill streaks and damage numbers
-- Extend visual effects to voxel game (CraftVerse)
-- Add weapon inspection / ADS animation layer
+**Live URL:** https://xrctz.github.io/ai-game-lab/
+
+## Related repositories
+
+| Repository | Role |
+| --- | --- |
+| [xrctz/DeadTakeover](https://github.com/xrctz/DeadTakeover) | Zombie FPS source (Three.js + Vite) |
+| [xrctz/ai-game-lab](https://github.com/xrctz/ai-game-lab) | This hub — hosting, player, and branding |
+
+## Documentation
+
+- [Website revamp notes](docs/WEBSITE_REVAMP_CHANGES.md)
+- [Lab expansion v8](docs/WEBSITE_GAME_EXPANSION_V8.md)
+- [Systems layer v9](docs/WEBSITE_GAME_EXPANSION_V9.md)
+- [Zombie performance notes](docs/ZOMBIE_PERFORMANCE_CHANGES.md)
 
 ## License
 
-No open-source license file is currently defined.  
-If you plan to open-source this repo, add a license (for example MIT) and clarify third-party asset usage.
+MIT — see [LICENSE](LICENSE). Third-party game assets may have separate terms; check each game folder and [showcase/previews/README.md](showcase/previews/README.md) for attribution.
