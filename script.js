@@ -163,6 +163,9 @@ function showToast(msg, duration){
   var liveDot = document.getElementById('liveDot');
   var btnRefresh = document.getElementById('btnRefresh');
   var btnClose = document.getElementById('btnClose');
+  var btnFullscreen = document.getElementById('btnFullscreen');
+  var playerWrapper = document.querySelector('.player-wrapper');
+  var playerLayout = document.querySelector('.player-layout');
 
   var GAME_URLS = {
     zombie: '/ai-game-lab/games/zombie/index.html',
@@ -188,6 +191,7 @@ function showToast(msg, duration){
       localStorage.setItem('zombieQuality', quality);
       var params = new URLSearchParams();
       params.set('quality', quality);
+      params.set('embed', '1');
       if (debugEl && debugEl.checked) params.set('debug', '1');
       return url + '?' + params.toString();
     }
@@ -260,6 +264,46 @@ function showToast(msg, duration){
   });
   if (btnRefresh) btnRefresh.addEventListener('click', function(){ if (currentGame) loadGame(currentGame); });
   if (btnClose) btnClose.addEventListener('click', closeGame);
+
+  function isPlayerFullscreen(){
+    var fs = document.fullscreenElement || document.webkitFullscreenElement;
+    return fs && playerWrapper && (fs === playerWrapper || playerWrapper.contains(fs));
+  }
+  function setPlayerFullscreenUi(on){
+    if (playerLayout) playerLayout.classList.toggle('player-fs', !!on);
+    if (btnFullscreen) btnFullscreen.classList.toggle('is-active', !!on);
+    if (playerWrapper) playerWrapper.classList.toggle('is-fullscreen', !!on);
+  }
+  function togglePlayerFullscreen(){
+    if (!playerWrapper || !currentIframe) {
+      showToast('Load a game first, then use fullscreen.');
+      return;
+    }
+    if (isPlayerFullscreen()) {
+      var exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit) exit.call(document);
+      return;
+    }
+    var req = playerWrapper.requestFullscreen || playerWrapper.webkitRequestFullscreen;
+    if (!req) {
+      showToast('Fullscreen is not supported in this browser.');
+      return;
+    }
+    Promise.resolve(req.call(playerWrapper)).catch(function(){
+      showToast('Could not enter fullscreen.');
+    });
+  }
+  if (btnFullscreen) btnFullscreen.addEventListener('click', togglePlayerFullscreen);
+  document.addEventListener('fullscreenchange', function(){ setPlayerFullscreenUi(isPlayerFullscreen()); });
+  document.addEventListener('webkitfullscreenchange', function(){ setPlayerFullscreenUi(isPlayerFullscreen()); });
+  document.addEventListener('keydown', function(e){
+    if (e.code !== 'KeyF' || e.repeat || !currentIframe) return;
+    var tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+    e.preventDefault();
+    togglePlayerFullscreen();
+  });
+
   var requested = new URLSearchParams(location.search).get('game');
   if (requested) setTimeout(function(){ loadGame(requested); }, 250);
 })();

@@ -10,6 +10,11 @@
   var MAX_KILL_FEED = 6;
   var KILL_FEED_DURATION = 4000;
 
+  function isEmbedded(){
+    try { if (window.self !== window.top) return true; } catch(e) { return true; }
+    return /(?:^|[?&])embed=1(?:&|$)/.test(location.search);
+  }
+
   function $(id){ return document.getElementById(id); }
 
   function createStyles(){
@@ -337,6 +342,10 @@
       '</button>',
     ].join('');
     document.body.appendChild(panel);
+    if(isEmbedded()){
+      document.body.classList.add('dt-embedded');
+      panel.style.display = 'none';
+    }
 
     $('dt-guide-btn').addEventListener('click', function(){ guide.classList.add('open'); });
     $('dt-perf-btn').addEventListener('click', showPerf);

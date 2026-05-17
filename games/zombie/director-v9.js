@@ -27,6 +27,11 @@
   var compactKey = 'deadtakeover_compact_hud';
   var photoActive = false;
 
+  function isEmbedded(){
+    try { if (window.self !== window.top) return true; } catch(e) { return true; }
+    return /(?:^|[?&])embed=1(?:&|$)/.test(location.search);
+  }
+
   function $(id){ return document.getElementById(id); }
   function text(id){ var el=$(id); return el ? (el.textContent || '').trim() : ''; }
   function setMessage(msg){
@@ -131,6 +136,11 @@
       '  #dt-v9-director{left:12px;right:12px;bottom:60px;width:auto}',
       '  .dt-v9-readout{grid-template-columns:1fr 1fr}',
       '}',
+      'body.dt-embedded #dt-v9-director{bottom:auto;top:8px;right:8px;width:min(220px,calc(100vw - 16px))}',
+      'body.dt-embedded #dt-lab-panel{display:none!important}',
+      'body.dt-embedded #hud-left,body.dt-embedded #hud-right{transform:scale(.82)}',
+      'body.dt-embedded #hud-left{transform-origin:top left}',
+      'body.dt-embedded #hud-right{transform-origin:top right}',
     ].join('\n');
     document.head.appendChild(s);
   }
@@ -226,6 +236,15 @@
     return box;
   }
 
+  function applyEmbeddedMode(box){
+    if(!isEmbedded()) return;
+    document.body.classList.add('dt-embedded', 'dt-v9-compact');
+    box.classList.add('dt-v9-mini');
+    var minBtn = $('dt-v9-min');
+    if(minBtn) minBtn.textContent = 'Open';
+    setMessage('Hub player — O toggles Director · I opens guide');
+  }
+
   function drawFpsGraph(){
     var canvas = $('dt-v9-fps-graph');
     if(!canvas) return;
@@ -301,7 +320,8 @@
 
   function init(){
     injectStyles();
-    build();
+    var box = build();
+    applyEmbeddedMode(box);
     update();
 
     // Fast update for graph smoothness, slow update for tips
