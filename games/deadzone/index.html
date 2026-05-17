@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dead Zone: Evacuation</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+
+        <div id="loading-screen">
+            <div class="loading-content">
+                <h1 class="game-title">DEAD ZONE</h1>
+                <p class="game-subtitle">EVACUATION</p>
+                <div class="loading-bar-container">
+                    <div class="loading-bar" id="loading-bar"></div>
+                </div>
+                <p class="loading-text" id="loading-text">INITIALIZING...</p>
+            </div>
+        </div>
+
+        <div id="main-menu" class="menu-screen hidden">
+            <div class="menu-content">
+                <h1 class="game-title">DEAD ZONE</h1>
+                <p class="game-subtitle">EVACUATION</p>
+                <div class="menu-buttons">
+                    <button class="menu-btn" id="btn-select-map">SELECT MAP</button>
+                    <button class="menu-btn" id="btn-controls">CONTROLS</button>
+                    <button class="menu-btn" id="btn-settings">SETTINGS</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="map-select-screen" class="menu-screen hidden">
+            <div class="menu-content map-select-content">
+                <h2>SELECT OPERATION ZONE</h2>
+                <div class="map-grid" id="map-grid">
+                    <div class="map-card selected" data-map="outpost">
+                        <div class="map-preview map-preview-outpost">
+                            <div class="map-preview-overlay"></div>
+                            <div class="map-preview-icon">🏗</div>
+                        </div>
+                        <div class="map-info">
+                            <div class="map-name">OUTPOST ALPHA</div>
+                            <div class="map-desc">Military compound in the wasteland. Tight corridors, open courtyards. Classic survival.</div>
+                            <div class="map-tags">
+                                <span class="map-tag tag-size">MEDIUM</span>
+                                <span class="map-tag tag-difficulty">NORMAL</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="map-card" data-map="city">
+                        <div class="map-preview map-preview-city">
+                            <div class="map-preview-overlay"></div>
+                            <div class="map-preview-icon">🏙</div>
+                        </div>
+                        <div class="map-info">
+                            <div class="map-name">DEAD CITY</div>
+                            <div class="map-desc">Abandoned downtown district. Neon-lit streets, dark alleys, towering buildings. Urban nightmare.</div>
+                            <div class="map-tags">
+                                <span class="map-tag tag-size">LARGE</span>
+                                <span class="map-tag tag-difficulty">HARD</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="map-select-actions">
+                    <button class="menu-btn" id="btn-map-start">DEPLOY</button>
+                    <button class="menu-btn" id="btn-map-back">BACK</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="controls-screen" class="menu-screen hidden">
+            <div class="menu-content">
+                <h2>CONTROLS</h2>
+                <div class="controls-grid">
+                    <div class="control-row"><span>WASD</span><span>Movement</span></div>
+                    <div class="control-row"><span>Mouse</span><span>Aim</span></div>
+                    <div class="control-row"><span>Left Click</span><span>Fire</span></div>
+                    <div class="control-row"><span>Right Click</span><span>Aim Down Sights</span></div>
+                    <div class="control-row"><span>R</span><span>Reload</span></div>
+                    <div class="control-row"><span>1 / 2 / 3</span><span>Switch Weapon</span></div>
+                    <div class="control-row"><span>Shift</span><span>Sprint</span></div>
+                    <div class="control-row"><span>Ctrl</span><span>Crouch</span></div>
+                    <div class="control-row"><span>Space</span><span>Jump</span></div>
+                    <div class="control-row"><span>G</span><span>Grenade</span></div>
+                    <div class="control-row"><span>V</span><span>Melee Shove</span></div>
+                    <div class="control-row"><span>T</span><span>Toggle Flashlight</span></div>
+                    <div class="control-row"><span>Q</span><span>Squad: Follow Me</span></div>
+                    <div class="control-row"><span>E</span><span>Squad: Hold Position</span></div>
+                    <div class="control-row"><span>F</span><span>Squad: Focus Fire</span></div>
+                    <div class="control-row"><span>X</span><span>Squad: Regroup</span></div>
+                    <div class="control-row"><span>Tab</span><span>Squad Command Wheel</span></div>
+                    <div class="control-row"><span>Esc</span><span>Pause Menu</span></div>
+                </div>
+                <button class="menu-btn" id="btn-controls-back">BACK</button>
+            </div>
+        </div>
+
+        <div id="settings-screen" class="menu-screen hidden">
+            <div class="menu-content">
+                <h2>SETTINGS</h2>
+                <div class="setting-row">
+                    <label>Master Volume</label>
+                    <input type="range" id="setting-volume" min="0" max="100" value="70">
+                </div>
+                <div class="setting-row">
+                    <label>Mouse Sensitivity</label>
+                    <input type="range" id="setting-sensitivity" min="1" max="10" value="5">
+                </div>
+                <div class="setting-row">
+                    <label>FOV</label>
+                    <input type="range" id="setting-fov" min="60" max="110" value="75">
+                </div>
+                <div class="setting-row">
+                    <label>Show FPS</label>
+                    <input type="checkbox" id="setting-fps">
+                </div>
+                <button class="menu-btn" id="btn-settings-back">BACK</button>
+            </div>
+        </div>
+
+        <div id="hud" class="hidden">
+            <div id="crosshair">
+                <div class="crosshair-line crosshair-top"></div>
+                <div class="crosshair-line crosshair-bottom"></div>
+                <div class="crosshair-line crosshair-left"></div>
+                <div class="crosshair-line crosshair-right"></div>
+                <div class="crosshair-dot"></div>
+            </div>
+
+            <div id="hit-marker" class="hidden">
+                <div class="hit-line hit-tl"></div>
+                <div class="hit-line hit-tr"></div>
+                <div class="hit-line hit-bl"></div>
+                <div class="hit-line hit-br"></div>
+            </div>
+
+            <div id="damage-vignette"></div>
+
+            <div id="damage-indicator" class="hidden">
+                <div class="damage-arrow damage-top"></div>
+                <div class="damage-arrow damage-right"></div>
+                <div class="damage-arrow damage-bottom"></div>
+                <div class="damage-arrow damage-left"></div>
+            </div>
+
+            <div id="health-bar-container">
+                <div class="health-icon">+</div>
+                <div class="health-bar-bg">
+                    <div class="health-bar" id="health-bar"></div>
+                </div>
+                <span class="health-text" id="health-text">100</span>
+            </div>
+
+            <div id="ammo-display">
+                <div class="weapon-name" id="weapon-name">M4 CARBINE</div>
+                <div class="ammo-counter">
+                    <span class="ammo-current" id="ammo-current">30</span>
+                    <span class="ammo-separator">/</span>
+                    <span class="ammo-reserve" id="ammo-reserve">120</span>
+                </div>
+            </div>
+
+            <div id="weapon-slots">
+                <div class="weapon-slot active" data-slot="1">
+                    <span class="slot-key">1</span>
+                    <span class="slot-name">RIFLE</span>
+                </div>
+                <div class="weapon-slot" data-slot="2">
+                    <span class="slot-key">2</span>
+                    <span class="slot-name">SHOTGUN</span>
+                </div>
+                <div class="weapon-slot" data-slot="3">
+                    <span class="slot-key">3</span>
+                    <span class="slot-name">PISTOL</span>
+                </div>
+            </div>
+
+            <div id="teammate-panel">
+                <div class="teammate-card" data-ally="0">
+                    <div class="teammate-role">ASSAULT</div>
+                    <div class="teammate-name">REAPER</div>
+                    <div class="teammate-health-bg">
+                        <div class="teammate-health" id="ally-health-0"></div>
+                    </div>
+                    <div class="teammate-status" id="ally-status-0">FOLLOWING</div>
+                </div>
+                <div class="teammate-card" data-ally="1">
+                    <div class="teammate-role">MEDIC</div>
+                    <div class="teammate-name">DOC</div>
+                    <div class="teammate-health-bg">
+                        <div class="teammate-health" id="ally-health-1"></div>
+                    </div>
+                    <div class="teammate-status" id="ally-status-1">FOLLOWING</div>
+                </div>
+                <div class="teammate-card" data-ally="2">
+                    <div class="teammate-role">SUPPORT</div>
+                    <div class="teammate-name">HAVOC</div>
+                    <div class="teammate-health-bg">
+                        <div class="teammate-health" id="ally-health-2"></div>
+                    </div>
+                    <div class="teammate-status" id="ally-status-2">FOLLOWING</div>
+                </div>
+            </div>
+
+            <div id="wave-display">
+                <div class="wave-label" id="wave-label">WAVE 1</div>
+                <div class="wave-enemies" id="wave-enemies">ENEMIES: 12</div>
+            </div>
+
+            <div id="objective-display">
+                <div class="objective-text" id="objective-text">SURVIVE THE HORDE</div>
+            </div>
+
+            <div id="interaction-prompt" class="hidden">
+                <span id="interaction-text">Press E to interact</span>
+            </div>
+
+            <div id="fps-counter" class="hidden">FPS: 60</div>
+
+            <div id="kill-feed"></div>
+        </div>
+
+        <div id="pause-menu" class="menu-screen hidden">
+            <div class="menu-content">
+                <h2>PAUSED</h2>
+                <button class="menu-btn" id="btn-resume">RESUME</button>
+                <button class="menu-btn" id="btn-restart">RESTART</button>
+                <button class="menu-btn" id="btn-quit">QUIT TO MENU</button>
+            </div>
+        </div>
+
+        <div id="game-over-screen" class="menu-screen hidden">
+            <div class="menu-content">
+                <h1 class="game-over-title">MISSION FAILED</h1>
+                <div class="game-over-stats">
+                    <div class="stat-row"><span>Waves Survived</span><span id="go-waves">0</span></div>
+                    <div class="stat-row"><span>Zombies Killed</span><span id="go-kills">0</span></div>
+                    <div class="stat-row"><span>Headshots</span><span id="go-headshots">0</span></div>
+                    <div class="stat-row"><span>Accuracy</span><span id="go-accuracy">0%</span></div>
+                </div>
+                <button class="menu-btn" id="btn-retry">TRY AGAIN</button>
+                <button class="menu-btn" id="btn-go-menu">MAIN MENU</button>
+            </div>
+        </div>
+
+        <div id="victory-screen" class="menu-screen hidden">
+            <div class="menu-content">
+                <h1 class="victory-title">EXTRACTION COMPLETE</h1>
+                <div class="game-over-stats">
+                    <div class="stat-row"><span>Final Wave</span><span id="v-waves">0</span></div>
+                    <div class="stat-row"><span>Total Kills</span><span id="v-kills">0</span></div>
+                    <div class="stat-row"><span>Headshots</span><span id="v-headshots">0</span></div>
+                    <div class="stat-row"><span>Score</span><span id="v-score">0</span></div>
+                </div>
+                <button class="menu-btn" id="btn-v-next">NEXT MISSION</button>
+                <button class="menu-btn" id="btn-v-menu">MAIN MENU</button>
+            </div>
+        </div>
+
+        <div id="wave-announce" class="hidden">
+            <div class="wave-announce-text" id="wave-announce-text">WAVE 1</div>
+            <div class="wave-announce-sub" id="wave-announce-sub">PREPARE YOURSELF</div>
+        </div>
+
+        <div id="squad-wheel" class="hidden">
+            <div class="wheel-center">SQUAD</div>
+            <div class="wheel-option wheel-top" data-command="focus">FOCUS FIRE</div>
+            <div class="wheel-option wheel-right" data-command="hold">HOLD</div>
+            <div class="wheel-option wheel-bottom" data-command="regroup">REGROUP</div>
+            <div class="wheel-option wheel-left" data-command="follow">FOLLOW</div>
+        </div>
+
+        <div id="shop-panel" class="hidden">
+            <div class="shop-header">
+                <h2 class="shop-title">SUPPLY DEPOT</h2>
+                <div class="shop-currency" id="shop-currency">CURRENCY: 0</div>
+            </div>
+            <div class="shop-items" id="shop-items"></div>
+            <div class="shop-footer">
+                <span>Press B to close</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    var scriptSrc = 'https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';
+    function appendScript(src, onErr) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.onerror = onErr;
+        document.head.appendChild(s);
+    }
+    appendScript(scriptSrc, function() {
+        // Fallback
+        appendScript('https://unpkg.com/three@0.159.0/build/three.min.js', function() {
+            document.getElementById('loading-text').textContent = 'ERROR: Cannot load 3D engine. Check internet.';
+            document.getElementById('loading-text').style.color = '#ff4444';
+        });
+    });
+
+    function waitForTHREE() {
+        if (typeof THREE !== 'undefined') {
+            var s = document.createElement('script');
+            s.src = 'js/game-bundle.js';
+            s.onerror = function() {
+                document.getElementById('loading-text').textContent = 'ERROR: Failed to load game bundle.';
+                document.getElementById('loading-text').style.color = '#ff4444';
+            };
+            document.body.appendChild(s);
+        } else {
+            setTimeout(waitForTHREE, 200);
+        }
+    }
+    setTimeout(waitForTHREE, 500);
+    </script>
+</body>
+</html>

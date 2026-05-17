@@ -169,11 +169,13 @@ function showToast(msg, duration){
 
   var GAME_URLS = {
     zombie: '/ai-game-lab/games/zombie/index.html',
+    deadzone: '/ai-game-lab/games/deadzone/index.html',
     voxel: '/ai-game-lab/games/voxel/index.html',
     minecraft: '/ai-game-lab/games/voxel/index.html'
   };
   var GAME_NAMES = {
     zombie: 'DeadTakeover Protocol',
+    deadzone: 'Dead Zone: Evacuation',
     voxel: 'CraftVerse Engine',
     minecraft: 'CraftVerse Engine',
     mindcraft: 'Mindcraft Control Deck'
@@ -353,6 +355,7 @@ function showToast(msg, duration){
     {title:'Home', detail:'Return to the launch deck', href:'/ai-game-lab/', tag:'page'},
     {title:'Showcase', detail:'Browse all project cards', href:'/ai-game-lab/showcase/', tag:'page'},
     {title:'Play DeadTakeover Lab+', detail:'Boot the zombie game with v10 visual effects and director HUD', href:'/ai-game-lab/play/?game=zombie', tag:'game'},
+    {title:'Play Dead Zone: Evacuation', detail:'3D squad FPS with two maps and 15 waves', href:'/ai-game-lab/play/?game=deadzone', tag:'game'},
     {title:'Play CraftVerse', detail:'Boot the voxel sandbox', href:'/ai-game-lab/play/?game=voxel', tag:'game'},
     {title:'Story', detail:'Read the project origin log', href:'/ai-game-lab/story/', tag:'page'},
     {title:'Updates', detail:'Read release notes and runtime status', href:'/ai-game-lab/showcase/updates/', tag:'page'},
@@ -419,16 +422,18 @@ function showToast(msg, duration){
     }).then(function(){ showToast('Site cache refreshed. Reloading…'); setTimeout(function(){ location.reload(); }, 650); });
   });
   var checks = [
-    ['zombie','/ai-game-lab/games/zombie/index.html'],
-    ['voxel','/ai-game-lab/games/voxel/index.html']
+    ['zombie','/ai-game-lab/games/zombie/index.html','Zombie'],
+    ['deadzone','/ai-game-lab/games/deadzone/index.html','Dead Zone'],
+    ['voxel','/ai-game-lab/games/voxel/index.html','Voxel']
   ];
   checks.forEach(function(item){
     var el = document.querySelector('[data-route-check="' + item[0] + '"]');
     if (!el) return;
+    var label = item[2];
     fetch(item[1], { method:'HEAD', cache:'no-store' }).then(function(res){
       el.classList.toggle('ok', res.ok); el.classList.toggle('warn', !res.ok);
-      el.textContent = (item[0] === 'zombie' ? 'Zombie' : 'Voxel') + ' route: ' + (res.ok ? 'ready' : 'missing');
-    }).catch(function(){ el.classList.add('warn'); el.textContent = (item[0] === 'zombie' ? 'Zombie' : 'Voxel') + ' route: offline'; });
+      el.textContent = label + ' route: ' + (res.ok ? 'ready' : 'missing');
+    }).catch(function(){ el.classList.add('warn'); el.textContent = label + ' route: offline'; });
   });
 })();
 
