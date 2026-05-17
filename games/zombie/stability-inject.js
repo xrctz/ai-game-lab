@@ -96,24 +96,36 @@
     perfOverlay = document.createElement('div');
     perfOverlay.id = 'stab-perf-overlay';
     perfOverlay.style.cssText =
-      'position:fixed;top:8px;left:8px;z-index:99999;' +
-      'background:rgba(0,0,0,0.85);color:#0f0;font:11px monospace;' +
-      'padding:8px 10px;border-radius:6px;pointer-events:none;display:none;' +
-      'border:1px solid rgba(0,255,0,0.3);max-width:340px;line-height:1.5;white-space:pre';
+      'position:fixed;top:12px;left:12px;z-index:99999;' +
+      'background:linear-gradient(165deg,rgba(8,14,32,.92),rgba(4,6,16,.95));' +
+      'backdrop-filter:blur(12px);' +
+      'color:#eaf0ff;font:11px "JetBrains Mono",monospace;' +
+      'padding:14px 16px;border-radius:14px;pointer-events:none;display:none;' +
+      'border:1px solid rgba(53,231,255,.18);min-width:300px;line-height:1.8;white-space:pre;' +
+      'box-shadow:0 12px 40px rgba(0,0,0,.4),0 0 20px rgba(53,231,255,.04)';
     document.body.appendChild(perfOverlay);
   }
 
   function updateOverlay() {
     if (!overlayVisible || !perfOverlay) return;
     var snap = window.__zombiePerfSnapshot ? window.__zombiePerfSnapshot() : null;
-    perfOverlay.textContent =
-      'FPS: ' + (snap ? snap.fps : '...') +
-      '  avg: ' + (snap ? snap.avgMs.toFixed(1) + 'ms' : '...') +
-      '  scale: ' + (snap ? snap.ratio.toFixed(2) : '...') +
-      '\nquality: ' + (snap ? snap.quality : '...') +
-      '  listeners: ' + LISTENERS.length +
-      '  timers: ' + (INTERVALS.size + TIMEOUTS.size) +
-      '  ctx: ' + (contextLost ? 'LOST' : 'OK');
+    var stream = window.__zombieGetStreamingStats ? window.__zombieGetStreamingStats() : null;
+
+    var fpsColor = snap && snap.fps >= 50 ? '#5dff96' : snap && snap.fps >= 30 ? '#ffb86c' : '#ff4d6a';
+    var ctxColor = contextLost ? '#ff4d6a' : '#5dff96';
+
+    perfOverlay.innerHTML =
+      '<div style="font-family:Orbitron,sans-serif;font-size:10px;letter-spacing:.1em;color:#35e7ff;margin-bottom:8px;text-transform:uppercase">Debug Overlay</div>' +
+      '<div>FPS: <span style="color:' + fpsColor + ';font-weight:700">' + (snap ? snap.fps : '...') + '</span>' +
+      '  avg: <span style="color:#8a96be">' + (snap ? snap.avgMs.toFixed(1) + 'ms' : '...') + '</span>' +
+      '  scale: <span style="color:#8a96be">' + (snap ? snap.ratio.toFixed(2) : '...') + '</span></div>' +
+      '<div>quality: <span style="color:#35e7ff">' + (snap ? snap.quality : '...') + '</span>' +
+      '  ctx: <span style="color:' + ctxColor + ';font-weight:700">' + (contextLost ? 'LOST' : 'OK') + '</span></div>' +
+      '<div style="border-top:1px solid rgba(255,255,255,.06);padding-top:6px;margin-top:4px">listeners: <span style="color:#ffb86c">' + LISTENERS.length + '</span>' +
+      '  timers: <span style="color:#ffb86c">' + (INTERVALS.size + TIMEOUTS.size) + '</span></div>' +
+      (stream ? '<div>stream: <span style="color:#8a96be">pending ' + (stream.pending||0) + ' · built ' + (stream.built||0) + '</span>' +
+        '  hitches: <span style="color:' + (stream.hitches > 5 ? '#ff4d6a' : '#8a96be') + '">' + (stream.hitches||0) + '</span></div>' : '') +
+      '<div style="border-top:1px solid rgba(255,255,255,.06);padding-top:6px;margin-top:4px;font-size:10px;color:#5a6588">Press ` to toggle · O minimize director</div>';
   }
 
   window.addEventListener('keydown', function (e) {

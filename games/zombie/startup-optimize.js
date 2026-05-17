@@ -66,5 +66,5 @@
     };
   }
 
-  console.log('[startup] DeadTakeover boot optimizer active');
+  console.log('[startup] DeadTakeover v10 boot optimizer active');
 })();

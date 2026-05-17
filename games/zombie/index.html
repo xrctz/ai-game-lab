@@ -4,18 +4,44 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DeadTakeover Lab+ v9 — Zombie Open World Game</title>
+    <title>DeadTakeover Lab+ v10 — Zombie Open World Game</title>
     <!-- Loading screen: displayed until the game bundle hides it -->
     <style>
-      #game-loader{position:fixed;inset:0;z-index:99999;background:#0a0a0a;
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Orbitron:wght@600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+      :root{
+        --dt-bg:#050810;--dt-panel:rgba(8,12,28,.88);--dt-panel-2:rgba(14,20,44,.82);
+        --dt-text:#eaf0ff;--dt-muted:#8a96be;--dt-dim:#5a6588;
+        --dt-line:rgba(90,220,255,.14);--dt-line-hi:rgba(90,220,255,.32);
+        --dt-cyan:#35e7ff;--dt-violet:#9b5cff;--dt-pink:#ff4fd8;
+        --dt-lime:#5dff96;--dt-orange:#ffb86c;--dt-red:#ff4d6a;
+        --dt-gold:#ffd666;--dt-rust:#c47a3a;
+        --dt-font:'Inter',system-ui,-apple-system,sans-serif;
+        --dt-font-display:'Orbitron','Inter',system-ui,sans-serif;
+        --dt-font-mono:'JetBrains Mono','Fira Code',monospace;
+        --dt-radius:18px;--dt-radius-sm:12px;
+      }
+      *{box-sizing:border-box}
+      #game-loader{position:fixed;inset:0;z-index:99999;
+        background:radial-gradient(ellipse at 50% 30%,rgba(20,10,50,.9),#050810 70%);
         display:flex;flex-direction:column;align-items:center;justify-content:center;
-        font-family:'Segoe UI',system-ui,sans-serif;color:#ccc;transition:opacity .4s;}
-      #game-loader.hidden{opacity:0;pointer-events:none;}
-      .loader-bar-wrap{width:280px;height:6px;background:#1a1a1a;border-radius:3px;margin-top:18px;overflow:hidden}
-      .loader-bar-fill{height:100%;width:0;background:linear-gradient(90deg,#9b30ff,#00f0ff);border-radius:3px;
-        animation:loader-progress 12s ease-out forwards;}
-      @keyframes loader-progress{0%{width:8%}100%{width:92%}}
-      .loader-text{font-size:14px;margin-top:10px;color:#888}
+        font-family:var(--dt-font);color:var(--dt-text);transition:opacity .5s ease,transform .5s ease}
+      #game-loader.hidden{opacity:0;pointer-events:none;transform:scale(1.02)}
+      .loader-title{font-family:var(--dt-font-display);font-size:2.2rem;font-weight:900;letter-spacing:.08em;
+        text-transform:uppercase;background:linear-gradient(135deg,var(--dt-cyan),var(--dt-violet),var(--dt-pink));
+        -webkit-background-clip:text;background-clip:text;color:transparent;
+        filter:drop-shadow(0 0 30px rgba(53,231,255,.25));margin-bottom:6px}
+      .loader-sub{font-family:var(--dt-font-mono);font-size:.78rem;color:var(--dt-muted);letter-spacing:.06em;margin-bottom:28px}
+      .loader-bar-wrap{width:340px;height:4px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;
+        box-shadow:0 0 20px rgba(53,231,255,.1)}
+      .loader-bar-fill{height:100%;width:0;background:linear-gradient(90deg,var(--dt-violet),var(--dt-cyan));border-radius:999px;
+        animation:loader-progress 10s ease-out forwards;box-shadow:0 0 14px rgba(53,231,255,.4)}
+      @keyframes loader-progress{0%{width:6%}60%{width:72%}100%{width:95%}}
+      .loader-text{font-size:.82rem;margin-top:16px;color:var(--dt-dim);font-family:var(--dt-font-mono);letter-spacing:.03em}
+      .loader-systems{display:flex;gap:12px;margin-top:22px}
+      .loader-sys{display:flex;align-items:center;gap:6px;font-size:.7rem;color:var(--dt-dim);font-family:var(--dt-font-mono)}
+      .loader-sys-dot{width:6px;height:6px;border-radius:50%;background:var(--dt-lime);box-shadow:0 0 8px var(--dt-lime);
+        animation:pulse-dot 1.6s ease-in-out infinite}
+      @keyframes pulse-dot{0%,100%{opacity:.5;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
     </style>
     <script src="./startup-optimize.js"></script>
     <script src="./stability-inject.js"></script>
@@ -27,21 +53,36 @@
       (function(){
         var loader=document.createElement('div');
         loader.id='game-loader';
-        loader.innerHTML='<h1 style="font-size:1.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase">DeadTakeover Lab+ v9</h1>'
+        loader.innerHTML='<div class="loader-title">DeadTakeover</div>'
+          +'<div class="loader-sub">Lab+ v10 · Systems Online</div>'
           +'<div class="loader-bar-wrap"><div class="loader-bar-fill" id="loaderBar"></div></div>'
-          +'<div class="loader-text" id="loaderText">Loading Lab+ v9 systems&hellip;</div>';
+          +'<div class="loader-text" id="loaderText">Initializing runtime…</div>'
+          +'<div class="loader-systems">'
+          +'<span class="loader-sys"><span class="loader-sys-dot"></span>Director</span>'
+          +'<span class="loader-sys"><span class="loader-sys-dot"></span>Streaming</span>'
+          +'<span class="loader-sys"><span class="loader-sys-dot"></span>Weapons</span>'
+          +'<span class="loader-sys"><span class="loader-sys-dot"></span>World</span>'
+          +'</div>';
         document.body.insertBefore(loader,document.body.firstChild);
+        var sysTexts=['Initializing renderer…','Loading world systems…','Preparing weapons…','Syncing streaming…','Building terrain…','Almost ready…'];
+        var si=0;
+        var sysInterval=setInterval(function(){
+          var t=document.getElementById('loaderText');
+          if(t&&si<sysTexts.length){t.textContent=sysTexts[si];si++;}
+          else clearInterval(sysInterval);
+        },1800);
         window.__hideLoader=function(){
+          clearInterval(sysInterval);
           var bar=document.getElementById('loaderBar');
           var text=document.getElementById('loaderText');
           if(bar){bar.style.animation='none';bar.style.width='100%';}
-          if(text)text.textContent='Ready.';
-          setTimeout(function(){loader.classList.add('hidden');},280);
+          if(text)text.textContent='Systems ready — launching…';
+          setTimeout(function(){loader.classList.add('hidden');},350);
         };
         window.addEventListener('load',function(){
           setTimeout(function(){
             if(!loader.classList.contains('hidden'))window.__hideLoader();
-          },600);
+          },800);
         });
         document.addEventListener('DOMContentLoaded',function(){
           var obs=new MutationObserver(function(){
@@ -53,6 +94,7 @@
       })();
     </script>
     <script type="module" crossorigin src="./assets/index-labplus-v9.js"></script>
+    <!-- v10: visual layer injected via director-v9.js, gameplus-mode.js, streaming-mode.js -->
     <link rel="modulepreload" crossorigin href="./assets/three-DmS57Xe5.js">
     <link rel="stylesheet" crossorigin href="./assets/index-r1xQZ7Nn.css">
   </head>
@@ -60,63 +102,416 @@
     <div id="app">
       <canvas id="game"></canvas>
       <div id="sky-vignette"></div>
+
+      <!-- ═══ MENU OVERLAY ═══ -->
       <div id="menu-overlay">
         <div class="menu-card">
-          <h1 id="menu-title">DeadTakeover Lab+ v9</h1>
-          <p id="menu-subtitle">Survive the open world with your team — Lab+ v9 systems enabled.</p>
+          <div class="menu-brand">
+            <div class="menu-brand-icon">
+              <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="40" height="40">
+                <rect x="1" y="1" width="38" height="38" rx="10" fill="rgba(53,231,255,.08)" stroke="url(#menuGrad)" stroke-width="1.5"/>
+                <path d="M20 9l5 18h-3l-1-4h-2l-1 4h-3l5-18zm0 6l-1.5 6h3L20 15z" fill="url(#menuGrad)"/>
+                <circle cx="29" cy="11" r="2.5" fill="#35e7ff" opacity=".9"/>
+                <defs><linearGradient id="menuGrad" x1="5" y1="5" x2="35" y2="35"><stop stop-color="#9b5cff"/><stop offset=".55" stop-color="#6b1fff"/><stop offset="1" stop-color="#35e7ff"/></linearGradient></defs>
+              </svg>
+            </div>
+            <div>
+              <h1 id="menu-title">DeadTakeover</h1>
+              <p id="menu-subtitle" class="menu-version-tag">Lab+ v10 · Director Active</p>
+            </div>
+          </div>
+
           <div id="map-select" class="map-select">
-            <div class="map-select-label">Choose map</div>
+            <div class="map-select-label">
+              <span class="map-select-icon">◈</span> Select Theater
+            </div>
             <div id="map-grid" class="map-grid"></div>
           </div>
+
           <div class="menu-actions">
-            <button id="btn-start">Start Game</button>
-            <button id="btn-continue" class="is-hidden">Continue Run</button>
-            <button id="btn-resume" class="is-hidden">Resume</button>
-            <button id="btn-restart" class="is-hidden">Restart Run</button>
-            <button id="btn-audio">Audio: On</button>
+            <button id="btn-start" class="menu-btn-primary">
+              <span class="btn-icon">▶</span> Deploy
+            </button>
+            <button id="btn-continue" class="menu-btn-primary is-hidden">
+              <span class="btn-icon">▶</span> Continue Run
+            </button>
+            <button id="btn-resume" class="menu-btn-primary is-hidden">
+              <span class="btn-icon">▶</span> Resume
+            </button>
+            <button id="btn-restart" class="menu-btn-secondary is-hidden">
+              <span class="btn-icon">↻</span> Restart
+            </button>
+            <button id="btn-audio" class="menu-btn-secondary">
+              <span class="btn-icon">♫</span> Audio On
+            </button>
           </div>
-            <p class="menu-help">Lab+ v9: director overlay enabled · bonus weapons unlocked · Press I for field guide · WASD Move · Shift Sprint · C Crouch · Space Jump · Click/LMB Shoot · RMB Aim Down Sights · R Reload · 1-7 Weapon Slots · Q/E Swap Weapon · G Grenade · J Molotov · K Land Mine · L Spike Trap · V Noise Maker · F Melee Knife / Enter Vehicle · B Build Barricade · N Switch Build Type · U Weapon Upgrade Bench · Tab Inventory · T Team Swap · P Pause · M Audio. Scavenge materials from zombies! Craft items at your inventory! Build wood/metal barricades! Upgrade weapons at benches! Watch for ★ Supply Drops! Special Zombies: Spitter (acid), Hunter (pounces), Charger (charges), Crawler (low)! Corpses revive if not headshot!</p>
-          <p class="menu-credits">Buildings &amp; street atlas: Kenney.nl (CC0). Pistol GLB: Webaverse (github.com/webaverse/pistol). Music: Kevin MacLeod (incompetech.com) — Title: Floating Cities; maps + Outbreak City: Movement Proposition, Darkest Child, Frost Waltz, Crossing the Chasm, Volatile Reaction, District Four. CC BY — see incompetech.com.</p>
+
+          <div class="menu-controls">
+            <div class="menu-ctrl-section">
+              <span class="menu-ctrl-title">Movement</span>
+              <div class="menu-ctrl-grid">
+                <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move</span>
+                <span><kbd>Shift</kbd> Sprint</span>
+                <span><kbd>C</kbd> Crouch</span>
+                <span><kbd>Space</kbd> Jump</span>
+              </div>
+            </div>
+            <div class="menu-ctrl-section">
+              <span class="menu-ctrl-title">Combat</span>
+              <div class="menu-ctrl-grid">
+                <span><kbd>LMB</kbd> Shoot</span>
+                <span><kbd>RMB</kbd> Aim Down Sights</span>
+                <span><kbd>R</kbd> Reload</span>
+                <span><kbd>1</kbd>–<kbd>7</kbd> Weapon Slots</span>
+                <span><kbd>Q</kbd>/<kbd>E</kbd> Swap Weapon</span>
+              </div>
+            </div>
+            <div class="menu-ctrl-section">
+              <span class="menu-ctrl-title">Tactical</span>
+              <div class="menu-ctrl-grid">
+                <span><kbd>G</kbd> Grenade</span>
+                <span><kbd>J</kbd> Molotov</span>
+                <span><kbd>K</kbd> Land Mine</span>
+                <span><kbd>L</kbd> Spike Trap</span>
+                <span><kbd>V</kbd> Noise Maker</span>
+                <span><kbd>F</kbd> Knife / Vehicle</span>
+              </div>
+            </div>
+            <div class="menu-ctrl-section">
+              <span class="menu-ctrl-title">Systems</span>
+              <div class="menu-ctrl-grid">
+                <span><kbd>B</kbd> Build Barricade</span>
+                <span><kbd>N</kbd> Cycle Build Type</span>
+                <span><kbd>U</kbd> Upgrade Bench</span>
+                <span><kbd>Tab</kbd> Inventory</span>
+                <span><kbd>T</kbd> Team Swap</span>
+                <span><kbd>I</kbd> Field Guide</span>
+                <span><kbd>P</kbd> Pause</span>
+                <span><kbd>M</kbd> Audio</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="menu-footer-info">
+            <div class="menu-sys-badges">
+              <span class="sys-badge sys-badge-ok">Director v10</span>
+              <span class="sys-badge sys-badge-ok">Lab+ Kit</span>
+              <span class="sys-badge sys-badge-ok">All Weapons</span>
+              <span class="sys-badge sys-badge-ok">Streaming Fix</span>
+            </div>
+            <p class="menu-credits">Buildings: Kenney.nl (CC0) · Pistol: Webaverse · Music: Kevin MacLeod (CC BY)</p>
+          </div>
         </div>
       </div>
+
+      <!-- ═══ HUD ═══ -->
       <div id="hud">
         <div id="hud-left">
-          <div class="panel-title">Survivor Status</div>
-          <div class="bar-wrap"><span>Health</span><div class="bar"><div id="health-fill" class="bar-fill health"></div></div></div>
-          <div class="bar-wrap"><span>Stamina</span><div class="bar"><div id="stamina-fill" class="bar-fill stamina"></div></div></div>
-          <div class="meta" id="stats-meta">Ammo: 20/100 | Kills: 0 | Zombies: 0</div>
-          <div class="meta" id="extra-meta">Grenades: 3 | NoiseMakers: 2 | Score: 0</div>
+          <div class="panel-title">
+            <span class="panel-icon">◉</span> Survivor Status
+          </div>
+          <div class="bar-wrap">
+            <span class="bar-label"><span class="bar-icon">♥</span> Health</span>
+            <div class="bar"><div id="health-fill" class="bar-fill health"></div></div>
+          </div>
+          <div class="bar-wrap">
+            <span class="bar-label"><span class="bar-icon">⚡</span> Stamina</span>
+            <div class="bar"><div id="stamina-fill" class="bar-fill stamina"></div></div>
+          </div>
+          <div class="hud-divider"></div>
+          <div class="meta" id="stats-meta">Ammo: 20/100 · Kills: 0 · Zombies: 0</div>
+          <div class="meta" id="extra-meta">Grenades: 3 · NoiseMakers: 2 · Score: 0</div>
           <div class="meta" id="skill-meta">Skills: None</div>
         </div>
+
         <div id="hud-right">
-          <div class="panel-title">Minimap</div>
+          <div class="panel-title">
+            <span class="panel-icon">◎</span> Tactical Map
+          </div>
           <canvas id="minimap" width="180" height="180"></canvas>
-          <div id="world-stats">Wave 1 | 00:00</div>
+          <div id="world-stats">Wave 1 · 00:00</div>
         </div>
+
         <div id="top-center-alert"></div>
-        <div id="message">WASD move, Shift sprint, mouse look, click shoot, R reload.</div>
+        <div id="message">
+          <span class="msg-icon">◈</span>
+          WASD move · Shift sprint · Click shoot · R reload
+        </div>
       </div>
-      <div id="crosshair"></div>
-      <div id="hit-marker"></div>
+
+      <!-- ═══ OVERLAYS ═══ -->
+      <div id="crosshair">
+        <div class="crosshair-line crosshair-top"></div>
+        <div class="crosshair-line crosshair-right"></div>
+        <div class="crosshair-line crosshair-bottom"></div>
+        <div class="crosshair-line crosshair-left"></div>
+        <div class="crosshair-dot"></div>
+      </div>
+      <div id="hit-marker">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="6" y1="6" x2="10" y2="10"/><line x1="18" y1="6" x2="14" y2="10"/>
+          <line x1="6" y1="18" x2="10" y2="14"/><line x1="18" y1="18" x2="14" y2="14"/>
+        </svg>
+      </div>
       <div id="damage-flash"></div>
       <div id="damage-direction"></div>
       <div id="kill-streak-display"></div>
       <div id="night-indicator"></div>
       <div id="build-hint"></div>
+
     </div>
+
+    <!-- ═══ UPGRADE BENCH ═══ -->
     <div id="upgrade-bench" class="upgrade-bench-overlay is-hidden">
       <div class="upgrade-bench-card">
-        <h2>Weapon Upgrade Bench</h2>
-        <p class="upgrade-bench-subtitle">Select a weapon to upgrade using scavenged materials.</p>
+        <div class="upgrade-bench-header">
+          <div class="upgrade-bench-icon">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          </div>
+          <div>
+            <h2>Weapon Upgrade Bench</h2>
+            <p class="upgrade-bench-subtitle">Enhance your weapons using scavenged materials.</p>
+          </div>
+        </div>
         <div id="upgrade-weapon-list" class="upgrade-weapon-list"></div>
         <div id="upgrade-details" class="upgrade-details is-hidden">
           <div class="upgrade-weapon-name" id="upgrade-weapon-name"></div>
           <div class="upgrade-grid" id="upgrade-grid"></div>
         </div>
         <div class="upgrade-bench-actions">
-          <button id="upgrade-bench-close">Close</button>
+          <button id="upgrade-bench-close" class="upgrade-close-btn">
+            <span>✕</span> Close
+          </button>
         </div>
       </div>
     </div>
+
+    <!-- ═══ FULL GAME STYLES ═══ -->
+    <style>
+      /* ──── MENU OVERLAY ──── */
+      #menu-overlay{position:fixed;inset:0;z-index:8000;display:grid;place-items:center;
+        background:radial-gradient(ellipse at 50% 20%,rgba(20,10,60,.85),rgba(5,8,16,.96) 70%);
+        backdrop-filter:blur(8px)}
+      #menu-overlay .menu-card{width:min(820px,calc(100vw - 40px));max-height:90vh;overflow-y:auto;
+        border:1px solid var(--dt-line);border-radius:24px;
+        background:linear-gradient(165deg,rgba(12,18,42,.94),rgba(6,8,20,.96));
+        box-shadow:0 0 80px rgba(53,231,255,.08),0 32px 80px rgba(0,0,0,.5);
+        padding:32px 36px;color:var(--dt-text)}
+      #menu-overlay .menu-card::before{content:'';position:absolute;inset:0;border-radius:inherit;padding:1px;
+        background:linear-gradient(135deg,rgba(53,231,255,.35),rgba(155,92,255,.15),rgba(255,79,216,.25));
+        mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;pointer-events:none}
+
+      .menu-brand{display:flex;align-items:center;gap:16px;margin-bottom:28px}
+      .menu-brand-icon{width:52px;height:52px;display:grid;place-items:center;border-radius:16px;
+        background:linear-gradient(135deg,rgba(53,231,255,.12),rgba(155,92,255,.1));
+        border:1px solid rgba(255,255,255,.08)}
+      #menu-title{font-family:var(--dt-font-display);font-size:1.9rem;font-weight:900;letter-spacing:.04em;margin:0;
+        background:linear-gradient(90deg,var(--dt-cyan),var(--dt-violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+      .menu-version-tag{font-family:var(--dt-font-mono);font-size:.74rem;color:var(--dt-lime);letter-spacing:.06em;margin:4px 0 0}
+
+      .map-select{margin-bottom:24px}
+      .map-select-label{font-family:var(--dt-font-mono);font-size:.76rem;text-transform:uppercase;letter-spacing:.1em;
+        color:var(--dt-cyan);font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+      .map-select-icon{font-size:1rem}
+      .map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+      .map-grid .map-btn,.map-grid button{border:1px solid var(--dt-line);border-radius:var(--dt-radius-sm);
+        background:rgba(255,255,255,.04);color:var(--dt-text);padding:14px 12px;cursor:pointer;
+        font-family:var(--dt-font);font-weight:700;font-size:.88rem;transition:all .18s ease;text-align:center}
+      .map-grid .map-btn:hover,.map-grid button:hover{border-color:var(--dt-line-hi);background:rgba(53,231,255,.08);
+        transform:translateY(-2px);box-shadow:0 8px 24px rgba(53,231,255,.1)}
+      .map-grid .map-btn.active,.map-grid button.active{border-color:var(--dt-cyan);background:rgba(53,231,255,.12);
+        box-shadow:0 0 20px rgba(53,231,255,.15)}
+
+      .menu-actions{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px}
+      .menu-btn-primary{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border:none;border-radius:14px;
+        background:linear-gradient(135deg,var(--dt-cyan),var(--dt-violet));color:#050810;
+        font-family:var(--dt-font);font-weight:900;font-size:.95rem;cursor:pointer;
+        box-shadow:0 12px 32px rgba(53,231,255,.2);transition:all .18s ease;letter-spacing:.02em}
+      .menu-btn-primary:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(53,231,255,.28)}
+      .menu-btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;
+        border:1px solid var(--dt-line);border-radius:14px;background:rgba(255,255,255,.05);
+        color:var(--dt-text);font-family:var(--dt-font);font-weight:800;font-size:.88rem;
+        cursor:pointer;transition:all .18s ease}
+      .menu-btn-secondary:hover{border-color:var(--dt-line-hi);background:rgba(255,255,255,.08)}
+      .btn-icon{font-size:.9em}
+
+      .menu-controls{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px}
+      .menu-ctrl-section{border:1px solid rgba(255,255,255,.06);border-radius:var(--dt-radius-sm);
+        background:rgba(0,0,0,.18);padding:14px 16px}
+      .menu-ctrl-title{font-family:var(--dt-font-mono);font-size:.68rem;text-transform:uppercase;
+        letter-spacing:.1em;color:var(--dt-cyan);font-weight:700;display:block;margin-bottom:10px}
+      .menu-ctrl-grid{display:grid;gap:5px}
+      .menu-ctrl-grid span{font-size:.78rem;color:var(--dt-muted);line-height:1.6}
+      .menu-ctrl-grid kbd{font-family:var(--dt-font-mono);font-size:.72em;border:1px solid var(--dt-line);
+        border-bottom-width:2px;border-radius:5px;padding:1px 6px;background:rgba(255,255,255,.06);color:var(--dt-text)}
+
+      .menu-footer-info{border-top:1px solid rgba(255,255,255,.06);padding-top:18px}
+      .menu-sys-badges{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+      .sys-badge{font-family:var(--dt-font-mono);font-size:.68rem;font-weight:700;padding:5px 10px;
+        border-radius:999px;letter-spacing:.04em}
+      .sys-badge-ok{background:rgba(93,255,150,.1);border:1px solid rgba(93,255,150,.25);color:var(--dt-lime)}
+      .menu-credits{font-size:.72rem;color:var(--dt-dim);line-height:1.5;margin:0}
+
+      /* ──── HUD PANELS ──── */
+      #hud{position:fixed;inset:0;pointer-events:none;z-index:7000;font-family:var(--dt-font)}
+      #hud-left,#hud-right{position:absolute;pointer-events:auto;
+        border:1px solid var(--dt-line);border-radius:var(--dt-radius);
+        background:linear-gradient(165deg,rgba(8,12,28,.82),rgba(4,6,16,.88));
+        backdrop-filter:blur(12px);padding:16px;min-width:220px;
+        box-shadow:0 12px 40px rgba(0,0,0,.35)}
+      #hud-left{left:16px;top:16px}
+      #hud-right{right:16px;top:16px;text-align:center}
+
+      .panel-title{font-family:var(--dt-font-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;
+        color:var(--dt-cyan);font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+      .panel-icon{font-size:.9rem;opacity:.8}
+      .hud-divider{height:1px;background:linear-gradient(90deg,transparent,var(--dt-line),transparent);margin:10px 0}
+
+      .bar-wrap{margin-bottom:10px}
+      .bar-label{font-size:.72rem;color:var(--dt-muted);display:flex;align-items:center;gap:5px;margin-bottom:4px;
+        font-weight:600}
+      .bar-icon{font-size:.78rem}
+      .bar{height:8px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;
+        border:1px solid rgba(255,255,255,.06)}
+      .bar-fill{height:100%;border-radius:999px;transition:width .3s ease}
+      .bar-fill.health{background:linear-gradient(90deg,#ff4d6a,#ff8fa3);box-shadow:0 0 10px rgba(255,77,106,.3)}
+      .bar-fill.stamina{background:linear-gradient(90deg,#35e7ff,#5dff96);box-shadow:0 0 10px rgba(53,231,255,.3)}
+
+      .meta{font-family:var(--dt-font-mono);font-size:.72rem;color:var(--dt-muted);padding:6px 8px;
+        border-radius:8px;background:rgba(0,0,0,.15);margin-bottom:5px;line-height:1.5;
+        border:1px solid rgba(255,255,255,.04)}
+
+      #minimap{border:1px solid var(--dt-line);border-radius:12px;margin:0 auto;display:block;
+        box-shadow:0 0 20px rgba(0,0,0,.3)}
+      #world-stats{font-family:var(--dt-font-mono);font-size:.72rem;color:var(--dt-muted);
+        margin-top:10px;letter-spacing:.04em}
+
+      #message{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);pointer-events:auto;
+        display:flex;align-items:center;gap:8px;padding:10px 20px;
+        border:1px solid var(--dt-line);border-radius:999px;
+        background:rgba(8,12,28,.85);backdrop-filter:blur(12px);
+        font-family:var(--dt-font-mono);font-size:.78rem;color:var(--dt-muted);letter-spacing:.02em;
+        box-shadow:0 8px 32px rgba(0,0,0,.3)}
+      .msg-icon{color:var(--dt-cyan);font-size:.9rem}
+
+      #top-center-alert{position:fixed;top:60px;left:50%;transform:translateX(-50%);pointer-events:none;z-index:7500;
+        font-family:var(--dt-font-display);font-size:1.1rem;font-weight:800;letter-spacing:.04em;text-align:center;
+        color:var(--dt-gold);text-shadow:0 0 20px rgba(255,214,102,.3)}
+
+      /* ──── CROSSHAIR ──── */
+      #crosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:7100;
+        width:28px;height:28px}
+      .crosshair-line{position:absolute;background:rgba(255,255,255,.85);border-radius:1px}
+      .crosshair-top{top:0;left:50%;width:2px;height:8px;transform:translateX(-50%)}
+      .crosshair-bottom{bottom:0;left:50%;width:2px;height:8px;transform:translateX(-50%)}
+      .crosshair-left{left:0;top:50%;width:8px;height:2px;transform:translateY(-50%)}
+      .crosshair-right{right:0;top:50%;width:8px;height:2px;transform:translateY(-50%)}
+      .crosshair-dot{position:absolute;top:50%;left:50%;width:3px;height:3px;border-radius:50%;
+        background:rgba(255,255,255,.6);transform:translate(-50%,-50%)}
+
+      /* ──── HIT MARKER ──── */
+      #hit-marker{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:7150;
+        color:var(--dt-red);opacity:0;transition:opacity .1s ease}
+      #hit-marker.show{opacity:1}
+
+      /* ──── DAMAGE FLASH ──── */
+      #damage-flash{position:fixed;inset:0;pointer-events:none;z-index:7050;
+        background:radial-gradient(ellipse at center,transparent 40%,rgba(255,30,60,.3));
+        opacity:0;transition:opacity .15s ease}
+      #damage-flash.show{opacity:1}
+
+      /* ──── KILL FEED ──── */
+      #kill-feed,.kill-feed{position:fixed;top:80px;right:16px;z-index:7200;pointer-events:none;
+        display:grid;gap:4px;max-width:280px}
+      .kill-feed-item{display:flex;align-items:center;gap:8px;padding:6px 12px;
+        border-radius:10px;background:rgba(8,12,28,.75);border:1px solid rgba(255,255,255,.06);
+        font-family:var(--dt-font-mono);font-size:.72rem;color:var(--dt-muted);
+        animation:kill-feed-in .3s ease forwards;opacity:0;transform:translateX(20px)}
+      .kill-feed-item .kf-icon{font-size:.82rem}
+      .kill-feed-item .kf-name{color:var(--dt-text);font-weight:700}
+      .kill-feed-item .kf-detail{color:var(--dt-dim)}
+      .kill-feed-item.fade-out{animation:kill-feed-out .4s ease forwards}
+      @keyframes kill-feed-in{to{opacity:1;transform:translateX(0)}}
+      @keyframes kill-feed-out{to{opacity:0;transform:translateX(20px)}}
+
+      /* ──── NIGHT INDICATOR ──── */
+      #night-indicator{position:fixed;top:16px;left:50%;transform:translateX(-50%);pointer-events:none;z-index:7100;
+        font-family:var(--dt-font-mono);font-size:.74rem;color:var(--dt-violet);letter-spacing:.08em;
+        text-shadow:0 0 12px rgba(155,92,255,.3)}
+
+      /* ──── BUILD HINT ──── */
+      #build-hint{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);pointer-events:none;z-index:7100;
+        padding:8px 16px;border:1px solid var(--dt-line);border-radius:12px;
+        background:rgba(8,12,28,.8);backdrop-filter:blur(8px);
+        font-family:var(--dt-font-mono);font-size:.76rem;color:var(--dt-muted);
+        box-shadow:0 8px 24px rgba(0,0,0,.25)}
+
+      /* ──── UPGRADE BENCH ──── */
+      .upgrade-bench-overlay{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;
+        background:rgba(0,0,0,.7);backdrop-filter:blur(6px)}
+      .upgrade-bench-card{width:min(780px,calc(100vw - 32px));max-height:85vh;overflow-y:auto;
+        border:1px solid var(--dt-line);border-radius:24px;
+        background:linear-gradient(165deg,rgba(14,20,44,.96),rgba(6,8,20,.98));
+        box-shadow:0 32px 80px rgba(0,0,0,.5);padding:28px 32px;color:var(--dt-text)}
+      .upgrade-bench-card::before{content:'';position:absolute;inset:0;border-radius:inherit;padding:1px;
+        background:linear-gradient(135deg,rgba(53,231,255,.3),rgba(155,92,255,.15));
+        mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;pointer-events:none}
+      .upgrade-bench-header{display:flex;align-items:center;gap:16px;margin-bottom:24px}
+      .upgrade-bench-icon{width:52px;height:52px;display:grid;place-items:center;border-radius:16px;
+        background:linear-gradient(135deg,rgba(53,231,255,.12),rgba(155,92,255,.1));
+        border:1px solid rgba(255,255,255,.08);color:var(--dt-cyan)}
+      .upgrade-bench-card h2{font-family:var(--dt-font-display);font-size:1.4rem;font-weight:800;letter-spacing:.03em;margin:0}
+      .upgrade-bench-subtitle{font-size:.82rem;color:var(--dt-muted);margin:4px 0 0}
+      .upgrade-weapon-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+      .upgrade-weapon-list button,.upgrade-weapon-chip{display:flex;align-items:center;gap:8px;
+        padding:10px 14px;border:1px solid var(--dt-line);border-radius:var(--dt-radius-sm);
+        background:rgba(255,255,255,.04);color:var(--dt-text);cursor:pointer;
+        font-family:var(--dt-font);font-weight:700;font-size:.84rem;transition:all .18s ease}
+      .upgrade-weapon-list button:hover,.upgrade-weapon-chip:hover{border-color:var(--dt-line-hi);
+        background:rgba(53,231,255,.08);transform:translateY(-1px)}
+      .upgrade-weapon-chip-icon{font-family:var(--dt-font-mono);font-size:.72rem;
+        width:22px;height:22px;display:grid;place-items:center;border-radius:7px;
+        background:rgba(53,231,255,.12);color:var(--dt-cyan)}
+      .upgrade-details{margin-bottom:20px}
+      .upgrade-weapon-name{font-family:var(--dt-font-display);font-size:1.1rem;font-weight:800;margin-bottom:14px;
+        color:var(--dt-cyan)}
+      .upgrade-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+      .upgrade-card{border:1px solid var(--dt-line);border-radius:var(--dt-radius-sm);
+        background:rgba(0,0,0,.2);padding:14px;transition:all .18s ease}
+      .upgrade-card:hover{border-color:var(--dt-line-hi)}
+      .upgrade-card.is-maxed{opacity:.5;border-color:rgba(93,255,150,.2)}
+      .upgrade-card.is-locked{opacity:.45}
+      .upgrade-card-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+      .upgrade-card-icon{font-size:1.1rem}
+      .upgrade-card-name{font-weight:800;font-size:.84rem}
+      .upgrade-card-tier{font-family:var(--dt-font-mono);font-size:.68rem;color:var(--dt-muted);margin-bottom:6px}
+      .upgrade-card-effect{font-size:.76rem;color:var(--dt-dim);margin-bottom:10px;line-height:1.5}
+      .upgrade-card-cost{font-family:var(--dt-font-mono);font-size:.7rem;color:var(--dt-orange);margin-bottom:10px}
+      .upgrade-card-btn,.upgrade-card button{padding:7px 14px;border:1px solid var(--dt-cyan);
+        border-radius:10px;background:rgba(53,231,255,.1);color:var(--dt-cyan);
+        font-family:var(--dt-font);font-weight:800;font-size:.78rem;cursor:pointer;transition:all .18s ease}
+      .upgrade-card-btn:hover,.upgrade-card button:hover{background:rgba(53,231,255,.2)}
+      .upgrade-card-btn:disabled,.upgrade-card button:disabled{opacity:.3;cursor:not-allowed}
+      .upgrade-close-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;
+        border:1px solid var(--dt-line);border-radius:14px;background:rgba(255,255,255,.05);
+        color:var(--dt-text);font-family:var(--dt-font);font-weight:800;font-size:.88rem;
+        cursor:pointer;transition:all .18s ease}
+      .upgrade-close-btn:hover{border-color:var(--dt-line-hi);background:rgba(255,255,255,.08)}
+
+      /* ──── KEYFRAME ANIMATIONS ──── */
+      @keyframes hud-glow{0%,100%{box-shadow:0 12px 40px rgba(0,0,0,.35)}50%{box-shadow:0 12px 40px rgba(0,0,0,.35),0 0 20px rgba(53,231,255,.06)}}
+
+      /* ──── RESPONSIVE ──── */
+      @media(max-width:720px){
+        #menu-overlay .menu-card{padding:20px;margin:12px}
+        .menu-controls{grid-template-columns:1fr}
+        .map-grid{grid-template-columns:repeat(2,1fr)}
+        #hud-left,#hud-right{min-width:auto;padding:12px}
+        #hud-left{left:8px;top:8px}
+        #hud-right{right:8px;top:8px}
+        .upgrade-bench-card{padding:18px}
+        .upgrade-grid{grid-template-columns:1fr}
+      }
+    </style>
   </body>
 </html>

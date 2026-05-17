@@ -101,5 +101,5 @@
     if (currentRatio) applyRatio(currentRatio);
   }, { passive: true });
 
-  console.log('[performance] DeadTakeover quality mode:', requested);
+  console.log('[performance] DeadTakeover v10 quality mode:', requested, '| caps:', JSON.stringify(caps));
 })();
