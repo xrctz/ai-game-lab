@@ -25,7 +25,7 @@
   function create(){
     var count = Math.min(30, Math.max(14, Math.round(innerWidth / 55)));
     particles = Array.from({ length: count }, function(){
-      return { x: Math.random()*w, y: Math.random()*h, vx:(Math.random()-.5)*.18, vy:(Math.random()-.5)*.18, r:Math.random()*1.4+.45, o:Math.random()*.13+.08 };
+      return { x: Math.random()*w, y: Math.random()*h, vx:(Math.random()-.5)*.22, vy:(Math.random()-.5)*.22, r:Math.random()*1.8+.5, o:Math.random()*.18+.1 };
     });
   }
   var last = 0;
@@ -36,7 +36,7 @@
     for (var i=0;i<particles.length;i++){
       var p = particles[i]; p.x += p.vx*dt; p.y += p.vy*dt;
       if (p.x < -8) p.x = w + 8; if (p.x > w + 8) p.x = -8; if (p.y < -8) p.y = h + 8; if (p.y > h + 8) p.y = -8;
-      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fillStyle = 'rgba(53,231,255,' + p.o + ')'; ctx.fill();
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fillStyle = 'rgba(255,110,180,' + p.o + ')'; ctx.fill();
     }
     raf = requestAnimationFrame(draw);
   }
@@ -486,8 +486,8 @@ function showToast(msg, duration){
 })();
 
 (function initV9PageBadges(){
-  document.documentElement.dataset.build = 'v11';
-  window.__aiGameLabBuild = { version:'v11', zombieBundle:'index-labplus-v9.js', updated:'pointer-lock overhaul' };
+  document.documentElement.dataset.build = 'v12-kawaii';
+  window.__aiGameLabBuild = { version:'v12-kawaii', zombieBundle:'index-labplus-v9.js', updated:'kawaii pink anime visual overhaul' };
 })();
 
 (function initHeroVideo() {
