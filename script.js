@@ -1,7 +1,7 @@
 /* ================================================================
    AI Game Lab v12-kawaii — site interactions, launcher, and safe game player
    ================================================================ */
-var AIGL_ASSET_BUILD = '16-kawaii';
+var AIGL_ASSET_BUILD = '17-anime';
 var AIGL_STYLE_HREF = '/ai-game-lab/styles.css?v=' + AIGL_ASSET_BUILD;
 
 (function initThemeGuard(){
@@ -334,7 +334,7 @@ function showToast(msg, duration){
     iframe.addEventListener('load', function(){
       if (playerLoader) playerLoader.classList.remove('visible');
       if (playerEmpty) playerEmpty.style.display = 'none';
-      currentGame = game; setStatus(true, game); showToast((GAME_NAMES[game] || game) + ' loaded');
+      currentGame = game; setStatus(true, game); document.body.classList.add('player-active'); showToast((GAME_NAMES[game] || game) + ' loaded');
       try { iframe.focus(); } catch(e) {}
       showPlayerOverlay(game);
     });
@@ -347,7 +347,7 @@ function showToast(msg, duration){
     playerScreen.appendChild(iframe);
   }
   function closeGame(){
-    clearIframe(); currentGame = null; setStatus(false, null);
+    clearIframe(); currentGame = null; setStatus(false, null); document.body.classList.remove('player-active');
     if (playerEmpty) playerEmpty.style.display = '';
     if (window.__particleResume) window.__particleResume();
     showToast('Player closed');
@@ -556,8 +556,8 @@ function showToast(msg, duration){
 })();
 
 (function initV9PageBadges(){
-  document.documentElement.dataset.build = 'v16-kawaii';
-  window.__aiGameLabBuild = { version:'v16-kawaii', assets:AIGL_ASSET_BUILD, zombieBundle:'index-labplus-v9.js', updated:'kawaii pink anime visual overhaul' };
+  document.documentElement.dataset.build = 'v17-anime';
+  window.__aiGameLabBuild = { version:'v17-anime', assets:AIGL_ASSET_BUILD, zombieBundle:'index-labplus-v9.js', updated:'anime mascot characters added' };
 })();
 
 (function initHeroVideo() {
@@ -589,4 +589,24 @@ function showToast(msg, duration){
   tryPlay();
   if (mq.addEventListener) mq.addEventListener('change', tryPlay);
   else if (mq.addListener) mq.addListener(tryPlay);
+})();
+
+/* v17-anime-mascots: One-time mascot greeting bubble */
+(function initMascotGreeting(){
+  var bubble = document.getElementById('mascotBubble');
+  if (!bubble) return;
+  var KEY = 'aigl_met_mimo';
+  if (localStorage.getItem(KEY)) return;
+  /* Show the bubble after a short delay */
+  setTimeout(function(){
+    bubble.classList.remove('hidden');
+    localStorage.setItem(KEY, '1');
+    /* Auto-hide after 6 seconds */
+    setTimeout(function(){ bubble.classList.add('hidden'); }, 6000);
+  }, 1200);
+  /* Also hide on click anywhere */
+  document.addEventListener('click', function hideBubble(){
+    bubble.classList.add('hidden');
+    document.removeEventListener('click', hideBubble);
+  }, { once: true });
 })();

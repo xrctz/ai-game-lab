@@ -10,17 +10,24 @@
       <stop offset="1" stop-color="#ff6eb4"/>
     </linearGradient>
   </defs>
+  <!-- Background -->
   <rect width="32" height="32" rx="8" fill="#1a0a14"/>
   <rect x="0.8" y="0.8" width="30.4" height="30.4" rx="7.2" stroke="url(#avr)" stroke-width="1" fill="none"/>
+  <!-- Face -->
   <ellipse cx="16" cy="18" rx="9" ry="10" fill="#ffe0f0"/>
+  <!-- Eyes -->
   <ellipse cx="13" cy="17" rx="2" ry="2.5" fill="#2a1228"/>
   <ellipse cx="19" cy="17" rx="2" ry="2.5" fill="#2a1228"/>
   <circle cx="13.7" cy="16.3" r="0.9" fill="#fff"/>
   <circle cx="19.7" cy="16.3" r="0.9" fill="#fff"/>
+  <!-- Blush -->
   <ellipse cx="10.5" cy="19.5" rx="2.2" ry="1.2" fill="#ff9ed2" opacity="0.5"/>
   <ellipse cx="21.5" cy="19.5" rx="2.2" ry="1.2" fill="#ff9ed2" opacity="0.5"/>
+  <!-- Smile -->
   <path d="M14 22c1 1.5 4 1.5 5 0" stroke="#d4508a" stroke-width="0.8" stroke-linecap="round" fill="none"/>
+  <!-- Hair -->
   <path d="M7 16c1-8 4-13 9-14s8 1 9 5c1 2 1 5 0 7l-2 3c-1.5 2-4 3-7 3h-4c-3 0-5-1-6.5-3z" fill="url(#avh)"/>
+  <!-- Sakura clip -->
   <circle cx="23" cy="9" r="2.5" fill="#ff6eb4"/>
   <circle cx="23" cy="9" r="1.5" fill="#ffb7d5"/>
   <circle cx="23" cy="9" r="0.6" fill="#fff" opacity="0.6"/>

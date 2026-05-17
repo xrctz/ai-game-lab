@@ -3,9 +3,9 @@
  * Hub HTML/CSS/JS: network-only (never serve stale blue shell).
  * Game assets: cache-first with background refresh.
  */
-const BUILD = '16-kawaii';
-const CACHE_HUB = 'ai-game-lab-hub-v15-kawaii';
-const CACHE_GAMES = 'ai-game-lab-games-v15-kawaii';
+const BUILD = '17-anime';
+const CACHE_HUB = 'ai-game-lab-hub-v17-anime';
+const CACHE_GAMES = 'ai-game-lab-games-v17-anime';
 const HUB_STYLE = '/ai-game-lab/styles.css?v=' + BUILD;
 const HUB_SCRIPT = '/ai-game-lab/script.js?v=' + BUILD;
 

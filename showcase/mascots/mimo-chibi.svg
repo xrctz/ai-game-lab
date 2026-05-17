@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 280" fill="none">
+  <defs>
+    <linearGradient id="ch" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0%" stop-color="#ffccee"/>
+      <stop offset="50%" stop-color="#ff9ed2"/>
+      <stop offset="100%" stop-color="#ff6eb4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Body (hoodie) -->
+  <path d="M100 170c-15 5-30 25-30 55v35c0 12 10 20 22 20h116c12 0 22-8 22-20v-35c0-30-15-50-30-55l-20-5h-60z" fill="#2a1228"/>
+  <text x="140" y="220" text-anchor="middle" font-family="M PLUS Rounded 1c,sans-serif" font-size="28" font-weight="900" fill="#ff6eb4" opacity="0.7">A+</text>
+
+  <!-- Face -->
+  <ellipse cx="140" cy="115" rx="55" ry="60" fill="#ffe0f0"/>
+
+  <!-- Blush -->
+  <ellipse cx="108" cy="128" rx="12" ry="7" fill="#ff9ed2" opacity="0.4"/>
+  <ellipse cx="172" cy="128" rx="12" ry="7" fill="#ff9ed2" opacity="0.4"/>
+
+  <!-- Eyes (big chibi eyes) -->
+  <ellipse cx="122" cy="110" rx="12" ry="15" fill="#2a1228"/>
+  <ellipse cx="158" cy="110" rx="12" ry="15" fill="#2a1228"/>
+  <ellipse cx="126" cy="104" rx="5" ry="7" fill="#fff"/>
+  <ellipse cx="162" cy="104" rx="5" ry="7" fill="#fff"/>
+  <ellipse cx="120" cy="114" rx="3" ry="4" fill="#fff" opacity="0.5"/>
+  <ellipse cx="156" cy="114" rx="3" ry="4" fill="#fff" opacity="0.5"/>
+
+  <!-- Wink mouth -->
+  <path d="M132 138c4 6 12 6 16 0" stroke="#d4508a" stroke-width="2" stroke-linecap="round" fill="none"/>
+
+  <!-- Hair -->
+  <path d="M80 105c5-55 25-90 60-100s60-5 75 15c10 12 15 30 15 50l-15 30c-10 15-25 20-45 20h-50c-20 0-30-5-40-10z" fill="url(#ch)"/>
+  <!-- Side strands -->
+  <path d="M82 110c-10 25-15 60-10 90" stroke="url(#ch)" stroke-width="14" stroke-linecap="round" fill="none"/>
+  <path d="M198 110c10 25 15 60 10 90" stroke="url(#ch)" stroke-width="14" stroke-linecap="round" fill="none"/>
+
+  <!-- Sakura clip -->
+  <g transform="translate(190,70) scale(0.6)">
+    <circle cx="0" cy="0" r="12" fill="#ff6eb4"/>
+    <circle cx="0" cy="0" r="7" fill="#ffb7d5"/>
+    <circle cx="0" cy="0" r="3" fill="#fff" opacity="0.6"/>
+  </g>
+
+  <!-- Sparkles -->
+  <g fill="#ffb7d5" opacity="0.6">
+    <path d="M40 60l2 4 4 2-4 2-2 4-2-4-4-2 4-2z"/>
+    <path d="M240 50l1.5 3 3 1.5-3 1.5-1.5 3-1.5-3-3-1.5 3-1.5z"/>
+  </g>
+</svg>

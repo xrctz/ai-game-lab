@@ -246,3 +246,145 @@ body::selection{background:rgba(255,110,180,.32)}
 .install-toast{
   border-color:rgba(255,110,180,.15)
 }
+
+
+/* ================================================================
+   v17-anime-mascots — Anime mascot character styles
+   ================================================================ */
+
+/* Hero mascot (Mimo) — replaces/overlaps hero-visual */
+.hero-mascot{
+  position:relative;display:flex;align-items:center;justify-content:center;
+  width:100%;max-width:420px;aspect-ratio:1/1;margin:0 auto;
+  animation:mascot-float 4s ease-in-out infinite;
+  filter:drop-shadow(0 12px 40px rgba(255,110,180,.35));
+  z-index:2
+}
+.hero-mascot img{
+  width:100%;height:100%;object-fit:contain;
+  border-radius:var(--radius)
+}
+
+@keyframes mascot-float{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-12px)}
+}
+@media(prefers-reduced-motion:reduce){
+  .hero-mascot{animation:none!important}
+}
+
+/* Mascot speech bubble */
+.mascot-bubble{
+  position:absolute;bottom:12%;left:50%;transform:translateX(-50%);
+  background:var(--panel);border:1px solid var(--line);border-radius:18px;
+  padding:12px 18px;font-family:var(--font-body);font-size:.88rem;
+  color:var(--text);white-space:nowrap;pointer-events:none;
+  box-shadow:0 8px 30px rgba(255,110,180,.2);
+  animation:bubble-in .4s cubic-bezier(.34,1.56,.64,1) both;
+  z-index:10
+}
+.mascot-bubble::after{
+  content:"";position:absolute;top:-8px;left:50%;transform:translateX(-50%);
+  border-left:8px solid transparent;border-right:8px solid transparent;
+  border-bottom:8px solid var(--line)
+}
+.mascot-bubble.hidden{display:none}
+
+@keyframes bubble-in{
+  0%{opacity:0;transform:translateX(-50%) translateY(10px) scale(.9)}
+  100%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+}
+
+/* Page mascot (peek from corner) — Showcase, Updates */
+.page-mascot{
+  position:absolute;right:-20px;bottom:-10px;
+  width:180px;height:auto;pointer-events:none;z-index:2;
+  opacity:.85;
+  filter:drop-shadow(0 8px 24px rgba(255,110,180,.25));
+  animation:mascot-float 5s ease-in-out infinite
+}
+.page-mascot img{
+  width:100%;height:auto;object-fit:contain
+}
+@media(prefers-reduced-motion:reduce){
+  .page-mascot{animation:none!important}
+}
+
+/* Compact page hero needs position relative for mascot peek */
+.page-hero.compact{position:relative;overflow:visible}
+
+/* Boot panel Nova chibi */
+.boot-mascot{
+  display:flex;align-items:center;justify-content:center;
+  padding:12px 0 0;margin-top:12px;
+  border-top:1px solid var(--line);
+  pointer-events:none
+}
+.boot-mascot img{
+  width:100px;height:auto;object-fit:contain;
+  filter:drop-shadow(0 6px 18px rgba(255,110,180,.2));
+  animation:mascot-float 4.5s ease-in-out infinite
+}
+@media(prefers-reduced-motion:reduce){
+  .boot-mascot img{animation:none!important}
+}
+
+/* Story watermark mascots */
+.story-watermark{
+  position:absolute;right:20px;bottom:20px;
+  width:200px;height:auto;opacity:.08;pointer-events:none;z-index:0;
+  filter:drop-shadow(0 4px 16px rgba(255,110,180,.15))
+}
+.story-watermark img{width:100%;height:auto;object-fit:contain}
+.article-block{position:relative}
+
+/* Card mascot badge (small icon next to eyebrow) */
+.card-mascot-badge{
+  display:inline-flex;align-items:center;gap:6px;vertical-align:middle
+}
+.card-mascot-badge img{
+  width:24px;height:24px;border-radius:50%;
+  object-fit:cover;vertical-align:middle;
+  box-shadow:0 0 8px rgba(255,110,180,.3)
+}
+
+/* 404 mascot */
+.error-mascot{
+  display:flex;justify-content:center;margin:18px auto 0;
+  width:160px;height:auto;
+  filter:drop-shadow(0 8px 24px rgba(255,110,180,.25));
+  animation:mascot-float 4s ease-in-out infinite
+}
+@media(prefers-reduced-motion:reduce){
+  .error-mascot{animation:none!important}
+}
+
+/* Player active — hide mascots during gameplay */
+body.player-active .hero-mascot,
+body.player-active .page-mascot,
+body.player-active .boot-mascot,
+body.player-active .error-mascot{
+  opacity:0;pointer-events:none;transition:opacity .3s ease
+}
+
+/* Light mode mascot adjustments */
+:root[data-theme="light"] .hero-mascot{
+  filter:drop-shadow(0 12px 40px rgba(200,80,140,.25))
+}
+:root[data-theme="light"] .page-mascot{
+  filter:drop-shadow(0 8px 24px rgba(200,80,140,.18))
+}
+
+/* Mobile: hide page mascot and shrink hero mascot */
+@media(max-width:980px){
+  .hero-mascot{max-width:320px}
+  .page-mascot{width:120px;right:-10px;opacity:.6}
+}
+@media(max-width:720px){
+  .page-mascot{display:none}
+  .hero-mascot{max-width:260px}
+  .boot-mascot img{width:70px}
+  .error-mascot{width:120px}
+  .story-watermark{display:none}
+  .mascot-bubble{font-size:.78rem;padding:8px 14px;white-space:normal;max-width:260px;text-align:center}
+}
