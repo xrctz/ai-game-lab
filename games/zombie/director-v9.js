@@ -128,7 +128,7 @@
       '#dt-v9-director .dt-btn.dt-btn-warn:hover{background:rgba(255,184,108,.12);color:#ffb86c}',
 
       '#dt-v9-director .dt-v9-mini #dt-v9-body{display:none}',
-      '.dt-v9-photo #hud,.dt-v9-photo #crosshair,.dt-v9-photo #dt-lab-panel,.dt-v9-photo #dt-v9-director,.dt-v9-photo .kill-feed{opacity:.03!important}',
+      '.dt-v9-photo #hud,.dt-v9-photo #crosshair,.dt-v9-photo #dt-lab-panel,.dt-v9-photo #dt-v9-director,.dt-v9-photo .kill-feed,.dt-v9-photo #weapon-info,.dt-v9-photo #wave-announce,.dt-v9-photo #kill-streak-banner,.dt-v9-photo #dt-fx-damage-overlay{opacity:.03!important}',
       '.dt-v9-compact #hud-left,.dt-v9-compact #hud-right{transform:scale(.84);transform-origin:top left}',
       '.dt-v9-compact #hud-right{transform-origin:top right}',
 
@@ -289,6 +289,7 @@
   function update(){
     var perf = window.__zombiePerfSnapshot ? window.__zombiePerfSnapshot() : null;
     var stream = window.__zombieGetStreamingStats ? window.__zombieGetStreamingStats() : null;
+    var fx = window.__dtVisualEffects || null;
     var world = text('world-stats') || 'Menu';
     var stats = text('stats-meta') || 'Waiting for run';
     var extra = text('extra-meta') || 'No resources yet';
@@ -302,6 +303,12 @@
     var streamText = stream ? ('pending ' + (stream.pending || 0) + ' · built ' + (stream.built || 0)) : 'standby';
     if(fps) streamText += ' · ' + fps + ' fps';
 
+    // Session info from visual effects engine
+    var sessionTime = fx && fx.getSessionTime ? fx.getSessionTime() : '';
+    var sessionKills = fx && fx.getTotalKills ? fx.getTotalKills() : 0;
+    if(sessionTime) streamText += ' · ' + sessionTime;
+    if(sessionKills > 0) streamText += ' · ' + sessionKills + ' total';
+
     // Render scale
     var scaleText = perf && perf.ratio ? (perf.ratio.toFixed ? perf.ratio.toFixed(2) : perf.ratio) : '--';
 
@@ -313,7 +320,11 @@
     if(ex) ex.textContent = extra.replace(/\s*\|\s*/g, ' · ');
     if(sr) sr.textContent = streamText;
     if(tip) tip.textContent = tips[tipIndex % tips.length];
-    if(pl) pl.textContent = fps ? (fps + ' fps · scale ' + scaleText) : '-- fps';
+    if(pl){
+      var perfText = fps ? (fps + ' fps · scale ' + scaleText) : '-- fps';
+      if(sessionTime) perfText += ' · ' + sessionTime;
+      pl.textContent = perfText;
+    }
 
     drawFpsGraph();
   }

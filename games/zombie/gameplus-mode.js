@@ -263,8 +263,13 @@
     console.log('[DeadTakeover Lab+]', { perf: perf, streaming: stream });
   }
 
+  function getKillFeed(){
+    var feeds = document.querySelectorAll('#kill-feed');
+    return feeds.length ? feeds[feeds.length - 1] : null;
+  }
+
   function addKillFeedItem(icon, name, detail){
-    var feed = $('kill-feed');
+    var feed = getKillFeed();
     if(!feed) return;
     var item = document.createElement('div');
     item.className = 'kill-feed-item kf-show';

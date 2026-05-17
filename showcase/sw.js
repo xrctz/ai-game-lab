@@ -1,10 +1,10 @@
 /**
- * AI Game Lab v9 — Service Worker
+ * AI Game Lab v10 — Service Worker
  * HTML uses network-first so GitHub Pages updates show quickly.
  * Static assets use cache-first with background refresh.
  */
-const CACHE_HUB = 'ai-game-lab-hub-v9-systems';
-const CACHE_GAMES = 'ai-game-lab-games-v9-systems';
+const CACHE_HUB = 'ai-game-lab-hub-v10-fx';
+const CACHE_GAMES = 'ai-game-lab-games-v10-fx';
 const HUB_SHELL = [
   '/ai-game-lab/',
   '/ai-game-lab/index.html',
