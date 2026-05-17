@@ -1,15 +1,18 @@
 /**
- * AI Game Lab v13-kawaii — Service Worker
- * HTML + hub CSS/JS: network-first (fresh theme after deploy).
+ * AI Game Lab v14-kawaii — Service Worker
+ * Hub HTML/CSS/JS: network-only (no stale blue theme from cache).
  * Game assets: cache-first with background refresh.
  */
-const CACHE_HUB = 'ai-game-lab-hub-v13-kawaii';
-const CACHE_GAMES = 'ai-game-lab-games-v13-kawaii';
+const BUILD = '15-kawaii';
+const CACHE_HUB = 'ai-game-lab-hub-v14-kawaii';
+const CACHE_GAMES = 'ai-game-lab-games-v14-kawaii';
+const HUB_STYLE = '/ai-game-lab/styles.css?v=' + BUILD;
+const HUB_SCRIPT = '/ai-game-lab/script.js?v=' + BUILD;
 const HUB_SHELL = [
   '/ai-game-lab/',
   '/ai-game-lab/index.html',
-  '/ai-game-lab/styles.css?v=14-kawaii',
-  '/ai-game-lab/script.js?v=14-kawaii',
+  HUB_STYLE,
+  HUB_SCRIPT,
   '/ai-game-lab/manifest.json',
   '/ai-game-lab/showcase/',
   '/ai-game-lab/showcase/index.html',
@@ -28,15 +31,43 @@ function isHubAsset(url) {
   return /\/styles\.css$/.test(url.pathname) || /\/script\.js$/.test(url.pathname);
 }
 
-function networkFirst(request, cacheName) {
-  return fetch(request).then(function (response) {
+function isHubDocument(url, request) {
+  return request.destination === 'document' || url.pathname.endsWith('/');
+}
+
+function networkOnly(request) {
+  return fetch(request, { cache: 'no-store' });
+}
+
+function networkFirstDoc(request) {
+  return fetch(request, { cache: 'no-store' }).then(function (response) {
     if (response && response.ok) {
       var copy = response.clone();
-      caches.open(cacheName).then(function (cache) { cache.put(request, copy); });
+      caches.open(CACHE_HUB).then(function (cache) { cache.put(request, copy); });
     }
     return response;
   }).catch(function () {
     return caches.match(request);
+  });
+}
+
+function purgeLegacyHubEntries() {
+  return caches.keys().then(function (keys) {
+    return Promise.all(keys.map(function (key) {
+      if (key.indexOf('ai-game-lab') !== 0) return Promise.resolve();
+      return caches.open(key).then(function (cache) {
+        return cache.keys().then(function (requests) {
+          return Promise.all(requests.map(function (req) {
+            var path = new URL(req.url).pathname;
+            if (/\/styles\.css$/.test(path) || /\/script\.js$/.test(path)) {
+              var q = new URL(req.url).search;
+              if (q.indexOf(BUILD) === -1) return cache.delete(req);
+            }
+            return Promise.resolve();
+          }));
+        });
+      });
+    }));
   });
 }
 
@@ -55,7 +86,7 @@ self.addEventListener('activate', function (e) {
         keys.filter(function (k) { return k !== CACHE_HUB && k !== CACHE_GAMES; })
           .map(function (k) { return caches.delete(k); })
       );
-    }).then(function () { return self.clients.claim(); })
+    }).then(purgeLegacyHubEntries).then(function () { return self.clients.claim(); })
   );
 });
 
@@ -68,13 +99,13 @@ self.addEventListener('fetch', function (e) {
   var url = new URL(e.request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (e.request.destination === 'document' || url.pathname.endsWith('/')) {
-    e.respondWith(networkFirst(e.request, CACHE_HUB));
+  if (isHubDocument(url, e.request)) {
+    e.respondWith(networkFirstDoc(e.request));
     return;
   }
 
   if (isHubAsset(url)) {
-    e.respondWith(networkFirst(e.request, CACHE_HUB));
+    e.respondWith(networkOnly(e.request));
     return;
   }
 

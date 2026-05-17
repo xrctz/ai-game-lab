@@ -1,6 +1,47 @@
 /* ================================================================
-   AI Game Lab v11 — site interactions, launcher, and safe game player
+   AI Game Lab v12-kawaii — site interactions, launcher, and safe game player
    ================================================================ */
+var AIGL_ASSET_BUILD = '15-kawaii';
+var AIGL_STYLE_HREF = '/ai-game-lab/styles.css?v=' + AIGL_ASSET_BUILD;
+
+(function initThemeGuard(){
+  function normColor(v){
+    return (v || '').trim().toLowerCase().replace(/\s+/g, '');
+  }
+  function isKawaiiTheme(){
+    var bg = normColor(getComputedStyle(document.documentElement).getPropertyValue('--bg'));
+    return bg === '#1a0a14' || bg === '#fff0f6' || bg === 'rgb(26,10,20)' || bg === 'rgb(255,240,246)';
+  }
+  function sheetNeedsFix(link){
+    if (!link) return true;
+    return link.href.indexOf('v=' + AIGL_ASSET_BUILD) === -1;
+  }
+  function applyStylesheet(force){
+    var link = document.querySelector('link[rel="stylesheet"][href*="styles.css"]');
+    if (sheetNeedsFix(link)) {
+      if (link) link.remove();
+      link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = AIGL_STYLE_HREF;
+      document.head.appendChild(link);
+      return;
+    }
+    if (force || !isKawaiiTheme()) {
+      link.href = AIGL_STYLE_HREF + '&_=' + Date.now();
+    }
+  }
+  function guard(force){
+    applyStylesheet(!!force);
+    if (!isKawaiiTheme()) applyStylesheet(true);
+  }
+  window.addEventListener('pageshow', function(e){ if (e.persisted) guard(true); });
+  window.addEventListener('popstate', function(){ guard(false); });
+  document.addEventListener('visibilitychange', function(){
+    if (!document.hidden) guard(false);
+  });
+  guard(false);
+})();
+
 (function cursorSpotlight(){
   document.addEventListener('mousemove', function(e){
     document.body.style.setProperty('--cx', ((e.clientX / innerWidth) * 100).toFixed(2) + '%');
@@ -16,7 +57,7 @@
     reloaded = true;
     location.reload();
   });
-  navigator.serviceWorker.register('/ai-game-lab/showcase/sw.js', { scope: '/ai-game-lab/', updateViaCache: 'none' })
+  navigator.serviceWorker.register('/ai-game-lab/showcase/sw.js?v=' + AIGL_ASSET_BUILD, { scope: '/ai-game-lab/', updateViaCache: 'none' })
     .then(function(reg){
       reg.update();
       if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -469,9 +510,18 @@ function showToast(msg, duration){
   var clearBtn = document.getElementById('btnClearGameCache');
   if (clearBtn) clearBtn.addEventListener('click', function(){
     if (!('caches' in window)) { showToast('Browser cache API unavailable'); return; }
-    caches.keys().then(function(keys){
+    var jobs = [caches.keys().then(function(keys){
       return Promise.all(keys.filter(function(k){ return k.indexOf('ai-game-lab') !== -1; }).map(function(k){ return caches.delete(k); }));
-    }).then(function(){ showToast('Site cache refreshed. Reloading…'); setTimeout(function(){ location.reload(); }, 650); });
+    })];
+    if ('serviceWorker' in navigator) {
+      jobs.push(navigator.serviceWorker.getRegistrations().then(function(regs){
+        return Promise.all(regs.map(function(r){ return r.unregister(); }));
+      }));
+    }
+    Promise.all(jobs).then(function(){
+      showToast('Site cache cleared. Reloading…');
+      setTimeout(function(){ location.href = location.pathname + '?_=' + Date.now(); }, 650);
+    });
   });
   var checks = [
     ['zombie','/ai-game-lab/games/zombie/index.html','Zombie'],
@@ -506,8 +556,8 @@ function showToast(msg, duration){
 })();
 
 (function initV9PageBadges(){
-  document.documentElement.dataset.build = 'v12-kawaii';
-  window.__aiGameLabBuild = { version:'v12-kawaii', zombieBundle:'index-labplus-v9.js', updated:'kawaii pink anime visual overhaul' };
+  document.documentElement.dataset.build = 'v15-kawaii';
+  window.__aiGameLabBuild = { version:'v15-kawaii', assets:AIGL_ASSET_BUILD, zombieBundle:'index-labplus-v9.js', updated:'kawaii pink anime visual overhaul' };
 })();
 
 (function initHeroVideo() {
