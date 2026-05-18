@@ -1,6 +1,6 @@
 /**
- * AI Game Lab v15-kawaii — Service Worker
- * Hub HTML/CSS/JS: network-only (never serve stale blue shell).
+ * AI Game Lab v17-anime — Service Worker
+ * Hub HTML/CSS/JS: network-only (never serve stale hub shell).
  * Game assets: cache-first with background refresh.
  */
 const BUILD = '17-anime';

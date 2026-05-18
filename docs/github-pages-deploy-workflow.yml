@@ -1,0 +1,60 @@
+name: Deploy GitHub Pages from repository
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Pages must match what is on main (hub, games/, play/, etc.). An old workflow
+      # only unpacked website.zip, so paths like /play/ never updated when you pushed files.
+      - name: Assemble site for Pages
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          mkdir -p _site
+          cp -a index.html styles.css script.js mindcraft-info.html manifest.json 404.html favicon.svg _site/
+          for d in games play showcase story; do
+            if [ -d "$d" ]; then
+              cp -a "$d" _site/
+            fi
+          done
+          test -f _site/index.html
+          test -f _site/games/voxel/index.html
+          test -f _site/games/zombie/index.html
+          test -f _site/play/index.html
+          test -f _site/mindcraft-info.html
+          test -f _site/manifest.json
+          test -f _site/404.html
+          test -f _site/favicon.svg
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

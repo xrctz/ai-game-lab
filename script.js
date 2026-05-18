@@ -1,5 +1,5 @@
 /* ================================================================
-   AI Game Lab v12-kawaii — site interactions, launcher, and safe game player
+   AI Game Lab v17-anime — site interactions, launcher, and safe game player
    ================================================================ */
 var AIGL_ASSET_BUILD = '17-anime';
 var AIGL_STYLE_HREF = '/ai-game-lab/styles.css?v=' + AIGL_ASSET_BUILD;

@@ -1,5 +1,5 @@
 /* ================================================================
-   AI Game Lab v12-kawaii — Kawaii Pink Anime Visual Overhaul
+   AI Game Lab v17-anime — Kawaii Pink Anime Visual Overhaul
    ================================================================ */
 :root{
   --bg:#1a0a14; --bg-2:#2a1228; --panel:rgba(42,18,40,.78); --panel-2:rgba(55,25,50,.72);
@@ -64,7 +64,7 @@ main{position:relative;z-index:2}.hero-shell,.page-hero,.section-block,.lab-stri
 
 
 /* ================================================================
-   Kawaii Pink Anime — v12-kawaii additions
+   Kawaii Pink Anime — v17-anime additions
    ================================================================ */
 
 /* Bouncy card hover */
@@ -359,11 +359,23 @@ body::selection{background:rgba(255,110,180,.32)}
   .error-mascot{animation:none!important}
 }
 
+/* Card mascot corner accent (Pixel on CraftVerse card) */
+.card-mascot-corner{
+  position:absolute;bottom:8px;right:8px;width:72px;height:72px;
+  pointer-events:none;z-index:3;opacity:.82;
+  filter:drop-shadow(0 4px 12px rgba(255,110,180,.3));
+  animation:mascot-float 5s ease-in-out infinite
+}
+@media(prefers-reduced-motion:reduce){
+  .card-mascot-corner{animation:none!important}
+}
+
 /* Player active — hide mascots during gameplay */
 body.player-active .hero-mascot,
 body.player-active .page-mascot,
 body.player-active .boot-mascot,
-body.player-active .error-mascot{
+body.player-active .error-mascot,
+body.player-active .card-mascot-corner{
   opacity:0;pointer-events:none;transition:opacity .3s ease
 }
 

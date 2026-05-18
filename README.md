@@ -65,14 +65,20 @@ Open **http://127.0.0.1:8080/** (or the URL printed by `serve.sh`).
 ```text
 ai-game-lab/
 ├── index.html          # Landing page
+├── 404.html            # Custom 404 page (deployed via workflow)
+├── manifest.json       # PWA manifest (deployed via workflow)
+├── favicon.svg         # Root favicon (deployed via workflow)
 ├── play/               # Game player shell
 ├── showcase/           # Project catalog & previews
+│   └── mascots/        # Anime mascot SVGs (Mimo, Nova, Pixel)
 ├── story/              # Project narrative
 ├── games/              # Built game bundles (zombie, voxel, deadzone, …)
 ├── styles.css          # Hub design system
 ├── script.js           # Theme, player, command palette
 └── docs/               # Internal change logs & dev notes
 ```
+
+> **Note:** `manifest.json`, `404.html`, and `favicon.svg` should be copied into `_site/` by the GitHub Actions workflow (see [`docs/github-pages-deploy-workflow.yml`](docs/github-pages-deploy-workflow.yml) for the full intended workflow). If your Git credential is a classic PAT without the **`workflow`** scope, GitHub rejects pushes that change `.github/workflows/` — apply that YAML via the repository website (Edit → paste → commit) or regenerate a PAT with `workflow` enabled. Cursor Simple Browser may not fully match Chrome for service worker behaviour and preview rendering.
 
 Game source for **DeadTakeover** lives in a separate repository: [xrctz/DeadTakeover](https://github.com/xrctz/DeadTakeover). Use `sync-games.sh` to copy fresh builds into `games/zombie/` when developing locally.
 
@@ -91,6 +97,7 @@ Pushes to `main` deploy to GitHub Pages via [`.github/workflows/deploy-pages.yml
 
 ## Documentation
 
+- [Intended GitHub Pages deploy workflow](docs/github-pages-deploy-workflow.yml) (copy into `.github/workflows/deploy-pages.yml` when PAT cannot push workflows)
 - [Website revamp notes](docs/WEBSITE_REVAMP_CHANGES.md)
 - [Lab expansion v8](docs/WEBSITE_GAME_EXPANSION_V8.md)
 - [Systems layer v9](docs/WEBSITE_GAME_EXPANSION_V9.md)
