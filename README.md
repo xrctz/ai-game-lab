@@ -65,11 +65,12 @@ Open **http://127.0.0.1:8080/** (or the URL printed by `serve.sh`).
 ```text
 ai-game-lab/
 ├── index.html          # Landing page
-├── 404.html            # Custom 404 page (deployed via workflow)
-├── manifest.json       # PWA manifest (deployed via workflow)
-├── favicon.svg         # Root favicon (deployed via workflow)
+├── 404.html            # Custom 404 (needs workflow copy to _site/ — see docs workflow)
+├── manifest.json       # PWA manifest duplicate (hub uses showcase/manifest.json on Pages)
+├── favicon.svg         # Root favicon (optional once workflow copies it)
 ├── play/               # Game player shell
 ├── showcase/           # Project catalog & previews
+│   ├── manifest.json   # PWA manifest served on GitHub Pages (linked from all hub pages)
 │   └── mascots/        # Anime mascot SVGs (Mimo, Nova, Pixel)
 ├── story/              # Project narrative
 ├── games/              # Built game bundles (zombie, voxel, deadzone, …)
@@ -78,7 +79,7 @@ ai-game-lab/
 └── docs/               # Internal change logs & dev notes
 ```
 
-> **Note:** `manifest.json`, `404.html`, and `favicon.svg` should be copied into `_site/` by the GitHub Actions workflow (see [`docs/github-pages-deploy-workflow.yml`](docs/github-pages-deploy-workflow.yml) for the full intended workflow). If your Git credential is a classic PAT without the **`workflow`** scope, GitHub rejects pushes that change `.github/workflows/` — apply that YAML via the repository website (Edit → paste → commit) or regenerate a PAT with `workflow` enabled. Cursor Simple Browser may not fully match Chrome for service worker behaviour and preview rendering.
+> **Note:** All hub HTML points at **`/ai-game-lab/showcase/manifest.json`** so install prompts work on GitHub Pages without copying the root `manifest.json` into `_site/`. Root `manifest.json` stays in sync for local tooling. To publish root **`404.html`** / **`favicon.svg`** at the site root, update `.github/workflows/deploy-pages.yml` using [`docs/github-pages-deploy-workflow.yml`](docs/github-pages-deploy-workflow.yml) (web UI or a PAT with **`workflow`** scope). Cursor Simple Browser may not fully match Chrome for service worker behaviour and preview rendering.
 
 Game source for **DeadTakeover** lives in a separate repository: [xrctz/DeadTakeover](https://github.com/xrctz/DeadTakeover). Use `sync-games.sh` to copy fresh builds into `games/zombie/` when developing locally.
 

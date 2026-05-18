@@ -1,3 +1,7 @@
+# Intended replacement for .github/workflows/deploy-pages.yml when you cannot push
+# workflow files (classic PAT needs `workflow` scope). Hub pages use
+# /ai-game-lab/showcase/manifest.json so the PWA manifest deploys with showcase/;
+# this workflow still copies root manifest.json, 404.html, and favicon.svg for parity.
 name: Deploy GitHub Pages from repository
 
 on:
