@@ -1,12 +1,21 @@
+/**
+ * Dead Zone entry (modular path). Prefer game-bundle.js on production pages;
+ * this module entry stays available for local ES-module development.
+ */
 async function initGame() {
     try {
         if (!window.THREE) {
             throw new Error('Three.js not loaded');
         }
 
+        const loadingText = document.getElementById('loading-text');
+        if (loadingText) loadingText.textContent = 'MOUNTING SYSTEMS…';
+
         const { Game } = await import('./game/Game.js');
         const game = new Game();
         await game.init();
+        window.__deadZoneGame = game;
+        if (loadingText) loadingText.textContent = 'READY';
     } catch (err) {
         console.error('Game initialization failed:', err);
         const loadingText = document.getElementById('loading-text');
@@ -21,4 +30,7 @@ async function initGame() {
     }
 }
 
-initGame();
+// Only auto-boot if THREE is present and no bundle already claimed the page
+if (!window.__deadZoneBundleBooted) {
+    initGame();
+}
