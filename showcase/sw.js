@@ -1,11 +1,11 @@
 /**
- * AI Game Lab v20-overhaul — Service Worker
+ * AI Game Lab v21-neat — Service Worker
  * Hub HTML/CSS/JS: network-only (never serve stale hub shell).
  * Game assets: cache-first with background refresh.
  */
-const BUILD = '20-overhaul';
-const CACHE_HUB = 'ai-game-lab-hub-v20-overhaul';
-const CACHE_GAMES = 'ai-game-lab-games-v20-overhaul';
+const BUILD = '21-neat';
+const CACHE_HUB = 'ai-game-lab-hub-v21-neat';
+const CACHE_GAMES = 'ai-game-lab-games-v21-neat';
 const HUB_STYLE = '/ai-game-lab/styles.css?v=' + BUILD;
 const HUB_SCRIPT = '/ai-game-lab/script.js?v=' + BUILD;
 
