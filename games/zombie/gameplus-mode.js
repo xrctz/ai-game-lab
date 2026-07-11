@@ -4,7 +4,7 @@
  */
 (function(){
   'use strict';
-  window.__deadTakeoverLabPlus = 'v10';
+  window.__deadTakeoverLabPlus = 'v20';
 
   var killFeedItems = [];
   var MAX_KILL_FEED = 6;

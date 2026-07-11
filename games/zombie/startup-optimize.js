@@ -66,5 +66,13 @@
     };
   }
 
-  console.log('[startup] DeadTakeover v10 boot optimizer active');
+  /* --- 3. Expose boot quality hint for inject layers --- */
+  try {
+    var q = new URLSearchParams(location.search).get('quality') || 'balanced';
+    document.documentElement.dataset.dtQuality = (q === 'low' || q === 'high') ? q : 'balanced';
+  } catch (e) {
+    document.documentElement.dataset.dtQuality = 'balanced';
+  }
+
+  console.log('[startup] DeadTakeover v20 boot optimizer active');
 })();
