@@ -1010,3 +1010,108 @@ body {
     color: #ff4444 !important;
     text-shadow: 0 0 10px rgba(255, 0, 0, 0.6), 0 0 6px rgba(0, 0, 0, 0.9);
 }
+
+/* ================================================================
+   Dead Zone v20 — UI overhaul (hub overhaul pass)
+   ================================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+body {
+  font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+}
+
+.game-title {
+  font-family: 'Outfit', system-ui, sans-serif;
+  letter-spacing: 0.14em;
+  background: linear-gradient(120deg, #ff4d6a, #ff8a65 50%, #ffd166);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 0 28px rgba(255, 77, 106, 0.35));
+}
+
+.game-subtitle {
+  letter-spacing: 0.28em;
+  color: #9aa3b8;
+  font-weight: 600;
+}
+
+#loading-screen {
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(120, 20, 40, 0.45), transparent 50%),
+    #07080f;
+}
+
+.loading-bar {
+  background: linear-gradient(90deg, #c62828, #ff6b6b, #ffd166);
+  box-shadow: 0 0 16px rgba(255, 77, 106, 0.45);
+}
+
+.menu-screen {
+  background:
+    radial-gradient(ellipse at 70% 10%, rgba(255, 77, 106, 0.12), transparent 40%),
+    radial-gradient(ellipse at 10% 90%, rgba(90, 120, 255, 0.08), transparent 35%),
+    rgba(7, 8, 15, 0.94);
+  backdrop-filter: blur(8px);
+}
+
+.menu-btn {
+  font-family: 'Outfit', system-ui, sans-serif;
+  border: 1px solid rgba(255, 120, 140, 0.22);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  border-radius: 12px;
+  letter-spacing: 0.08em;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.menu-btn:hover {
+  border-color: rgba(255, 100, 120, 0.55);
+  box-shadow: 0 12px 28px rgba(255, 60, 80, 0.18);
+  transform: translateY(-2px);
+  background: linear-gradient(165deg, rgba(255, 77, 106, 0.16), rgba(255, 255, 255, 0.04));
+}
+
+#hud {
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+#health-bar {
+  background: linear-gradient(90deg, #ff3355, #ff6b6b);
+  box-shadow: 0 0 12px rgba(255, 51, 85, 0.35);
+}
+
+.wave-label,
+#weapon-name {
+  font-family: 'Outfit', system-ui, sans-serif;
+  letter-spacing: 0.04em;
+}
+
+#embed-overlay {
+  font-family: 'DM Sans', system-ui, sans-serif !important;
+  background: rgba(7, 8, 15, 0.78) !important;
+}
+
+#embed-overlay a#open-new-tab {
+  border-radius: 10px !important;
+  border-color: rgba(255, 100, 120, 0.5) !important;
+  background: rgba(255, 60, 80, 0.16) !important;
+  letter-spacing: 0.06em !important;
+}
+
+.map-card {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.map-card.selected,
+.map-card:hover {
+  border-color: rgba(255, 100, 120, 0.45);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  transform: translateY(-3px);
+}
+
+#crosshair {
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.35));
+}
