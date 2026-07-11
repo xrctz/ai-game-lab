@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DeadTakeover Lab+ v20 — Zombie Open World Game</title>
+    <title>DeadTakeover Lab+ v21 — Zombie Open World Game</title>
     <!-- Loading screen: displayed until the game bundle hides it -->
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Orbitron:wght@600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
@@ -51,12 +51,13 @@
     <script src="./director-v9.js"></script>
     <script src="./visual-effects.js"></script>
     <script src="./hub-embed-bridge.js"></script>
+    <script src="./ui-declutter.js"></script>
     <script>
       (function(){
         var loader=document.createElement('div');
         loader.id='game-loader';
         loader.innerHTML='<div class="loader-title">DeadTakeover</div>'
-          +'<div class="loader-sub">Lab+ v20 · Systems Online</div>'
+          +'<div class="loader-sub">Lab+ v21 · Systems Online</div>'
           +'<div class="loader-bar-wrap"><div class="loader-bar-fill" id="loaderBar"></div></div>'
           +'<div class="loader-text" id="loaderText">Initializing runtime…</div>'
           +'<div class="loader-systems">'
@@ -119,7 +120,7 @@
             </div>
             <div>
               <h1 id="menu-title">DeadTakeover</h1>
-              <p id="menu-subtitle" class="menu-version-tag">Lab+ v10 · Director Active</p>
+              <p id="menu-subtitle" class="menu-version-tag">Select a theater · Deploy when ready</p>
             </div>
           </div>
 
@@ -148,6 +149,7 @@
             </button>
           </div>
 
+          <!-- Controls collapsed by ui-declutter.js (#dt-controls-toggle) -->
           <div class="menu-controls">
             <div class="menu-ctrl-section">
               <span class="menu-ctrl-title">Movement</span>
@@ -162,32 +164,25 @@
               <span class="menu-ctrl-title">Combat</span>
               <div class="menu-ctrl-grid">
                 <span><kbd>LMB</kbd> Shoot</span>
-                <span><kbd>RMB</kbd> Aim Down Sights</span>
+                <span><kbd>RMB</kbd> ADS</span>
                 <span><kbd>R</kbd> Reload</span>
-                <span><kbd>1</kbd>–<kbd>7</kbd> Weapon Slots</span>
-                <span><kbd>Q</kbd>/<kbd>E</kbd> Swap Weapon</span>
+                <span><kbd>1</kbd>–<kbd>7</kbd> Weapons</span>
               </div>
             </div>
             <div class="menu-ctrl-section">
               <span class="menu-ctrl-title">Tactical</span>
               <div class="menu-ctrl-grid">
                 <span><kbd>G</kbd> Grenade</span>
-                <span><kbd>J</kbd> Molotov</span>
-                <span><kbd>K</kbd> Land Mine</span>
-                <span><kbd>L</kbd> Spike Trap</span>
-                <span><kbd>V</kbd> Noise Maker</span>
                 <span><kbd>F</kbd> Knife / Vehicle</span>
+                <span><kbd>B</kbd> Barricade</span>
+                <span><kbd>Tab</kbd> Inventory</span>
               </div>
             </div>
             <div class="menu-ctrl-section">
               <span class="menu-ctrl-title">Systems</span>
               <div class="menu-ctrl-grid">
-                <span><kbd>B</kbd> Build Barricade</span>
-                <span><kbd>N</kbd> Cycle Build Type</span>
-                <span><kbd>U</kbd> Upgrade Bench</span>
-                <span><kbd>Tab</kbd> Inventory</span>
-                <span><kbd>T</kbd> Team Swap</span>
                 <span><kbd>I</kbd> Field Guide</span>
+                <span><kbd>O</kbd> Director</span>
                 <span><kbd>P</kbd> Pause</span>
                 <span><kbd>M</kbd> Audio</span>
               </div>
@@ -196,12 +191,10 @@
 
           <div class="menu-footer-info">
             <div class="menu-sys-badges">
-              <span class="sys-badge sys-badge-ok">Director v10</span>
-              <span class="sys-badge sys-badge-ok">Lab+ Kit</span>
-              <span class="sys-badge sys-badge-ok">All Weapons</span>
-              <span class="sys-badge sys-badge-ok">Streaming Fix</span>
+              <span class="sys-badge sys-badge-ok">Lab+</span>
+              <span class="sys-badge sys-badge-ok">Browser</span>
             </div>
-            <p class="menu-credits">Buildings: Kenney.nl (CC0) · Pistol: Webaverse · Music: Kevin MacLeod (CC BY)</p>
+            <p class="menu-credits">Buildings: Kenney.nl (CC0) · Music: Kevin MacLeod (CC BY)</p>
           </div>
         </div>
       </div>
@@ -326,16 +319,16 @@
       #menu-overlay{position:fixed;inset:0;z-index:8000;display:grid;place-items:center;
         background:radial-gradient(ellipse at 50% 20%,rgba(20,10,60,.85),rgba(5,8,16,.96) 70%);
         backdrop-filter:blur(8px)}
-      #menu-overlay .menu-card{width:min(820px,calc(100vw - 40px));max-height:90vh;overflow-y:auto;
+      #menu-overlay .menu-card{width:min(520px,calc(100vw - 32px));max-height:min(88vh,820px);overflow-y:auto;
         border:1px solid var(--dt-line);border-radius:24px;
         background:linear-gradient(165deg,rgba(12,18,42,.94),rgba(6,8,20,.96));
         box-shadow:0 0 80px rgba(53,231,255,.08),0 32px 80px rgba(0,0,0,.5);
-        padding:32px 36px;color:var(--dt-text)}
+        padding:28px 26px 22px;color:var(--dt-text);text-align:left;scrollbar-width:thin}
       #menu-overlay .menu-card::before{content:'';position:absolute;inset:0;border-radius:inherit;padding:1px;
         background:linear-gradient(135deg,rgba(53,231,255,.35),rgba(155,92,255,.15),rgba(255,79,216,.25));
         mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;pointer-events:none}
 
-      .menu-brand{display:flex;align-items:center;gap:16px;margin-bottom:28px}
+      .menu-brand{display:flex;align-items:center;gap:14px;margin-bottom:18px}
       .menu-brand-icon{width:52px;height:52px;display:grid;place-items:center;border-radius:16px;
         background:linear-gradient(135deg,rgba(53,231,255,.12),rgba(155,92,255,.1));
         border:1px solid rgba(255,255,255,.08)}
@@ -369,7 +362,8 @@
       .menu-btn-secondary:hover{border-color:var(--dt-line-hi);background:rgba(255,255,255,.08)}
       .btn-icon{font-size:.9em}
 
-      .menu-controls{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px}
+      .menu-controls{display:none;grid-template-columns:1fr;gap:12px;margin-bottom:16px}
+      .menu-controls.is-open{display:grid}
       .menu-ctrl-section{border:1px solid rgba(255,255,255,.06);border-radius:var(--dt-radius-sm);
         background:rgba(0,0,0,.18);padding:14px 16px}
       .menu-ctrl-title{font-family:var(--dt-font-mono);font-size:.68rem;text-transform:uppercase;

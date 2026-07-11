@@ -64,7 +64,10 @@
     injectStyles();
     var chip = document.createElement('div');
     chip.id = 'dt-hub-chip';
-    chip.innerHTML = 'Hub embed · quality <strong>' + qualityFromQuery() + '</strong>';
+    chip.innerHTML = 'Hub · <strong>' + qualityFromQuery() + '</strong>';
+    // Hidden while menu is open (ui-declutter.js)
+    chip.style.display = 'none';
+    chip.setAttribute('data-dt-boot-hidden', '1');
     document.body.appendChild(chip);
 
     var bar = document.createElement('div');
@@ -75,15 +78,9 @@
     document.addEventListener('pointerlockerror', function () {
       bar.classList.add('show');
     });
-    // Esc from pointer lock: soft hint
+    // Only show fallback after pointer-lock fails — not on every Esc release
     document.addEventListener('pointerlockchange', function () {
-      if (!document.pointerLockElement && isEmbed()) {
-        setTimeout(function () {
-          if (!document.pointerLockElement) bar.classList.add('show');
-        }, 400);
-      } else {
-        bar.classList.remove('show');
-      }
+      if (document.pointerLockElement) bar.classList.remove('show');
     });
   }
 

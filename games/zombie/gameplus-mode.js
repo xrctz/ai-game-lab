@@ -347,9 +347,11 @@
       '</button>',
     ].join('');
     document.body.appendChild(panel);
+    // Always start hidden; ui-declutter.js reveals after menu closes
+    panel.style.display = 'none';
+    panel.setAttribute('data-dt-boot-hidden', '1');
     if(isEmbedded()){
       document.body.classList.add('dt-embedded');
-      panel.style.display = 'none';
     }
 
     $('dt-guide-btn').addEventListener('click', function(){ guide.classList.add('open'); });
@@ -371,7 +373,7 @@
     hookGameEvents();
 
     window.__labPlusKillFeed = addKillFeedItem;
-    console.log('[DeadTakeover Lab+] v10 overlay active');
+    console.log('[DeadTakeover Lab+] v21 overlay active (boot-decluttered)');
   }
 
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();

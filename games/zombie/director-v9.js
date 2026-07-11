@@ -184,10 +184,15 @@
       '</div>',
     ].join('\n');
     document.body.appendChild(box);
+    // Hidden until menu dismisses (ui-declutter.js); start minimized
+    box.style.display = 'none';
+    box.setAttribute('data-dt-boot-hidden', '1');
+    box.classList.add('dt-v9-mini');
 
     // Event bindings
     $('dt-v9-min').addEventListener('click', function(){
       box.classList.toggle('dt-v9-mini');
+      box.dataset.dtUserOpened = '1';
       this.textContent = box.classList.contains('dt-v9-mini') ? 'Open' : 'Minimize';
     });
     $('dt-v9-low').addEventListener('click', function(){
