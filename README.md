@@ -53,12 +53,13 @@ chmod +x serve.sh sync-games.sh   # macOS / Linux
 ./serve.sh
 ```
 
-Open **http://127.0.0.1:8080/** (or the URL printed by `serve.sh`).
+Open **http://127.0.0.1:8080/ai-game-lab/** (the local server mirrors the GitHub Pages base path). Root `/` redirects there.
 
 | Variable | Effect |
 | --- | --- |
 | `SKIP_SYNC=1 ./serve.sh` | Skip rebuilding sibling game folders |
 | `NO_OPEN=1 ./serve.sh` | Do not auto-open the browser |
+| `PORT=9090 ./serve.sh` | Bind a different port (default `8080`) |
 
 ## Repository layout
 

@@ -1,7 +1,7 @@
 /* ================================================================
-   AI Game Lab v17-anime — site interactions, launcher, and safe game player
+   AI Game Lab v18-polish — site interactions, launcher, and safe game player
    ================================================================ */
-var AIGL_ASSET_BUILD = '17-anime';
+var AIGL_ASSET_BUILD = '18-polish';
 var AIGL_STYLE_HREF = '/ai-game-lab/styles.css?v=' + AIGL_ASSET_BUILD;
 
 (function initThemeGuard(){
@@ -161,13 +161,23 @@ function showToast(msg, duration){
   var toggle = document.getElementById('menuToggle');
   var nav = document.getElementById('siteNav');
   if (!toggle || !nav) return;
+  function closeMenu(){
+    nav.classList.remove('open');
+    toggle.setAttribute('aria-expanded', 'false');
+  }
   toggle.addEventListener('click', function(){
     var open = nav.classList.toggle('open');
     toggle.setAttribute('aria-expanded', String(open));
   });
   document.addEventListener('click', function(e){
     if (!nav.classList.contains('open')) return;
-    if (!nav.contains(e.target) && !toggle.contains(e.target)) { nav.classList.remove('open'); toggle.setAttribute('aria-expanded', 'false'); }
+    if (!nav.contains(e.target) && !toggle.contains(e.target)) closeMenu();
+  });
+  nav.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', closeMenu);
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && nav.classList.contains('open')) closeMenu();
   });
 })();
 
@@ -225,8 +235,10 @@ function showToast(msg, duration){
   var btnRefresh = document.getElementById('btnRefresh');
   var btnClose = document.getElementById('btnClose');
   var btnFullscreen = document.getElementById('btnFullscreen');
+  var btnOpenTab = document.getElementById('btnOpenTab');
   var playerWrapper = document.querySelector('.player-wrapper');
   var playerLayout = document.querySelector('.player-layout');
+  var LAST_KEY = 'aigl_last_game';
 
   var GAME_URLS = {
     zombie: '/ai-game-lab/games/zombie/index.html',
@@ -243,6 +255,19 @@ function showToast(msg, duration){
   };
   var currentGame = null;
   var currentIframe = null;
+  var loadTimer = null;
+
+  function getStandaloneUrl(game){
+    var base = GAME_URLS[game];
+    if (!base) return null;
+    if (game === 'zombie') {
+      var qualityEl = document.getElementById('zombieQuality');
+      var quality = (qualityEl && qualityEl.value) || localStorage.getItem('zombieQuality') || 'balanced';
+      if (!/^(low|balanced|high)$/.test(quality)) quality = 'balanced';
+      return base + '?quality=' + encodeURIComponent(quality);
+    }
+    return base;
+  }
 
   function getGameUrl(game){
     var url = GAME_URLS[game];
@@ -264,8 +289,21 @@ function showToast(msg, duration){
     return url;
   }
 
+  function markBootActive(game){
+    document.querySelectorAll('[data-play]').forEach(function(el){
+      var on = el.getAttribute('data-play') === game;
+      el.classList.toggle('is-active', on);
+      if (el.tagName === 'BUTTON') el.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  function rememberGame(game){
+    if (!game || game === 'mindcraft') return;
+    try { localStorage.setItem(LAST_KEY, game); } catch(e) {}
+  }
+
   function clearPanel(){
-    playerScreen.querySelectorAll('.info-panel').forEach(function(el){ el.remove(); });
+    playerScreen.querySelectorAll('.info-panel, .player-error').forEach(function(el){ el.remove(); });
   }
   function clearPlayerOverlay(){
     var existing = playerScreen.querySelector('.player-click-overlay');
@@ -281,18 +319,33 @@ function showToast(msg, duration){
       } catch(e) {}
       return;
     }
+    var standalone = getStandaloneUrl(game) || '#';
     var overlay = document.createElement('div');
     overlay.className = 'player-click-overlay';
-    overlay.innerHTML = '<div class="pco-inner"><div class="pco-icon">🎯</div><strong>Click to capture mouse</strong><span>Click anywhere to start playing. Press <kbd>Esc</kbd> to release.</span></div>';
-    overlay.addEventListener('click', function(){
+    overlay.innerHTML = '<div class="pco-inner"><div class="pco-icon">🎯</div><strong>Click to capture mouse</strong><span>Click anywhere to start playing. Press <kbd>Esc</kbd> to release the pointer.</span><div class="pco-actions"><a href="' + standalone + '" target="_blank" rel="noopener noreferrer">Open in new tab</a></div></div>';
+    overlay.addEventListener('click', function(e){
+      if (e.target.closest('a')) return;
       if (currentIframe && currentIframe.contentWindow) {
-        try { currentIframe.focus(); } catch(e) {}
+        try { currentIframe.focus(); } catch(err) {}
         overlay.remove();
       }
     });
     playerScreen.appendChild(overlay);
   }
+  function showLoadError(game){
+    clearPanel();
+    clearPlayerOverlay();
+    if (playerLoader) playerLoader.classList.remove('visible');
+    var name = GAME_NAMES[game] || game;
+    var standalone = getStandaloneUrl(game) || '#';
+    var err = document.createElement('div');
+    err.className = 'player-error';
+    err.innerHTML = '<div><strong>' + name + ' failed to boot</strong><span>The embed took too long or the route is unavailable. Try a hard refresh, clear site cache, or open the game full-tab.</span><div class="hero-actions" style="margin-top:18px"><a class="btn btn-primary" href="' + standalone + '" target="_blank" rel="noopener noreferrer">Open full tab</a><button class="btn btn-secondary" type="button" data-retry-game="' + game + '">Retry</button></div></div>';
+    playerScreen.appendChild(err);
+    err.querySelector('[data-retry-game]').addEventListener('click', function(){ loadGame(game); });
+  }
   function clearIframe(){
+    if (loadTimer) { clearTimeout(loadTimer); loadTimer = null; }
     if (currentIframe) {
       try { if (currentIframe.contentWindow && currentIframe.contentWindow.__zombieCleanup) currentIframe.contentWindow.__zombieCleanup(); } catch(e) {}
       currentIframe.remove(); currentIframe = null;
@@ -304,10 +357,19 @@ function showToast(msg, duration){
   function setStatus(active, game){
     if (liveDot) liveDot.classList.toggle('active', !!active);
     if (playerName) playerName.textContent = active && game ? (GAME_NAMES[game] || game) : 'No game loaded';
+    if (btnOpenTab) {
+      if (active && game && GAME_URLS[game]) {
+        btnOpenTab.hidden = false;
+        btnOpenTab.href = getStandaloneUrl(game) || '#';
+      } else {
+        btnOpenTab.hidden = true;
+        btnOpenTab.removeAttribute('href');
+      }
+    }
   }
   function showMindcraft(){
     if (window.__particleResume) window.__particleResume();
-    clearIframe(); currentGame = 'mindcraft';
+    clearIframe(); currentGame = 'mindcraft'; markBootActive('mindcraft');
     if (playerEmpty) playerEmpty.style.display = 'none';
     var panel = document.createElement('div');
     panel.className = 'info-panel';
@@ -320,6 +382,8 @@ function showToast(msg, duration){
     if (game === 'mindcraft') { showMindcraft(); return; }
     var url = getGameUrl(game);
     if (!url) { showToast('Unknown game: ' + game); return; }
+    rememberGame(game);
+    markBootActive(game);
     if (window.__particlePause) window.__particlePause();
     clearIframe();
     if (playerEmpty) playerEmpty.style.display = 'none';
@@ -329,25 +393,38 @@ function showToast(msg, duration){
     iframe.src = url;
     iframe.loading = 'eager';
     iframe.allow = 'autoplay; fullscreen; gamepad; pointer-lock';
+    iframe.referrerPolicy = 'same-origin';
     iframe.title = GAME_NAMES[game] || game;
     iframe.tabIndex = -1;
+    var settled = false;
     iframe.addEventListener('load', function(){
+      if (settled || currentIframe !== iframe) return;
+      settled = true;
+      if (loadTimer) { clearTimeout(loadTimer); loadTimer = null; }
       if (playerLoader) playerLoader.classList.remove('visible');
       if (playerEmpty) playerEmpty.style.display = 'none';
       currentGame = game; setStatus(true, game); document.body.classList.add('player-active'); showToast((GAME_NAMES[game] || game) + ' loaded');
       try { iframe.focus(); } catch(e) {}
       showPlayerOverlay(game);
     });
-    setTimeout(function(){
-      if (currentIframe === iframe && playerLoader && playerLoader.classList.contains('visible')) {
-        playerLoader.classList.remove('visible'); showToast('Still loading. Large games can take longer on first cache.');
+    loadTimer = setTimeout(function(){
+      if (currentIframe !== iframe || settled) return;
+      if (playerLoader && playerLoader.classList.contains('visible')) {
+        // Soft warning first; full error only if still empty after more time
+        showToast('Still loading. Large games can take longer on first cache.');
+        loadTimer = setTimeout(function(){
+          if (currentIframe === iframe && !settled) {
+            settled = true;
+            showLoadError(game);
+          }
+        }, 14000);
       }
     }, 16000);
     currentIframe = iframe;
     playerScreen.appendChild(iframe);
   }
   function closeGame(){
-    clearIframe(); currentGame = null; setStatus(false, null); document.body.classList.remove('player-active');
+    clearIframe(); currentGame = null; markBootActive(null); setStatus(false, null); document.body.classList.remove('player-active');
     if (playerEmpty) playerEmpty.style.display = '';
     if (window.__particleResume) window.__particleResume();
     showToast('Player closed');
@@ -395,6 +472,8 @@ function showToast(msg, duration){
     if (e.code !== 'KeyF' || e.repeat || !currentIframe) return;
     var tag = (e.target && e.target.tagName) || '';
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+    // Don't steal F when a game iframe is focused and pointer-locked
+    if (document.pointerLockElement) return;
     e.preventDefault();
     togglePlayerFullscreen();
   });
@@ -460,7 +539,8 @@ function showToast(msg, duration){
   shell.setAttribute('role','dialog');
   shell.setAttribute('aria-modal','true');
   shell.setAttribute('aria-label','Command launcher');
-  shell.innerHTML = '<div class="command-palette"><div class="command-head"><span>Ctrl+K</span><input id="commandSearch" type="search" placeholder="Launch a page or game…" autocomplete="off" /></div><div class="command-list" id="commandList"></div></div>';
+  shell.setAttribute('aria-hidden','true');
+  shell.innerHTML = '<div class="command-palette"><div class="command-head"><span>Ctrl+K</span><input id="commandSearch" type="search" placeholder="Launch a page or game…" autocomplete="off" aria-label="Search commands" /></div><div class="command-list" id="commandList" role="listbox" aria-label="Commands"></div></div>';
   document.body.appendChild(shell);
   var orb = document.createElement('button');
   orb.className = 'launch-orb';
@@ -471,16 +551,29 @@ function showToast(msg, duration){
   var input = shell.querySelector('#commandSearch');
   var list = shell.querySelector('#commandList');
   var active = 0;
+  var lastFocus = null;
   function matches(cmd, q){ return !q || (cmd.title + ' ' + cmd.detail + ' ' + cmd.tag).toLowerCase().indexOf(q) !== -1; }
   function render(){
     var q = (input.value || '').trim().toLowerCase();
     var shown = commands.filter(function(c){ return matches(c, q); });
-    if (active >= shown.length) active = 0;
-    list.innerHTML = shown.map(function(c, i){ return '<button class="command-item ' + (i === active ? 'active' : '') + '" type="button" data-href="' + c.href + '"><span><strong>' + c.title + '</strong><small>' + c.detail + '</small></span><em>' + c.tag + '</em></button>'; }).join('') || '<div class="command-item"><span><strong>No match</strong><small>Try play, zombie, story, or GitHub.</small></span></div>';
+    if (active >= shown.length) active = Math.max(0, shown.length - 1);
+    list.innerHTML = shown.map(function(c, i){ return '<button class="command-item ' + (i === active ? 'active' : '') + '" type="button" role="option" aria-selected="' + (i === active ? 'true' : 'false') + '" data-href="' + c.href + '"><span><strong>' + c.title + '</strong><small>' + c.detail + '</small></span><em>' + c.tag + '</em></button>'; }).join('') || '<div class="command-item"><span><strong>No match</strong><small>Try play, zombie, story, or GitHub.</small></span></div>';
   }
-  function open(){ shell.classList.add('open'); active = 0; render(); setTimeout(function(){ input.focus(); input.select(); }, 20); }
-  function close(){ shell.classList.remove('open'); }
-  function launch(href){ if (!href) return; if (/^https?:/.test(href)) window.open(href, '_blank', 'noopener'); else location.href = href; }
+  function open(){
+    lastFocus = document.activeElement;
+    shell.classList.add('open');
+    shell.setAttribute('aria-hidden','false');
+    active = 0; render();
+    setTimeout(function(){ input.focus(); input.select(); }, 20);
+  }
+  function close(){
+    shell.classList.remove('open');
+    shell.setAttribute('aria-hidden','true');
+    if (lastFocus && typeof lastFocus.focus === 'function') {
+      try { lastFocus.focus(); } catch(e) {}
+    }
+  }
+  function launch(href){ if (!href) return; close(); if (/^https?:/.test(href)) window.open(href, '_blank', 'noopener'); else location.href = href; }
   orb.addEventListener('click', open);
   shell.addEventListener('click', function(e){ if (e.target === shell) close(); var item = e.target.closest('.command-item[data-href]'); if (item) launch(item.getAttribute('data-href')); });
   input.addEventListener('input', function(){ active = 0; render(); });
@@ -497,13 +590,10 @@ function showToast(msg, duration){
 
 (function initV9PlayerTools(){
   var lastKey = 'aigl_last_game';
-  document.addEventListener('click', function(e){
-    var play = e.target.closest('[data-play]');
-    if (play) localStorage.setItem(lastKey, play.getAttribute('data-play'));
-  });
   var lastBtn = document.getElementById('btnLastGame');
   if (lastBtn) lastBtn.addEventListener('click', function(){
     var game = localStorage.getItem(lastKey) || 'zombie';
+    if (game === 'mindcraft') game = 'zombie';
     var target = document.querySelector('[data-play="' + game + '"]');
     if (target) target.click(); else location.href = '/ai-game-lab/play/?game=' + encodeURIComponent(game);
   });
@@ -556,8 +646,13 @@ function showToast(msg, duration){
 })();
 
 (function initV9PageBadges(){
-  document.documentElement.dataset.build = 'v17-anime';
-  window.__aiGameLabBuild = { version:'v17-anime', assets:AIGL_ASSET_BUILD, zombieBundle:'index-labplus-v9.js', updated:'anime mascot characters added' };
+  document.documentElement.dataset.build = 'v18-polish';
+  window.__aiGameLabBuild = {
+    version: 'v18-polish',
+    assets: AIGL_ASSET_BUILD,
+    zombieBundle: 'index-labplus-v9.js',
+    updated: 'deploy completeness, player polish, local Pages base-path server'
+  };
 })();
 
 (function initHeroVideo() {
@@ -591,7 +686,7 @@ function showToast(msg, duration){
   else if (mq.addListener) mq.addListener(tryPlay);
 })();
 
-/* v17-anime-mascots: One-time mascot greeting bubble */
+/* v18-polish-mascots: One-time mascot greeting bubble */
 (function initMascotGreeting(){
   var bubble = document.getElementById('mascotBubble');
   if (!bubble) return;
