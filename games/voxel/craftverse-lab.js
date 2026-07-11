@@ -1,7 +1,7 @@
 /* ============================================================
-   CraftVerse Lab — inject layer  (v2 — pointer-lock fix)
+   CraftVerse Lab — inject layer  (v3 — hub overhaul)
    Scope: games/voxel/ only.  Prefix: cv-lab-
-   Do NOT touch the Vite bundle or hub files.
+   Do NOT touch the Vite bundle.
    ============================================================ */
 (function () {
   "use strict";
@@ -14,6 +14,7 @@
     catch (_) { return false; }
   })();
   var IS_MOBILE  = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  window.__craftverseLabVersion = "v3";
 
   /* ── State ── */
   var clickOverlay  = null;
@@ -132,13 +133,23 @@
     var icon  = makeEl("div", null, PREFIX + "overlay-icon");
     icon.textContent = "\u{1F3AE}";
     var title = makeEl("div", null, PREFIX + "overlay-title");
-    title.textContent = "Click to Play";
+    title.textContent = "Click to capture mouse";
     var sub   = makeEl("div", null, PREFIX + "overlay-sub");
-    sub.textContent = "This captures your mouse for look controls. Press Esc to release.";
+    sub.textContent = "Look controls need pointer lock. Press Esc to release. WASD move · Space jump · E inventory.";
 
     clickOverlay.appendChild(icon);
     clickOverlay.appendChild(title);
     clickOverlay.appendChild(sub);
+
+    if (IS_EMBED) {
+      var link = makeEl("a", PREFIX + "open-tab", PREFIX + "open-tab");
+      link.href = FULL_PATH;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "Open full screen \u2197";
+      link.style.pointerEvents = "auto";
+      clickOverlay.appendChild(link);
+    }
 
     /* Overlay is pointer-events:none in CSS when in-world.
        No click handler needed — user's real click passes through
@@ -218,8 +229,16 @@
      ───────────────────────────────────────────────────── */
   function createBrandBadge() {
     var badge = makeEl("div", PREFIX + "brand");
-    badge.textContent = "CraftVerse Engine";
+    badge.textContent = IS_EMBED ? "CraftVerse · hub embed" : "CraftVerse Engine";
     document.body.appendChild(badge);
+  }
+
+  function preferReducedMotion() {
+    try {
+      return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    } catch (_) {
+      return false;
+    }
   }
 
   /* ─────────────────────────────────────────────────────
@@ -239,9 +258,13 @@
     createLockMsg();
     createMobileBanner();
     createBrandBadge();
+    if (preferReducedMotion()) {
+      document.documentElement.classList.add(PREFIX + "reduced-motion");
+    }
 
     if (IS_EMBED) {
       createClickOverlay();
+      document.body.classList.add("cv-embedded");
     }
 
     watchCanvasInsertion();

@@ -1,5 +1,5 @@
 /* ============================================================
-   CraftVerse Lab — inject layer styles
+   CraftVerse Lab — inject layer styles (v3 hub overhaul)
    Scope: games/voxel/ only.  Prefix: cv-lab-
    ============================================================ */
 
@@ -72,6 +72,26 @@ body.cv-embedded .title-hint {
   max-width: 320px;
   text-align: center;
   line-height: 1.4;
+}
+#cv-lab-click-overlay .cv-lab-open-tab {
+  margin-top: 16px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(94, 234, 212, 0.35);
+  color: #5eead4;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.82rem;
+  background: rgba(7, 8, 15, 0.55);
+  pointer-events: auto;
+}
+#cv-lab-click-overlay .cv-lab-open-tab:hover {
+  border-color: rgba(255, 77, 154, 0.45);
+  color: #ff9ed2;
+}
+html.cv-lab-reduced-motion #cv-lab-click-overlay,
+html.cv-lab-reduced-motion #cv-lab-lock-msg {
+  transition: none !important;
 }
 
 /* ── Pointer-lock error / Esc message ── */
