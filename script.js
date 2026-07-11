@@ -1,7 +1,7 @@
 /* ================================================================
-   AI Game Lab v19-studio — site interactions, launcher, and safe game player
+   AI Game Lab v20-overhaul — site interactions, launcher, and safe game player
    ================================================================ */
-var AIGL_ASSET_BUILD = '19-studio';
+var AIGL_ASSET_BUILD = '20-overhaul';
 var AIGL_STYLE_HREF = '/ai-game-lab/styles.css?v=' + AIGL_ASSET_BUILD;
 
 (function initThemeGuard(){
@@ -241,13 +241,14 @@ function showToast(msg, duration){
   var playerLayout = document.querySelector('.player-layout');
   var LAST_KEY = 'aigl_last_game';
 
-  var GAME_URLS = {
+  var urlsApi = window.AIGL_PlayerUrls || null;
+  var GAME_URLS = (urlsApi && urlsApi.GAME_URLS) || {
     zombie: '/ai-game-lab/games/zombie/index.html',
     deadzone: '/ai-game-lab/games/deadzone/index.html',
     voxel: '/ai-game-lab/games/voxel/index.html',
     minecraft: '/ai-game-lab/games/voxel/index.html'
   };
-  var GAME_NAMES = {
+  var GAME_NAMES = (urlsApi && urlsApi.GAME_NAMES) || {
     zombie: 'DeadTakeover Protocol',
     deadzone: 'Dead Zone: Evacuation',
     voxel: 'CraftVerse Engine',
@@ -258,30 +259,42 @@ function showToast(msg, duration){
   var currentIframe = null;
   var loadTimer = null;
 
+  function readZombieOpts(){
+    var qualityEl = document.getElementById('zombieQuality');
+    var debugEl = document.getElementById('zombieDebug');
+    var quality = (qualityEl && qualityEl.value) || localStorage.getItem('zombieQuality') || 'balanced';
+    if (urlsApi && urlsApi.normalizeQuality) quality = urlsApi.normalizeQuality(quality);
+    else if (!/^(low|balanced|high)$/.test(quality)) quality = 'balanced';
+    localStorage.setItem('zombieQuality', quality);
+    return { quality: quality, debug: !!(debugEl && debugEl.checked) };
+  }
+
   function getStandaloneUrl(game){
+    if (urlsApi && urlsApi.getStandaloneUrl) {
+      if (game === 'zombie') return urlsApi.getStandaloneUrl(game, readZombieOpts());
+      return urlsApi.getStandaloneUrl(game);
+    }
     var base = GAME_URLS[game];
     if (!base) return null;
     if (game === 'zombie') {
-      var qualityEl = document.getElementById('zombieQuality');
-      var quality = (qualityEl && qualityEl.value) || localStorage.getItem('zombieQuality') || 'balanced';
-      if (!/^(low|balanced|high)$/.test(quality)) quality = 'balanced';
-      return base + '?quality=' + encodeURIComponent(quality);
+      var o = readZombieOpts();
+      return base + '?quality=' + encodeURIComponent(o.quality);
     }
     return base;
   }
 
   function getGameUrl(game){
+    if (urlsApi && urlsApi.getEmbedUrl) {
+      if (game === 'zombie') return urlsApi.getEmbedUrl(game, readZombieOpts());
+      return urlsApi.getEmbedUrl(game);
+    }
     var url = GAME_URLS[game];
     if (game === 'zombie') {
-      var qualityEl = document.getElementById('zombieQuality');
-      var debugEl = document.getElementById('zombieDebug');
-      var quality = (qualityEl && qualityEl.value) || localStorage.getItem('zombieQuality') || 'balanced';
-      if (!/^(low|balanced|high)$/.test(quality)) quality = 'balanced';
-      localStorage.setItem('zombieQuality', quality);
+      var opts = readZombieOpts();
       var params = new URLSearchParams();
-      params.set('quality', quality);
+      params.set('quality', opts.quality);
       params.set('embed', '1');
-      if (debugEl && debugEl.checked) params.set('debug', '1');
+      if (opts.debug) params.set('debug', '1');
       return url + '?' + params.toString();
     }
     if (game === 'deadzone' || game === 'voxel') {
@@ -647,12 +660,12 @@ function showToast(msg, duration){
 })();
 
 (function initV9PageBadges(){
-  document.documentElement.dataset.build = 'v19-studio';
+  document.documentElement.dataset.build = 'v20-overhaul';
   window.__aiGameLabBuild = {
-    version: 'v19-studio',
+    version: 'v20-overhaul',
     assets: AIGL_ASSET_BUILD,
     zombieBundle: 'index-labplus-v9.js',
-    updated: 'full studio UI redesign of the hub shell'
+    updated: 'full hub + games overhaul: player-urls, deadzone UI, zombie/voxel inject layers'
   };
 })();
 
