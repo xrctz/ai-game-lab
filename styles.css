@@ -1,6 +1,6 @@
 /* ================================================================
-   AI Game Lab v20-overhaul — Premium game-lab design system
-   Full hub + games publish pass
+   AI Game Lab v21-neat — Premium game-lab design system
+   Full hub + games publish pass · v21 neatness tweaks
    ================================================================ */
 /* accent glow polish */
 .hero-shell .btn-primary{box-shadow:0 16px 40px rgba(255,77,154,.32),0 0 0 1px rgba(255,255,255,.06) inset}
@@ -8,6 +8,16 @@
   content:"";position:absolute;inset:auto 0 0 0;height:42%;
   background:linear-gradient(to top,rgba(7,8,15,.72),transparent);pointer-events:none
 }
+/* Player chrome breathing room */
+.player-bar{padding:14px 16px}
+.player-hint{padding:14px 16px;line-height:1.55}
+.boot-panel{padding:18px 16px}
+.boot-option{padding:12px;margin-bottom:10px;gap:14px}
+.boot-note{margin-top:14px;line-height:1.6}
+.quality-panel{gap:12px;padding:14px;margin:14px 0}
+.hero-actions{gap:14px}
+.section-block{padding-top:56px;padding-bottom:56px}
+
 :root {
   --bg: #07080f;
   --bg-2: #0c0f1a;

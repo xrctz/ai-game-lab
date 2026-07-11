@@ -1,7 +1,7 @@
 /* ================================================================
-   AI Game Lab v20-overhaul — site interactions, launcher, and safe game player
+   AI Game Lab v21-neat — site interactions, launcher, and safe game player
    ================================================================ */
-var AIGL_ASSET_BUILD = '20-overhaul';
+var AIGL_ASSET_BUILD = '21-neat';
 var AIGL_STYLE_HREF = '/ai-game-lab/styles.css?v=' + AIGL_ASSET_BUILD;
 
 (function initThemeGuard(){
@@ -660,9 +660,9 @@ function showToast(msg, duration){
 })();
 
 (function initV9PageBadges(){
-  document.documentElement.dataset.build = 'v20-overhaul';
+  document.documentElement.dataset.build = 'v21-neat';
   window.__aiGameLabBuild = {
-    version: 'v20-overhaul',
+    version: 'v21-neat',
     assets: AIGL_ASSET_BUILD,
     zombieBundle: 'index-labplus-v9.js',
     updated: 'full hub + games overhaul: player-urls, deadzone UI, zombie/voxel inject layers'
