@@ -1,11 +1,11 @@
 /**
- * AI Game Lab v18-polish — Service Worker
+ * AI Game Lab v19-studio — Service Worker
  * Hub HTML/CSS/JS: network-only (never serve stale hub shell).
  * Game assets: cache-first with background refresh.
  */
-const BUILD = '18-polish';
-const CACHE_HUB = 'ai-game-lab-hub-v18-polish';
-const CACHE_GAMES = 'ai-game-lab-games-v18-polish';
+const BUILD = '19-studio';
+const CACHE_HUB = 'ai-game-lab-hub-v19-studio';
+const CACHE_GAMES = 'ai-game-lab-games-v19-studio';
 const HUB_STYLE = '/ai-game-lab/styles.css?v=' + BUILD;
 const HUB_SCRIPT = '/ai-game-lab/script.js?v=' + BUILD;
 
