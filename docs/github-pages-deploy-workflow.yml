@@ -1,7 +1,7 @@
 # Intended replacement for .github/workflows/deploy-pages.yml when you cannot push
 # workflow files (classic PAT needs `workflow` scope). Hub pages use
 # /ai-game-lab/showcase/manifest.json so the PWA manifest deploys with showcase/;
-# this workflow still copies root manifest.json, 404.html, and favicon.svg for parity.
+# this workflow still copies root manifest.json, 404.html, favicon.svg, and sw.js.
 name: Deploy GitHub Pages from repository
 
 on:
@@ -25,15 +25,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Pages must match what is on main (hub, games/, play/, etc.). An old workflow
-      # only unpacked website.zip, so paths like /play/ never updated when you pushed files.
       - name: Assemble site for Pages
         run: |
           set -euo pipefail
           rm -rf _site
           mkdir -p _site
-          cp -a index.html styles.css script.js mindcraft-info.html manifest.json 404.html favicon.svg _site/
-          for d in games play showcase story; do
+          cp -a index.html styles.css script.js mindcraft-info.html _site/
+          for f in 404.html favicon.svg manifest.json .nojekyll sw.js; do
+            if [ -f "$f" ]; then
+              cp -a "$f" _site/
+            fi
+          done
+          for d in games play showcase story updates; do
             if [ -d "$d" ]; then
               cp -a "$d" _site/
             fi
@@ -41,11 +44,13 @@ jobs:
           test -f _site/index.html
           test -f _site/games/voxel/index.html
           test -f _site/games/zombie/index.html
+          test -f _site/games/deadzone/index.html
           test -f _site/play/index.html
           test -f _site/mindcraft-info.html
           test -f _site/manifest.json
           test -f _site/404.html
           test -f _site/favicon.svg
+          test -f _site/.nojekyll
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
