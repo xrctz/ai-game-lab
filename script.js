@@ -1,16 +1,17 @@
 /* ================================================================
-   AI Game Lab v18-polish — site interactions, launcher, and safe game player
+   AI Game Lab v19-studio — site interactions, launcher, and safe game player
    ================================================================ */
-var AIGL_ASSET_BUILD = '18-polish';
+var AIGL_ASSET_BUILD = '19-studio';
 var AIGL_STYLE_HREF = '/ai-game-lab/styles.css?v=' + AIGL_ASSET_BUILD;
 
 (function initThemeGuard(){
   function normColor(v){
     return (v || '').trim().toLowerCase().replace(/\s+/g, '');
   }
-  function isKawaiiTheme(){
+  function isStudioTheme(){
     var bg = normColor(getComputedStyle(document.documentElement).getPropertyValue('--bg'));
-    return bg === '#1a0a14' || bg === '#fff0f6' || bg === 'rgb(26,10,20)' || bg === 'rgb(255,240,246)';
+    return bg === '#07080f' || bg === '#f6f7fc' || bg === 'rgb(7,8,15)' || bg === 'rgb(246,247,252)'
+      || bg === '#1a0a14' || bg === '#fff0f6' || bg === 'rgb(26,10,20)' || bg === 'rgb(255,240,246)';
   }
   function sheetNeedsFix(link){
     if (!link) return true;
@@ -26,13 +27,13 @@ var AIGL_STYLE_HREF = '/ai-game-lab/styles.css?v=' + AIGL_ASSET_BUILD;
       document.head.appendChild(link);
       return;
     }
-    if (force || !isKawaiiTheme()) {
+    if (force || !isStudioTheme()) {
       link.href = AIGL_STYLE_HREF + '&_=' + Date.now();
     }
   }
   function guard(force){
     applyStylesheet(!!force);
-    if (!isKawaiiTheme()) applyStylesheet(true);
+    if (!isStudioTheme()) applyStylesheet(true);
   }
   window.addEventListener('pageshow', function(e){ if (e.persisted) guard(true); });
   window.addEventListener('popstate', function(){ guard(false); });
@@ -97,7 +98,7 @@ var AIGL_STYLE_HREF = '/ai-game-lab/styles.css?v=' + AIGL_ASSET_BUILD;
     for (var i=0;i<particles.length;i++){
       var p = particles[i]; p.x += p.vx*dt; p.y += p.vy*dt;
       if (p.x < -8) p.x = w + 8; if (p.x > w + 8) p.x = -8; if (p.y < -8) p.y = h + 8; if (p.y > h + 8) p.y = -8;
-      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fillStyle = 'rgba(255,110,180,' + p.o + ')'; ctx.fill();
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fillStyle = 'rgba(255,77,154,' + p.o + ')'; ctx.fill();
     }
     raf = requestAnimationFrame(draw);
   }
@@ -646,12 +647,12 @@ function showToast(msg, duration){
 })();
 
 (function initV9PageBadges(){
-  document.documentElement.dataset.build = 'v18-polish';
+  document.documentElement.dataset.build = 'v19-studio';
   window.__aiGameLabBuild = {
-    version: 'v18-polish',
+    version: 'v19-studio',
     assets: AIGL_ASSET_BUILD,
     zombieBundle: 'index-labplus-v9.js',
-    updated: 'deploy completeness, player polish, local Pages base-path server'
+    updated: 'full studio UI redesign of the hub shell'
   };
 })();
 

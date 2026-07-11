@@ -2,29 +2,86 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="aigl-theme" content="18-polish" />
-  <style id="aigl-theme-lock">:root:not([data-theme="light"]){--bg:#1a0a14!important;--bg-2:#2a1228!important;--cyan:#ff6eb4!important;--violet:#ff9ed2!important}html:not([data-theme="light"]),html:not([data-theme="light"]) body{background-color:#1a0a14!important}</style>
+  <meta name="aigl-theme" content="19-studio" />
+  <style id="aigl-theme-lock">:root:not([data-theme="light"]){--bg:#07080f!important;--bg-2:#0c0f1a!important;--accent:#ff4d9a!important}html:not([data-theme="light"]),html:not([data-theme="light"]) body{background-color:#07080f!important}</style>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Mindcraft Control Deck setup notes for AI Game Lab." />
-  <meta name="theme-color" content="#1a0a14" />
+  <meta name="theme-color" content="#07080f" />
   <meta name="color-scheme" content="dark light" />
   <title>Mindcraft Setup — AI Game Lab</title>
-  <link rel="icon" type="image/svg+xml" href="/ai-game-lab/showcase/favicon.svg?v=18-polish" />
+  <link rel="icon" type="image/svg+xml" href="/ai-game-lab/showcase/favicon.svg?v=19-studio" />
   <link rel="manifest" href="/ai-game-lab/showcase/manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/ai-game-lab/styles.css?v=18-polish" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/ai-game-lab/styles.css?v=19-studio" />
 </head>
 <body>
   <div class="site-backdrop" aria-hidden="true"><div class="grid-plane"></div><div class="glow glow-a"></div><div class="glow glow-b"></div><div class="noise-layer"></div></div>
-  <header class="topbar" role="banner"><div class="topbar-inner"><a class="brand" href="/ai-game-lab/" aria-label="AI Game Lab home"><img class="brand-mark" src="/ai-game-lab/showcase/brand-mark.svg?v=18-polish" alt="" width="34" height="34" decoding="async" aria-hidden="true" /><span class="brand-copy"><strong>AI Game Lab</strong><small>Kawaii game lab ✨</small></span></a><nav id="siteNav" class="nav" aria-label="Site navigation"><a href="/ai-game-lab/">Home</a><a href="/ai-game-lab/showcase/">Showcase</a><a href="/ai-game-lab/play/">Play</a><a href="/ai-game-lab/story/">Story</a><a href="/ai-game-lab/showcase/updates/">Updates</a></nav><div class="topbar-actions"><a class="github-pill" href="https://github.com/xrctz/ai-game-lab" target="_blank" rel="noopener noreferrer">GitHub</a><button id="themeBtn" class="icon-btn" type="button" aria-label="Toggle theme"><svg class="ico-moon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><svg class="ico-sun" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M15 8h-2M3 8H1M13.07 2.93l-1.42 1.42M4.34 11.66l-1.41 1.41M13.07 13.07l-1.42-1.42M4.34 4.34 2.93 2.93" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button><button id="menuToggle" class="menu-toggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="siteNav"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button></div></div></header>
+  <header class="topbar" role="banner">
+    <div class="topbar-inner">
+      <a class="brand" href="/ai-game-lab/" aria-label="AI Game Lab home">
+        <img class="brand-mark" src="/ai-game-lab/showcase/brand-mark.svg?v=19-studio" alt="" width="36" height="36" decoding="async" aria-hidden="true" />
+        <span class="brand-copy"><strong>AI Game Lab</strong><small>Browser game studio</small></span>
+      </a>
+      <nav id="siteNav" class="nav" aria-label="Site navigation">
+        <a href="/ai-game-lab/">Home</a>
+        <a href="/ai-game-lab/showcase/">Showcase</a>
+        <a href="/ai-game-lab/play/">Play</a>
+        <a href="/ai-game-lab/story/">Story</a>
+        <a href="/ai-game-lab/showcase/updates/">Updates</a>
+      </nav>
+      <div class="topbar-actions">
+        <a class="github-pill" href="https://github.com/xrctz/ai-game-lab" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <button id="themeBtn" class="icon-btn" type="button" aria-label="Toggle theme">
+          <svg class="ico-moon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          <svg class="ico-sun" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M15 8h-2M3 8H1M13.07 2.93l-1.42 1.42M4.34 11.66l-1.41 1.41M13.07 13.07l-1.42-1.42M4.34 4.34 2.93 2.93" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <button id="menuToggle" class="menu-toggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="siteNav">
+          <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
   <main id="main">
-    <section class="page-hero compact"><span class="hero-kicker reveal"><span class="pulse-dot"></span> Local tool</span><h1 class="hero-title reveal">Mindcraft runs locally, not inside GitHub Pages.</h1><p class="hero-lead reveal">This page replaces the old redirect so the website does not create a broken iframe loop. Use the project repo for setup and launch it on your own machine.</p><div class="hero-actions reveal"><a class="btn btn-primary" href="https://github.com/xrctz/mindcraft" target="_blank" rel="noopener noreferrer">Open Mindcraft repo</a><a class="btn btn-secondary" href="/ai-game-lab/play/">Back to player</a></div></section>
-    <article class="article-block"><div class="story-card reveal"><span class="story-index">01</span><div><h2>Why it is not embedded</h2><p>Mindcraft depends on a local Java/Node environment and cannot be reliably served as a normal static browser game from GitHub Pages.</p></div></div><div class="story-card reveal"><span class="story-index">02</span><div><h2>What still works</h2><p>The hub still presents Mindcraft as part of the lab, but the Play page now opens a setup panel instead of trying to load a missing `/games/mindcraft/` folder.</p></div></div><div class="story-card reveal"><span class="story-index">03</span><div><h2>v9 keeps Mindcraft honest</h2><p>The hub still treats Mindcraft as part of the lab catalog, but it clearly labels it as a local tool so visitors do not hit a broken web embed.</p></div></div></article>
+    <section class="page-hero compact">
+      <span class="hero-kicker reveal"><span class="pulse-dot"></span> Local tool</span>
+      <h1 class="hero-title reveal">Mindcraft runs locally.</h1>
+      <p class="hero-lead reveal">GitHub Pages only hosts static files. Use the repo for setup and launch Mindcraft on your machine.</p>
+      <div class="hero-actions reveal">
+        <a class="btn btn-primary" href="https://github.com/xrctz/mindcraft" target="_blank" rel="noopener noreferrer">Open Mindcraft repo</a>
+        <a class="btn btn-secondary" href="/ai-game-lab/play/">Back to player</a>
+      </div>
+    </section>
+    <article class="article-block">
+      <div class="story-card reveal">
+        <span class="story-index">01</span>
+        <div>
+          <h2>Why it is not embedded</h2>
+          <p>Mindcraft depends on a local Java/Node environment and cannot be served as a normal static browser game from GitHub Pages.</p>
+        </div>
+      </div>
+      <div class="story-card reveal">
+        <span class="story-index">02</span>
+        <div>
+          <h2>What still works</h2>
+          <p>The hub presents Mindcraft as part of the lab. The Play page opens a setup panel instead of loading a missing <code>/games/mindcraft/</code> folder.</p>
+        </div>
+      </div>
+      <div class="story-card reveal">
+        <span class="story-index">03</span>
+        <div>
+          <h2>Honest labeling</h2>
+          <p>Mindcraft is clearly marked as a local tool so visitors never hit a broken web embed.</p>
+        </div>
+      </div>
+    </article>
   </main>
-  <footer class="footer-block"><p class="footer-copy">© <span id="copyrightYear">2026</span> AI Game Lab.</p></footer>
+  <footer class="footer-block">
+    <p class="footer-copy">© <span id="copyrightYear">2026</span> AI Game Lab.</p>
+  </footer>
   <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script src="/ai-game-lab/script.js?v=18-polish"></script>
+  <script src="/ai-game-lab/script.js?v=19-studio"></script>
 </body>
 </html>

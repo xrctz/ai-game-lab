@@ -39,7 +39,7 @@
 
 ## Features
 
-- **Unified hub** — Home, showcase, play, story, and updates share one design system
+- **Studio UI (v19)** — Premium dark design system shared across home, showcase, play, story, and updates
 - **Embedded player** — Click-to-play overlays, pointer-lock handling, and per-game quality controls
 - **Command launcher** — Press `Ctrl+K` to jump between pages and games
 - **GitHub Pages ready** — Static deploy with automated workflow on `main`
