@@ -3,19 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dead Zone: Evacuation</title>
+    <title>Dead Zone: Evacuation · v20</title>
+    <meta name="description" content="Dead Zone: Evacuation — squad tactical FPS in the browser." />
     <link rel="stylesheet" href="css/style.css">
+    <script src="js/hub-bridge.js"></script>
 </head>
 <body>
-    <!-- Embed / pointer-lock overlay (added for hub iframe support) -->
-    <div id="embed-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);place-items:center;text-align:center;font-family:'Segoe UI',Arial,sans-serif;color:#e0e0e0;padding:24px">
+    <!-- Embed / pointer-lock overlay (hub iframe support · v20) -->
+    <div id="embed-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(7,8,15,.78);backdrop-filter:blur(10px);place-items:center;text-align:center;font-family:'DM Sans','Segoe UI',Arial,sans-serif;color:#e8eaf2;padding:24px">
         <div>
-            <div style="font-size:48px;margin-bottom:16px">🎯</div>
-            <div style="font-size:22px;font-weight:700;letter-spacing:2px;margin-bottom:12px">CLICK TO PLAY</div>
-            <div style="font-size:13px;color:#888;max-width:340px;line-height:1.6;margin:0 auto 18px">Click anywhere to capture your mouse. You need pointer lock to aim and shoot.</div>
-            <div id="embed-lock-error" style="display:none;max-width:380px;margin:0 auto">
-                <div style="font-size:12px;color:#ff6b6b;margin-bottom:12px;letter-spacing:1px">⚠ Pointer lock was blocked by the browser.</div>
-                <a id="open-new-tab" href="./index.html" target="_blank" rel="noopener" style="display:inline-block;padding:10px 24px;border:1px solid #c62828;border-radius:8px;background:rgba(198,40,40,.2);color:#ff4444;font-weight:700;font-size:13px;letter-spacing:1px;text-decoration:none;transition:all .15s">OPEN IN NEW TAB</a>
+            <div style="font-size:42px;margin-bottom:14px">🎯</div>
+            <div style="font-size:22px;font-weight:800;letter-spacing:0.12em;margin-bottom:10px;font-family:Outfit,system-ui,sans-serif">CLICK TO PLAY</div>
+            <div style="font-size:13px;color:#9aa3b8;max-width:360px;line-height:1.65;margin:0 auto 18px">Click anywhere to capture your mouse. Pointer lock is required to aim and shoot in the hub iframe.</div>
+            <div id="embed-lock-error" style="display:none;max-width:400px;margin:0 auto">
+                <div style="font-size:12px;color:#ff6b6b;margin-bottom:12px;letter-spacing:0.04em">⚠ Pointer lock was blocked by the browser.</div>
+                <a id="open-new-tab" href="./index.html" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:11px 22px;border:1px solid rgba(255,100,120,.5);border-radius:10px;background:rgba(255,60,80,.16);color:#ff6b6b;font-weight:800;font-size:12px;letter-spacing:0.08em;text-decoration:none">OPEN IN NEW TAB</a>
             </div>
         </div>
     </div>
@@ -320,6 +322,7 @@
         if (typeof THREE !== 'undefined') {
             var s = document.createElement('script');
             s.src = 'js/game-bundle.js';
+            window.__deadZoneBundleBooted = true;
             s.onerror = function() {
                 document.getElementById('loading-text').textContent = 'ERROR: Failed to load game bundle.';
                 document.getElementById('loading-text').style.color = '#ff4444';
