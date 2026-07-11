@@ -1,57 +1,90 @@
 /**
- * DeadTakeover UI declutter (v21)
- * - Hide Lab+/Director/hub chrome while the main menu is open
- * - Show inject tools only after Deploy / during play
- * - Extra spacing rules for menu card (less cramped)
+ * DeadTakeover UI declutter (v21.1)
+ * - Hide Lab+/Director/hub chrome while the title menu is open
+ * - Reveal inject tools after Deploy (menu gets is-hidden)
+ * - NEVER watch document.body subtree — that re-entered on every
+ *   world DOM mutation and froze the tab after Deploy (textContent /
+ *   style writes feeding MutationObserver childList callbacks).
  */
 (function () {
   'use strict';
   if (window.__dtUiDeclutter) return;
-  window.__dtUiDeclutter = 'v21';
+  window.__dtUiDeclutter = 'v21.1';
 
   var STYLE_ID = 'dt-ui-declutter-css';
-  var SELECTORS = [
-    '#dt-v9-director',
-    '#dt-lab-panel',
-    '#dt-hub-chip',
-    '#dt-hub-fallback'
+  var CHROME_IDS = [
+    'dt-v9-director',
+    'dt-lab-panel',
+    'dt-hub-chip',
+    'dt-hub-fallback'
   ];
 
+  /** Last applied menu-open flag; skip redundant DOM work. */
+  var lastMenuOpen = null;
+  var menuObserver = null;
+  var lateMountTimer = null;
+  var lateMountTicks = 0;
+
+  function getMenu() {
+    return document.getElementById('menu-overlay');
+  }
+
   function isMenuOpen() {
-    var menu = document.getElementById('menu-overlay');
+    var menu = getMenu();
+    // Missing menu: treat as not open so we never block forever.
     if (!menu) return false;
     return !menu.classList.contains('is-hidden');
   }
 
-  function applyChromeVisibility() {
+  /**
+   * Idempotent chrome sync. Safe to call often; no-ops when state unchanged.
+   * Does not write textContent (that caused observer feedback loops).
+   */
+  function applyChromeVisibility(force) {
     var open = isMenuOpen();
-    document.documentElement.classList.toggle('dt-menu-open', open);
-    document.documentElement.classList.toggle('dt-in-game', !open);
-    SELECTORS.forEach(function (sel) {
-      var el = document.querySelector(sel);
-      if (!el) return;
+    if (!force && open === lastMenuOpen) return;
+    lastMenuOpen = open;
+
+    var root = document.documentElement;
+    root.classList.toggle('dt-menu-open', open);
+    root.classList.toggle('dt-in-game', !open);
+
+    for (var i = 0; i < CHROME_IDS.length; i++) {
+      var el = document.getElementById(CHROME_IDS[i]);
+      if (!el) continue;
+
       if (open) {
-        el.setAttribute('data-dt-boot-hidden', '1');
-        el.style.setProperty('display', 'none', 'important');
+        // CSS (html.dt-menu-open …) already hides these; only mark for restore.
+        if (el.getAttribute('data-dt-boot-hidden') !== '1') {
+          el.setAttribute('data-dt-boot-hidden', '1');
+        }
+        // Keep inline none as belt-and-suspenders for late-injected panels
+        // that set their own display:flex after our CSS.
+        if (el.style.getPropertyValue('display') !== 'none') {
+          el.style.setProperty('display', 'none', 'important');
+        }
       } else {
         if (el.getAttribute('data-dt-boot-hidden') === '1') {
           el.removeAttribute('data-dt-boot-hidden');
-          // restore natural display from stylesheet
           el.style.removeProperty('display');
         }
-        // Lab panel stays off in hub embed (director CSS already enforces this)
+        // Lab panel stays off in hub embed
         if (el.id === 'dt-lab-panel' && document.body.classList.contains('dt-embedded')) {
           el.style.setProperty('display', 'none', 'important');
         }
       }
-    });
-    // Director starts minimized when revealed in-game
+    }
+
+    // Director: prefer mini when first revealed in-game (class only — no text thrash)
     if (!open) {
       var dir = document.getElementById('dt-v9-director');
-      if (dir && !dir.dataset.dtUserOpened) {
+      if (dir && !dir.dataset.dtUserOpened && !dir.classList.contains('dt-v9-mini')) {
         dir.classList.add('dt-v9-mini');
         var minBtn = document.getElementById('dt-v9-min');
-        if (minBtn) minBtn.textContent = 'Open';
+        // Only update label once when entering mini, if empty/wrong
+        if (minBtn && minBtn.textContent !== 'Open') {
+          minBtn.textContent = 'Open';
+        }
       }
     }
   }
@@ -61,11 +94,18 @@
     var s = document.createElement('style');
     s.id = STYLE_ID;
     s.textContent = [
-      '/* Declutter markers */',
+      '/* Boot: hide inject chrome over title menu (CSS-only path) */',
       'html.dt-menu-open #dt-v9-director,',
       'html.dt-menu-open #dt-lab-panel,',
       'html.dt-menu-open #dt-hub-chip,',
       'html.dt-menu-open #dt-hub-fallback{display:none!important}',
+
+      '/* Fail-safe: when game hides menu, never block the canvas */',
+      '#menu-overlay.is-hidden{',
+      '  display:none!important;',
+      '  pointer-events:none!important;',
+      '  visibility:hidden!important;',
+      '}',
 
       '/* Roomier menu card */',
       '#menu-overlay .menu-card{',
@@ -136,7 +176,6 @@
       'html.dt-in-game #dt-hub-chip{',
       '  top:10px;right:10px;opacity:.85;font-size:10px;padding:5px 9px;',
       '}',
-      /* avoid fighting bottom message bar */
       'html.dt-in-game #dt-hub-fallback{bottom:56px}',
 
       '@media(max-width:720px){',
@@ -168,31 +207,74 @@
     var wrap = document.querySelector('#menu-overlay .menu-sys-badges');
     if (!wrap || wrap.dataset.dtSlimmed) return;
     wrap.dataset.dtSlimmed = '1';
-    // keep first two only
     var badges = wrap.querySelectorAll('.sys-badge');
-    badges.forEach(function (b, i) {
-      if (i > 1) b.remove();
-    });
+    for (var i = badges.length - 1; i >= 2; i--) {
+      badges[i].parentNode.removeChild(badges[i]);
+    }
     var sub = document.getElementById('menu-subtitle');
-    if (sub) sub.textContent = 'Select a theater · Deploy when ready';
+    if (sub && sub.textContent !== 'Select a theater · Deploy when ready') {
+      sub.textContent = 'Select a theater · Deploy when ready';
+    }
+  }
+
+  /**
+   * Cheap late-mount poll (no body MutationObserver).
+   * Inject panels may appear after this script; re-apply a few times only.
+   */
+  function scheduleLateMountSync() {
+    if (lateMountTimer) return;
+    lateMountTicks = 0;
+    lateMountTimer = setInterval(function () {
+      lateMountTicks += 1;
+      wireControlsToggle();
+      slimBadges();
+      applyChromeVisibility(true);
+      // Stop once chrome nodes exist or after a short window
+      var haveChrome =
+        document.getElementById('dt-v9-director') ||
+        document.getElementById('dt-lab-panel');
+      if ((haveChrome && lateMountTicks >= 3) || lateMountTicks >= 12) {
+        clearInterval(lateMountTimer);
+        lateMountTimer = null;
+      }
+    }, 250);
   }
 
   function watchMenu() {
-    var menu = document.getElementById('menu-overlay');
-    if (!menu) return;
-    applyChromeVisibility();
-    var obs = new MutationObserver(function () {
-      applyChromeVisibility();
+    var menu = getMenu();
+    if (!menu) {
+      // Menu not in DOM yet — retry briefly without body subtree watch
+      var tries = 0;
+      var t = setInterval(function () {
+        tries += 1;
+        if (getMenu() || tries > 40) {
+          clearInterval(t);
+          if (getMenu()) {
+            watchMenu();
+            wireControlsToggle();
+            slimBadges();
+            applyChromeVisibility(true);
+          }
+        }
+      }, 100);
+      return;
+    }
+
+    applyChromeVisibility(true);
+
+    if (menuObserver) {
+      menuObserver.disconnect();
+      menuObserver = null;
+    }
+
+    // ONLY watch the menu overlay class list — never body/subtree.
+    menuObserver = new MutationObserver(function () {
+      applyChromeVisibility(false);
     });
-    obs.observe(menu, { attributes: true, attributeFilter: ['class'] });
-    // also re-run when inject layers mount late
-    var bodyObs = new MutationObserver(function () {
-      applyChromeVisibility();
-      wireControlsToggle();
-      slimBadges();
+    menuObserver.observe(menu, {
+      attributes: true,
+      attributeFilter: ['class']
     });
-    bodyObs.observe(document.body, { childList: true, subtree: true });
-    setTimeout(function () { bodyObs.disconnect(); }, 8000);
   }
 
   function init() {
@@ -200,20 +282,35 @@
     wireControlsToggle();
     slimBadges();
     watchMenu();
-    applyChromeVisibility();
-    // Re-apply after other injects finish mounting
-    setTimeout(applyChromeVisibility, 50);
-    setTimeout(applyChromeVisibility, 400);
-    setTimeout(applyChromeVisibility, 1200);
+    scheduleLateMountSync();
+    // A couple of deferred force syncs for inject order; no continuous body watch
+    setTimeout(function () {
+      wireControlsToggle();
+      slimBadges();
+      applyChromeVisibility(true);
+    }, 50);
+    setTimeout(function () {
+      applyChromeVisibility(true);
+    }, 400);
   }
 
-  // When user opens director via O, remember preference
-  document.addEventListener('keydown', function (e) {
-    if (e.code === 'KeyO' && !e.repeat) {
-      var dir = document.getElementById('dt-v9-director');
-      if (dir) dir.dataset.dtUserOpened = '1';
-    }
-  }, true);
+  // Remember if user deliberately opens Director (O)
+  document.addEventListener(
+    'keydown',
+    function (e) {
+      if (e.code === 'KeyO' && !e.repeat) {
+        var dir = document.getElementById('dt-v9-director');
+        if (dir) dir.dataset.dtUserOpened = '1';
+      }
+    },
+    true
+  );
+
+  // Public hook for tests / debug
+  window.__dtApplyChromeVisibility = function (force) {
+    applyChromeVisibility(!!force);
+  };
+  window.__dtIsMenuOpen = isMenuOpen;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
