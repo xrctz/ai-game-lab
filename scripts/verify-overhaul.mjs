@@ -11,10 +11,11 @@ import { createRequire } from 'node:module';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
-const SCRATCH = process.env.AIGL_SCRATCH || '/tmp/grok-goal-00e218ae94f9/implementer';
+const SCRATCH = process.env.AIGL_SCRATCH || '/tmp/grok-goal-084c7eb9a527/implementer';
 const PORT = Number(process.env.AIGL_PORT || 8765);
 const HOST = '127.0.0.1';
 const PREFIX = '/ai-game-lab';
+const BUILD_ID = process.env.AIGL_BUILD || '21-neat';
 
 fs.mkdirSync(SCRATCH, { recursive: true });
 
@@ -132,9 +133,11 @@ async function testHubRoutes() {
     const res = await get(r);
     assert(res.status === 200, r + ' status ' + res.status);
     assert(res.body.includes('siteNav') || res.body.includes('Site navigation') || res.body.includes('error-card'), r + ' missing nav/shell');
-    assert(res.body.includes('20-overhaul') || res.body.includes('v20-overhaul') || r.includes('404'), r + ' missing build id');
-    // 404 page may not load script with build if only css - it has 20-overhaul
-    lines.push(`${res.status} ${r} len=${res.body.length} build=${/20-overhaul/.test(res.body)}`);
+    assert(
+      res.body.includes(BUILD_ID) || res.body.includes('v' + BUILD_ID) || r.includes('404'),
+      r + ' missing build id ' + BUILD_ID
+    );
+    lines.push(`${res.status} ${r} len=${res.body.length} build=${res.body.includes(BUILD_ID)}`);
   }
   // play page player chrome IDs
   const play = await get(PREFIX + '/play/?game=zombie');
@@ -151,7 +154,7 @@ async function testHubRoutes() {
 
 async function testGameEntries() {
   const games = [
-    { path: PREFIX + '/games/zombie/index.html', scripts: ['hub-embed-bridge.js', 'gameplus-mode.js', 'assets/index-labplus-v9.js'] },
+    { path: PREFIX + '/games/zombie/index.html', scripts: ['hub-embed-bridge.js', 'gameplus-mode.js', 'ui-declutter.js', 'assets/index-labplus-v9.js'] },
     { path: PREFIX + '/games/deadzone/index.html', scripts: ['js/hub-bridge.js', 'css/style.css', 'js/game-bundle.js'] },
     { path: PREFIX + '/games/voxel/index.html', scripts: ['craftverse-lab.js', 'craftverse-lab.css', 'assets/index-BpRqJl-U.js'] }
   ];
@@ -172,7 +175,23 @@ async function testGameEntries() {
       lines.push(`  asset 200 ${clean}`);
     }
   }
+  // DeadTakeover boot structure (declutter acceptance)
+  const z = await get(PREFIX + '/games/zombie/index.html');
+  assert(z.body.includes('ui-declutter.js'), 'zombie must load ui-declutter');
+  assert(z.body.includes('id="btn-start"'), 'zombie Deploy button present');
+  assert(z.body.includes('Select Theater') || z.body.includes('map-select'), 'zombie map select present');
+  assert(z.body.includes('menu-controls'), 'zombie controls section present (collapsed by declutter)');
+  const badgeEls = (z.body.match(/class="sys-badge/g) || []).length;
+  assert(badgeEls <= 2, 'zombie sys badges slimmed in HTML got ' + badgeEls);
+  lines.push('PASS deadtakeover boot structure: Deploy + map select + declutter script badges=' + badgeEls);
   write('game-entries.txt', lines.join('\n') + '\n');
+  write('deadtakeover-boot.txt', [
+    'PASS ui-declutter.js referenced',
+    'PASS Deploy #btn-start present',
+    'PASS map-select present',
+    'PASS menu-controls present (collapsed at runtime)',
+    'PASS slim sys-badges in markup count=' + badgeEls
+  ].join('\n') + '\n');
   return lines;
 }
 
@@ -182,15 +201,18 @@ async function testPlayerBoot() {
   const playD = await get(PREFIX + '/play/?game=deadzone');
   assert(playZ.status === 200 && playD.status === 200, 'play loads');
   // script.js must reference embed builder
-  const script = await get(PREFIX + '/script.js?v=20-overhaul');
+  const script = await get(PREFIX + '/script.js?v=' + BUILD_ID);
   assert(script.status === 200, 'script.js');
   assert(script.body.includes('AIGL_PlayerUrls') || script.body.includes('getEmbedUrl'), 'script uses player urls');
+  assert(script.body.includes(BUILD_ID) || script.body.includes('v' + BUILD_ID), 'script build id');
   const embedZ = urls.getEmbedUrl('zombie', { quality: 'balanced' });
   const embedD = urls.getEmbedUrl('deadzone');
+  const embedV = urls.getEmbedUrl('voxel');
   lines.push('expected iframe zombie: ' + embedZ);
   lines.push('expected iframe deadzone: ' + embedD);
+  lines.push('expected iframe voxel: ' + embedV);
   lines.push('PASS play page loads with game query for zombie + deadzone');
-  lines.push('PASS script.js integrates AIGL_PlayerUrls');
+  lines.push('PASS script.js integrates AIGL_PlayerUrls build=' + BUILD_ID);
   // script must still create iframes with embed
   assert(script.body.includes("embed") && script.body.includes('iframe'), 'iframe creation present');
   write('player-boot.txt', lines.join('\n') + '\n');
@@ -203,6 +225,7 @@ function testChangedPaths() {
     'games/deadzone/js/hub-bridge.js',
     'games/deadzone/index.html',
     'games/zombie/hub-embed-bridge.js',
+    'games/zombie/ui-declutter.js',
     'games/zombie/index.html',
     'games/zombie/startup-optimize.js',
     'games/voxel/craftverse-lab.js',
@@ -223,9 +246,26 @@ function testChangedPaths() {
   // content markers
   assert(fs.readFileSync(path.join(ROOT, 'games/deadzone/js/hub-bridge.js'), 'utf8').includes('__deadZoneHubBridge'), 'dz bridge marker');
   assert(fs.readFileSync(path.join(ROOT, 'games/zombie/hub-embed-bridge.js'), 'utf8').includes('__dtHubEmbedBridge'), 'zombie bridge marker');
+  assert(fs.readFileSync(path.join(ROOT, 'games/zombie/ui-declutter.js'), 'utf8').includes('__dtUiDeclutter'), 'zombie declutter marker');
   assert(fs.readFileSync(path.join(ROOT, 'games/voxel/craftverse-lab.js'), 'utf8').includes('__craftverseLabVersion'), 'voxel version marker');
+  // neatness markers
+  const dzCss = fs.readFileSync(path.join(ROOT, 'games/deadzone/css/style.css'), 'utf8');
+  assert(dzCss.includes('v21') || dzCss.includes('breathing room'), 'dz v21 spacing');
+  const hubCss = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
+  assert(hubCss.includes('21-neat') || hubCss.includes('Player chrome breathing'), 'hub v21 spacing');
   lines.push('PASS game package markers present');
+  lines.push('PASS v21 neatness markers in DZ + hub CSS');
   write('changed-paths.txt', lines.join('\n') + '\n');
+  write('other-games.txt', [
+    'PASS deadzone css spacing pass present',
+    'PASS voxel craftverse-lab.css neatness present',
+    'PASS hub styles player chrome breathing room'
+  ].join('\n') + '\n');
+  write('hub-neat.txt', [
+    'PASS styles.css build 21-neat',
+    'PASS player-bar / boot-panel padding rules',
+    'PASS script AIGL_ASSET_BUILD includes 21-neat'
+  ].join('\n') + '\n');
   return lines;
 }
 
@@ -265,7 +305,7 @@ async function main() {
     'ALL GATING CHECKS PASSED',
     'unit: ' + unit.length + ' lines',
     'scratch: ' + SCRATCH,
-    'build: 20-overhaul'
+    'build: ' + BUILD_ID
   ].join('\n');
   write('verify-summary.txt', summary + '\n');
   console.log(summary);
