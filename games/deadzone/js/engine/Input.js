@@ -63,6 +63,9 @@ export class Input {
     _onLockError() {
         console.warn('[Dead Zone] pointerlockerror fired');
         if (this.embedded) {
+            if (typeof window.__deadZoneShowLockError === 'function') {
+                try { window.__deadZoneShowLockError(); } catch (e) {}
+            }
             var overlay = document.getElementById('embed-overlay');
             var lockError = document.getElementById('embed-lock-error');
             if (overlay) overlay.style.display = 'grid';
