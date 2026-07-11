@@ -94,6 +94,33 @@ html.cv-lab-reduced-motion #cv-lab-lock-msg {
   transition: none !important;
 }
 
+/* v21 neatness — quieter brand chip, roomier title */
+#cv-lab-brand {
+  opacity: 0.72;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  padding: 5px 10px;
+  border-radius: 999px;
+}
+body.cv-embedded #title-main {
+  max-width: min(420px, 92vw);
+  margin: 0 auto;
+  gap: 12px;
+}
+body.cv-embedded .menu-btn {
+  min-height: 46px;
+  margin: 6px 0;
+}
+#cv-lab-click-overlay .cv-lab-overlay-title {
+  letter-spacing: 0.02em;
+  margin-bottom: 10px;
+}
+#cv-lab-click-overlay .cv-lab-overlay-sub {
+  max-width: 340px;
+  line-height: 1.5;
+}
+
+
 /* ── Pointer-lock error / Esc message ── */
 #cv-lab-lock-msg {
   position: fixed;
