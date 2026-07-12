@@ -422,6 +422,9 @@ class Input {
         this.mouseButtonsJustPressed = {};
         this.mouseButtonsJustReleased = {};
         this.locked = false;
+        this.mobileActive = false;
+        this._mobileLookDx = 0;
+        this._mobileLookDy = 0;
         this.embedded = false;
         this._lockRetryCount = 0;
         this._lockRetryMax = 1;
@@ -536,12 +539,19 @@ class Input {
     }
 
     getMouseDelta() {
+        if (this.mobileActive) {
+            return { x: this._mobileLookDx, y: this._mobileLookDy };
+        }
         return { x: this.mouse.dx, y: this.mouse.dy };
     }
 
     update() {
         this.mouse.dx = 0;
         this.mouse.dy = 0;
+        if (this.mobileActive) {
+            this._mobileLookDx = 0;
+            this._mobileLookDy = 0;
+        }
         this.keysJustPressed = {};
         this.keysJustReleased = {};
         this.mouseButtonsJustPressed = {};
@@ -549,7 +559,36 @@ class Input {
     }
 
     isLocked() {
-        return this.locked;
+        return this.locked || this.mobileActive;
+    }
+
+    setMobileActive(on) {
+        this.mobileActive = !!on;
+    }
+
+    addMobileLook(dx, dy) {
+        this._mobileLookDx += dx * this.sensitivity;
+        this._mobileLookDy += dy * this.sensitivity;
+    }
+
+    setMobileKey(code, down) {
+        if (down) {
+            if (!this.keys[code]) this.keysJustPressed[code] = true;
+            this.keys[code] = true;
+        } else {
+            this.keys[code] = false;
+            this.keysJustReleased[code] = true;
+        }
+    }
+
+    setMobileFire(down) {
+        if (down) {
+            if (!this.mouseButtons[0]) this.mouseButtonsJustPressed[0] = true;
+            this.mouseButtons[0] = true;
+        } else {
+            this.mouseButtons[0] = false;
+            this.mouseButtonsJustReleased[0] = true;
+        }
     }
 }
 
@@ -8425,6 +8464,7 @@ async function initGame() {
         if (!window.THREE) { throw new Error("Three.js not loaded"); }
         const game = new Game();
         await game.init();
+        window.__deadZoneGame = game;
     } catch (err) {
         console.error("Game initialization failed:", err);
         var loadingText = document.getElementById("loading-text");

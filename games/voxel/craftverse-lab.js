@@ -218,7 +218,7 @@
     icon.textContent = "\u{1F5A5}️";
     banner.appendChild(icon);
     banner.appendChild(document.createTextNode(
-      " CraftVerse is best experienced on desktop with a keyboard and mouse."
+      " CraftVerse on mobile — use the on-screen joystick and look zone."
     ));
     document.body.appendChild(banner);
     if (IS_EMBED) banner.classList.add(PREFIX + "show-mobile");
