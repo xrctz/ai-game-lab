@@ -1,11 +1,12 @@
 /**
- * AI Game Lab v21-neat — Service Worker
+ * AI Game Lab v22-july — Service Worker
  * Hub HTML/CSS/JS: network-only (never serve stale hub shell).
- * Game assets: cache-first with background refresh.
+ * Game HTML documents: network-first (always pick up rebuilt bundle refs).
+ * Game static assets (hashed JS/CSS, models, media): cache-first w/ refresh.
  */
 const BUILD = '21-neat';
-const CACHE_HUB = 'ai-game-lab-hub-v21-neat';
-const CACHE_GAMES = 'ai-game-lab-games-v21-neat';
+const CACHE_HUB = 'ai-game-lab-hub-v22-july';
+const CACHE_GAMES = 'ai-game-lab-games-v22-july';
 const HUB_STYLE = '/ai-game-lab/styles.css?v=' + BUILD;
 const HUB_SCRIPT = '/ai-game-lab/script.js?v=' + BUILD;
 
@@ -17,8 +18,31 @@ function isHubDocument(url, request) {
   return request.destination === 'document' || url.pathname.endsWith('/');
 }
 
+// Game index/HTML files must never be served stale: a rebuilt game points its
+// index.html at a new hashed bundle, so a cached index.html would load a dead
+// bundle. Always try network first for these and fall back to cache offline.
+function isGameDocument(url, request) {
+  if (url.pathname.indexOf('/games/') === -1) return false;
+  return request.destination === 'iframe' ||
+    request.destination === 'document' ||
+    url.pathname.endsWith('.html') ||
+    url.pathname.endsWith('/');
+}
+
 function networkOnly(request) {
   return fetch(request, { cache: 'no-store' });
+}
+
+function networkFirst(request) {
+  return fetch(request).then(function (response) {
+    if (response && response.ok) {
+      var copy = response.clone();
+      caches.open(CACHE_GAMES).then(function (cache) { cache.put(request, copy); });
+    }
+    return response;
+  }).catch(function () {
+    return caches.match(request);
+  });
 }
 
 function purgeLegacyHubEntries() {
@@ -68,6 +92,11 @@ self.addEventListener('fetch', function (e) {
 
   if (isHubDocument(url, e.request) || isHubAsset(url)) {
     e.respondWith(networkOnly(e.request));
+    return;
+  }
+
+  if (isGameDocument(url, e.request)) {
+    e.respondWith(networkFirst(e.request));
     return;
   }
 
