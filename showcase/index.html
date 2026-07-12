@@ -2,303 +2,259 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="aigl-theme" content="21-neat" />
-  <style id="aigl-theme-lock">:root:not([data-theme="light"]){--bg:#07080f!important;--bg-2:#0c0f1a!important;--accent:#ff4d9a!important}html:not([data-theme="light"]),html:not([data-theme="light"]) body{background-color:#07080f!important}</style>
+  <meta name="aigl-theme" content="24-library" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="AI Game Lab Showcase — project catalog for DeadTakeover, CraftVerse, Dead Zone, and Mindcraft." />
-  <meta name="theme-color" content="#07080f" />
-  <meta name="color-scheme" content="dark light" />
-  <meta property="og:title" content="Showcase — AI Game Lab" />
-  <meta property="og:url" content="https://xrctz.github.io/ai-game-lab/showcase/" />
-  <meta property="og:image" content="https://xrctz.github.io/ai-game-lab/showcase/previews/deadtakeover.png" />
-  <title>Showcase — AI Game Lab</title>
-  <link rel="icon" type="image/svg+xml" href="/ai-game-lab/showcase/favicon.svg?v=21-neat" />
+  <meta name="description" content="AI Game Lab catalog — filter and launch every build." />
+  <meta name="theme-color" content="#0a0a0b" />
+  <title>Catalog — AI Game Lab Library</title>
+  <link rel="icon" type="image/svg+xml" href="/ai-game-lab/showcase/favicon.svg?v=24-library" />
   <link rel="manifest" href="/ai-game-lab/showcase/manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/ai-game-lab/styles.css?v=21-neat" />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/ai-game-lab/styles.css?v=24-library" />
 </head>
 <body>
-  <div class="site-backdrop" aria-hidden="true"><div class="grid-plane"></div><div class="glow glow-a"></div><div class="glow glow-b"></div><div class="noise-layer"></div></div>
   <a class="skip" href="#main">Skip to content</a>
-  <header class="topbar" role="banner">
-    <div class="topbar-inner">
-      <a class="brand" href="/ai-game-lab/" aria-label="AI Game Lab home">
-        <img class="brand-mark" src="/ai-game-lab/showcase/brand-mark.svg?v=21-neat" alt="" width="36" height="36" decoding="async" aria-hidden="true" />
-        <span class="brand-copy"><strong>AI Game Lab</strong><small>Browser game studio</small></span>
+  <div class="ambient-stage" aria-hidden="true">
+    <div class="ambient-mesh"></div>
+    <div class="ambient-grid"></div>
+    <div class="ambient-scan"></div>
+    <div class="ambient-noise"></div>
+  </div>
+  <div class="app-shell">
+    <aside class="rail" id="siteRail" aria-label="Primary">
+      <a class="rail-brand" href="/ai-game-lab/">
+        <img src="/ai-game-lab/showcase/brand-mark.svg?v=24-library" alt="" width="36" height="36" />
+        <span><strong>AI Game Lab</strong><small>Library OS · v24</small></span>
       </a>
-      <nav id="siteNav" class="nav" aria-label="Site navigation">
-        <a href="/ai-game-lab/">Home</a>
-        <a href="/ai-game-lab/showcase/">Showcase</a>
-        <a href="/ai-game-lab/play/">Play</a>
-        <a href="/ai-game-lab/story/">Story</a>
-        <a href="/ai-game-lab/showcase/updates/">Updates</a>
+      <nav id="siteNav" class="rail-nav" aria-label="Site">
+        <a href="/ai-game-lab/"><span class="nav-ico" aria-hidden="true">▣</span> Library</a>
+        <a href="/ai-game-lab/play/"><span class="nav-ico" aria-hidden="true">▶</span> Play</a>
+        <a href="/ai-game-lab/showcase/" aria-current="page"><span class="nav-ico" aria-hidden="true">▦</span> Catalog</a>
+        <a href="/ai-game-lab/story/"><span class="nav-ico" aria-hidden="true">≡</span> Story</a>
+        <a href="/ai-game-lab/updates/"><span class="nav-ico" aria-hidden="true">↻</span> Updates</a>
       </nav>
-      <div class="topbar-actions">
-        <a class="github-pill" href="https://github.com/xrctz/ai-game-lab" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <button id="themeBtn" class="icon-btn" type="button" aria-label="Toggle theme">
-          <svg class="ico-moon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-          <svg class="ico-sun" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M15 8h-2M3 8H1M13.07 2.93l-1.42 1.42M4.34 11.66l-1.41 1.41M13.07 13.07l-1.42-1.42M4.34 4.34 2.93 2.93" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        </button>
-        <button id="menuToggle" class="menu-toggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="siteNav">
-          <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <main id="main">
-    <section class="page-hero compact">
-      <span class="hero-kicker reveal"><span class="pulse-dot"></span> Project showcase</span>
-      <h1 class="hero-title reveal">Every build gets a stage.</h1>
-      <p class="hero-lead reveal">Filter by type and launch playable systems directly from the catalog.</p>
-    </section>
-
-    <section class="section-block showcase-section">
-      <div class="section-head reveal">
-        <div>
-          <span class="eyebrow">Filter projects</span>
-          <h2>Lab catalog.</h2>
+      <div class="rail-footer">
+        <a class="btn-rail primary" href="/ai-game-lab/play/?game=zombie">Play now</a>
+        <a class="btn-rail" href="https://github.com/xrctz/ai-game-lab" target="_blank" rel="noopener noreferrer">GitHub</a>
+</div>
+    </aside>
+    <div class="main-col">
+      <div class="top-strip">
+        <div class="top-strip-left">
+          <button id="menuToggle" class="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="siteRail">
+            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </button>
+          <span class="template-chip">Library OS</span>
+          <span class="page-label">Catalog</span>
         </div>
-        <p id="resultsNote">11 projects</p>
+        <div class="top-strip-actions">
+          <button id="themeBtn" class="icon-btn" type="button" aria-label="Toggle theme">
+            <svg class="ico-moon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            <svg class="ico-sun" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M15 8h-2M3 8H1M13.07 2.93l-1.42 1.42M4.34 11.66l-1.41 1.41M13.07 13.07l-1.42-1.42M4.34 4.34 2.93 2.93" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+        </div>
       </div>
-      <div class="filter-bar reveal" role="tablist" aria-label="Project filters">
-        <button class="filter-btn active" type="button" data-filter="all" aria-selected="true">All</button>
-        <button class="filter-btn" type="button" data-filter="fps" aria-selected="false">FPS</button>
-        <button class="filter-btn" type="button" data-filter="racing" aria-selected="false">Racing</button>
-        <button class="filter-btn" type="button" data-filter="horror" aria-selected="false">Horror</button>
-        <button class="filter-btn" type="button" data-filter="rpg" aria-selected="false">RPG</button>
-        <button class="filter-btn" type="button" data-filter="sandbox" aria-selected="false">Sandbox</button>
-        <button class="filter-btn" type="button" data-filter="tools" aria-selected="false">Tools</button>
-        <button class="filter-btn" type="button" data-filter="update" aria-selected="false">Updates</button>
-      </div>
-
-      <div class="showcase-grid">
-        <article class="feature-card game reveal spotlight-card" data-category="fps">
-          <div class="media-frame">
-            <img src="/ai-game-lab/showcase/previews/deadtakeover.png" alt="DeadTakeover Protocol preview" width="720" height="450" loading="eager" fetchpriority="high" decoding="async" />
-            <span class="screen-badge hot">Playable · Lab+</span>
+      <main id="main" class="page-body">
+        <header class="page-hero reveal">
+          <div class="eyebrow">Full inventory</div>
+          <h1>Catalog</h1>
+          <p class="lede">Filter by genre, search by name, and launch from the theater. Every playable build in one inventory.</p>
+        </header>
+        <div class="catalog-toolbar reveal">
+          <div class="filter-bar" role="tablist" aria-label="Filters">
+            <button class="filter-btn active" type="button" data-filter="all" aria-selected="true">All</button>
+            <button class="filter-btn" type="button" data-filter="fps" aria-selected="false">FPS</button>
+            <button class="filter-btn" type="button" data-filter="racing" aria-selected="false">Racing</button>
+            <button class="filter-btn" type="button" data-filter="horror" aria-selected="false">Horror</button>
+            <button class="filter-btn" type="button" data-filter="rpg" aria-selected="false">RPG</button>
+            <button class="filter-btn" type="button" data-filter="sandbox" aria-selected="false">Sandbox</button>
+            <button class="filter-btn" type="button" data-filter="tools" aria-selected="false">Tools</button>
+            <button class="filter-btn" type="button" data-filter="update" aria-selected="false">Updates</button>
           </div>
-          <div class="card-body">
-            <p class="card-kicker">Survival FPS</p>
-            <h3>DeadTakeover Protocol</h3>
-            <p>Browser-native zombie survival with optimized streaming and cache-busted bundles.</p>
-            <div class="spec-grid">
-              <span>Genre<strong>FPS</strong></span>
-              <span>Route<strong>/games/zombie</strong></span>
-              <span>Status<strong>Playable</strong></span>
+          <div class="search-field">
+            <input id="showcaseSearch" type="search" placeholder="Search catalog…" aria-label="Search" autocomplete="off" />
+          </div>
+        </div>
+        <p class="results-note" id="resultsNote">11 projects</p>
+        <div class="catalog-grid">
+          <article class="catalog-card game reveal" data-category="fps">
+            <div class="game-tile-art">
+              <img src="/ai-game-lab/showcase/previews/deadtakeover.png" alt="DeadTakeover" width="720" height="400" loading="eager" />
+              <span class="tile-badge">Lab+</span>
             </div>
-            <div class="tag-row"><span>Three.js</span><span>WebGL</span><span>Streaming</span></div>
-            <a class="btn btn-card" href="/ai-game-lab/play/?game=zombie">Launch</a>
-          </div>
-        </article>
-
-        <article class="feature-card game reveal" data-category="fps">
-          <div class="media-frame">
-            <img src="/ai-game-lab/showcase/previews/deadzone.svg" alt="Dead Zone preview" width="720" height="450" loading="lazy" decoding="async" />
-            <span class="screen-badge hot">New</span>
-          </div>
-          <div class="card-body">
-            <p class="card-kicker">Squad tactical FPS</p>
-            <h3>Dead Zone: Evacuation</h3>
-            <p>Squad AI, Outpost Alpha &amp; Dead City, 15-wave extraction runs.</p>
-            <div class="spec-grid">
-              <span>Genre<strong>FPS</strong></span>
-              <span>Route<strong>/games/deadzone</strong></span>
-              <span>Status<strong>Playable</strong></span>
+            <div class="game-tile-body">
+              <h3>DeadTakeover Protocol</h3>
+              <p>Zombie survival FPS with streaming and Lab+ tools.</p>
+              <div class="spec-row">
+                <span>Genre<strong>FPS</strong></span>
+                <span>Route<strong>/zombie</strong></span>
+                <span>Status<strong>Playable</strong></span>
+              </div>
+              <a class="btn btn-primary" style="min-height:40px;width:100%;margin-top:8px" href="/ai-game-lab/play/?game=zombie">Launch</a>
             </div>
-            <div class="tag-row"><span>Three.js</span><span>Squad AI</span><span>2 maps</span></div>
-            <a class="btn btn-card" href="/ai-game-lab/play/?game=deadzone">Launch</a>
-          </div>
-        </article>
-
-        <article class="feature-card game reveal" data-category="sandbox">
-          <div class="media-frame">
-            <img src="/ai-game-lab/showcase/previews/craftverse.jpg?v=21-neat" alt="CraftVerse preview" width="720" height="450" loading="lazy" decoding="async" />
-            <span class="screen-badge">Playable</span>
-            <img class="card-mascot-corner" src="/ai-game-lab/showcase/mascots/pixel-card.svg?v=21-neat" alt="" aria-hidden="true" width="64" height="64" loading="lazy" decoding="async" />
-          </div>
-          <div class="card-body">
-            <p class="card-kicker">Voxel sandbox</p>
-            <h3>CraftVerse Engine</h3>
-            <p>Voxel terrain playground from the included static build.</p>
-            <div class="spec-grid">
-              <span>Genre<strong>Sandbox</strong></span>
-              <span>Route<strong>/games/voxel</strong></span>
-              <span>Status<strong>Playable</strong></span>
+          </article>
+          <article class="catalog-card game reveal" data-category="fps">
+            <div class="game-tile-art">
+              <img src="/ai-game-lab/showcase/previews/deadzone.svg" alt="Dead Zone" width="720" height="400" loading="lazy" />
+              <span class="tile-badge alt">New</span>
             </div>
-            <div class="tag-row"><span>Voxels</span><span>Terrain</span><span>Browser</span></div>
-            <a class="btn btn-card" href="/ai-game-lab/play/?game=voxel">Launch</a>
-          </div>
-        </article>
-
-        <article class="feature-card game reveal" data-category="racing">
-          <div class="media-frame">
-            <img src="/ai-game-lab/showcase/previews/racing.jpg" alt="VEIL RUSH preview" width="720" height="450" loading="lazy" decoding="async" />
-            <span class="screen-badge hot">New</span>
-          </div>
-          <div class="card-body">
-            <p class="card-kicker">3D racing</p>
-            <h3>VEIL RUSH</h3>
-            <p>Crystalline skimmer racing across the floating Glass Meridian circuit.</p>
-            <div class="spec-grid">
-              <span>Genre<strong>Racing</strong></span>
-              <span>Route<strong>/games/racing</strong></span>
-              <span>Status<strong>Playable</strong></span>
+            <div class="game-tile-body">
+              <h3>Dead Zone: Evacuation</h3>
+              <p>Squad AI, two maps, 15-wave extraction.</p>
+              <div class="spec-row">
+                <span>Genre<strong>FPS</strong></span>
+                <span>Route<strong>/deadzone</strong></span>
+                <span>Status<strong>Playable</strong></span>
+              </div>
+              <a class="btn btn-primary" style="min-height:40px;width:100%;margin-top:8px" href="/ai-game-lab/play/?game=deadzone">Launch</a>
             </div>
-            <div class="tag-row"><span>Three.js</span><span>Drift</span><span>Browser</span></div>
-            <a class="btn btn-card" href="/ai-game-lab/play/?game=racing">Launch</a>
-          </div>
-        </article>
-
-        <article class="feature-card game reveal" data-category="horror">
-          <div class="media-frame">
-            <img src="/ai-game-lab/showcase/previews/fnaf.png" alt="Midnight Watch preview" width="720" height="450" loading="lazy" decoding="async" />
-            <span class="screen-badge hot">New</span>
-          </div>
-          <div class="card-body">
-            <p class="card-kicker">Survival horror</p>
-            <h3>Midnight Watch</h3>
-            <p>Guard Bruno's Pizzeria—cameras, doors, power, and five nights of escalating AI.</p>
-            <div class="spec-grid">
-              <span>Genre<strong>Horror</strong></span>
-              <span>Route<strong>/games/fnaf</strong></span>
-              <span>Status<strong>Playable</strong></span>
+          </article>
+          <article class="catalog-card game reveal" data-category="sandbox">
+            <div class="game-tile-art">
+              <img src="/ai-game-lab/showcase/previews/craftverse.jpg?v=23" alt="CraftVerse" width="720" height="400" loading="lazy" />
+              <span class="tile-badge">Live</span>
             </div>
-            <div class="tag-row"><span>Three.js</span><span>Cameras</span><span>5 nights</span></div>
-            <a class="btn btn-card" href="/ai-game-lab/play/?game=fnaf">Launch</a>
-          </div>
-        </article>
-
-        <article class="feature-card game reveal" data-category="rpg">
-          <div class="media-frame">
-            <img src="/ai-game-lab/showcase/previews/pokemon.png" alt="Pokémon Adventure preview" width="720" height="450" loading="lazy" decoding="async" />
-            <span class="screen-badge hot">New</span>
-          </div>
-          <div class="card-body">
-            <p class="card-kicker">RPG adventure</p>
-            <h3>Pokémon Adventure</h3>
-            <p>2D canvas or 3D Three.js editions—catch, battle, heal, and save your progress.</p>
-            <div class="spec-grid">
-              <span>Genre<strong>RPG</strong></span>
-              <span>Route<strong>/games/pokemon</strong></span>
-              <span>Status<strong>Playable</strong></span>
+            <div class="game-tile-body">
+              <h3>CraftVerse Engine</h3>
+              <p>Voxel terrain playground.</p>
+              <div class="spec-row">
+                <span>Genre<strong>Sandbox</strong></span>
+                <span>Route<strong>/voxel</strong></span>
+                <span>Status<strong>Playable</strong></span>
+              </div>
+              <a class="btn btn-primary" style="min-height:40px;width:100%;margin-top:8px" href="/ai-game-lab/play/?game=voxel">Launch</a>
             </div>
-            <div class="tag-row"><span>Canvas</span><span>Three.js</span><span>2 editions</span></div>
-            <a class="btn btn-card" href="/ai-game-lab/play/?game=pokemon">Launch</a>
-          </div>
-        </article>
-
-        <article class="feature-card game reveal" data-category="fps tools">
-          <div class="media-frame">
-            <img src="/ai-game-lab/showcase/previews/deadzone.svg" alt="Night of the Dead preview" width="720" height="450" loading="lazy" decoding="async" />
-            <span class="screen-badge tool">Native</span>
-          </div>
-          <div class="card-body">
-            <p class="card-kicker">Desktop FPS</p>
-            <h3>Night of the Dead</h3>
-            <p>Raylib + .NET native zombie arena. Hosted hub shows build notes, not a fake embed.</p>
-            <div class="spec-grid">
-              <span>Genre<strong>FPS</strong></span>
-              <span>Route<strong>Info panel</strong></span>
-              <span>Status<strong>Native</strong></span>
+          </article>
+          <article class="catalog-card game reveal" data-category="racing">
+            <div class="game-tile-art">
+              <img src="/ai-game-lab/showcase/previews/racing.jpg" alt="VEIL RUSH" width="720" height="400" loading="lazy" />
+              <span class="tile-badge alt">New</span>
             </div>
-            <div class="tag-row"><span>C#</span><span>Raylib</span><span>Desktop</span></div>
-            <a class="btn btn-card" href="/ai-game-lab/nightofthedead-info.html">Read setup</a>
-          </div>
-        </article>
-
-        <article class="feature-card game reveal" data-category="tools">
-          <div class="media-frame">
-            <img src="/ai-game-lab/showcase/previews/mindcraft.png" alt="Mindcraft preview" width="720" height="450" loading="lazy" decoding="async" />
-            <span class="screen-badge tool">Local tool</span>
-          </div>
-          <div class="card-body">
-            <p class="card-kicker">AI launcher</p>
-            <h3>Mindcraft Control Deck</h3>
-            <p>Local Java/Node bot orchestration. Hosted site shows setup, not a fake iframe.</p>
-            <div class="spec-grid">
-              <span>Type<strong>Tool</strong></span>
-              <span>Route<strong>Info panel</strong></span>
-              <span>Status<strong>Local</strong></span>
+            <div class="game-tile-body">
+              <h3>VEIL RUSH</h3>
+              <p>Glass Meridian skimmer racing.</p>
+              <div class="spec-row">
+                <span>Genre<strong>Racing</strong></span>
+                <span>Route<strong>/racing</strong></span>
+                <span>Status<strong>Playable</strong></span>
+              </div>
+              <a class="btn btn-primary" style="min-height:40px;width:100%;margin-top:8px" href="/ai-game-lab/play/?game=racing">Launch</a>
             </div>
-            <div class="tag-row"><span>Java 21+</span><span>Node.js</span><span>AI agents</span></div>
-            <a class="btn btn-card" href="/ai-game-lab/mindcraft-info.html">Read setup</a>
-          </div>
-        </article>
-
-        <article class="feature-card game reveal" data-category="update">
-          <div class="media-frame">
-            <img src="/ai-game-lab/showcase/previews/deadtakeover.png" alt="Studio UI update" width="720" height="450" loading="lazy" decoding="async" />
-            <span class="screen-badge hot">v19</span>
-          </div>
-          <div class="card-body">
-            <p class="card-kicker">Latest update</p>
-            <h3>Studio UI redesign</h3>
-            <p>Full hub visual rebuild: premium dark palette, Outfit/DM Sans type, cleaner cards, tighter player chrome.</p>
-            <div class="tag-row"><span>Design</span><span>Hub</span><span>Cache</span></div>
-            <a class="btn btn-card" href="/ai-game-lab/showcase/updates/">Read update</a>
-          </div>
-        </article>
-
-        <article class="feature-card game reveal" data-category="update">
-          <div class="media-frame">
-            <img src="/ai-game-lab/showcase/previews/deadtakeover.png" alt="v18 polish" width="720" height="450" loading="lazy" decoding="async" />
-            <span class="screen-badge">v18</span>
-          </div>
-          <div class="card-body">
-            <p class="card-kicker">Previous</p>
-            <h3>Hub polish &amp; deploys</h3>
-            <p>Safer Pages assembly, open-in-new-tab player controls, local base-path server.</p>
-            <div class="tag-row"><span>Deploy</span><span>Player</span><span>Cache</span></div>
-            <a class="btn btn-card" href="/ai-game-lab/showcase/updates/">Read update</a>
-          </div>
-        </article>
-
-        <article class="feature-card game reveal" data-category="update">
-          <div class="media-frame">
-            <img src="/ai-game-lab/showcase/previews/deadtakeover.png" alt="Pointer-lock overhaul" width="720" height="450" loading="lazy" decoding="async" />
-            <span class="screen-badge">v11</span>
-          </div>
-          <div class="card-body">
-            <p class="card-kicker">Release</p>
-            <h3>Pointer-lock overhaul</h3>
-            <p>Iframe pointer lock for all games, click-to-play overlays, embed mode for Dead Zone.</p>
-            <div class="tag-row"><span>Pointer lock</span><span>Embed</span><span>UX</span></div>
-            <a class="btn btn-card" href="/ai-game-lab/showcase/updates/">Read update</a>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <button id="scrollTop" class="scroll-top" type="button" aria-label="Scroll to top" hidden>
-      <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 10 4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
-  </main>
-
-  <footer class="footer-block">
-    <div class="footer-inner">
-      <div>
-        <a class="brand footer-brand" href="/ai-game-lab/">
-          <img class="brand-mark" src="/ai-game-lab/showcase/brand-mark.svg?v=21-neat" alt="" width="32" height="32" decoding="async" aria-hidden="true" />
-          <span class="brand-copy"><strong>AI Game Lab</strong><small>Design · test · ship</small></span>
-        </a>
-        <p>A public stage for playable AI-built systems.</p>
-      </div>
-      <nav class="footer-nav" aria-label="Footer navigation">
-        <a href="/ai-game-lab/">Home</a>
-        <a href="/ai-game-lab/showcase/">Showcase</a>
-        <a href="/ai-game-lab/play/">Play</a>
-        <a href="/ai-game-lab/story/">Story</a>
-        <a href="/ai-game-lab/showcase/updates/">Updates</a>
-        <a href="https://github.com/xrctz/ai-game-lab" target="_blank" rel="noopener noreferrer">GitHub</a>
-      </nav>
+          </article>
+          <article class="catalog-card game reveal" data-category="horror">
+            <div class="game-tile-art">
+              <img src="/ai-game-lab/showcase/previews/fnaf.png" alt="Midnight Watch" width="720" height="400" loading="lazy" />
+              <span class="tile-badge alt">New</span>
+            </div>
+            <div class="game-tile-body">
+              <h3>Midnight Watch</h3>
+              <p>Cameras, doors, five nights of AI.</p>
+              <div class="spec-row">
+                <span>Genre<strong>Horror</strong></span>
+                <span>Route<strong>/fnaf</strong></span>
+                <span>Status<strong>Playable</strong></span>
+              </div>
+              <a class="btn btn-primary" style="min-height:40px;width:100%;margin-top:8px" href="/ai-game-lab/play/?game=fnaf">Launch</a>
+            </div>
+          </article>
+          <article class="catalog-card game reveal" data-category="rpg">
+            <div class="game-tile-art">
+              <img src="/ai-game-lab/showcase/previews/pokemon.png" alt="Pokémon" width="720" height="400" loading="lazy" />
+              <span class="tile-badge alt">New</span>
+            </div>
+            <div class="game-tile-body">
+              <h3>Pokémon Adventure</h3>
+              <p>2D canvas or 3D Three.js editions.</p>
+              <div class="spec-row">
+                <span>Genre<strong>RPG</strong></span>
+                <span>Route<strong>/pokemon</strong></span>
+                <span>Status<strong>Playable</strong></span>
+              </div>
+              <a class="btn btn-primary" style="min-height:40px;width:100%;margin-top:8px" href="/ai-game-lab/play/?game=pokemon">Launch</a>
+            </div>
+          </article>
+          <article class="catalog-card game reveal" data-category="fps tools">
+            <div class="game-tile-art">
+              <img src="/ai-game-lab/showcase/previews/deadzone.svg" alt="Night of the Dead" width="720" height="400" loading="lazy" />
+              <span class="tile-badge tool">Native</span>
+            </div>
+            <div class="game-tile-body">
+              <h3>Night of the Dead</h3>
+              <p>Raylib + .NET desktop arena.</p>
+              <div class="spec-row">
+                <span>Genre<strong>FPS</strong></span>
+                <span>Route<strong>Info</strong></span>
+                <span>Status<strong>Native</strong></span>
+              </div>
+              <a class="btn btn-secondary" style="min-height:40px;width:100%;margin-top:8px" href="/ai-game-lab/nightofthedead-info.html">Setup</a>
+            </div>
+          </article>
+          <article class="catalog-card game reveal" data-category="tools">
+            <div class="game-tile-art">
+              <img src="/ai-game-lab/showcase/previews/mindcraft.png" alt="Mindcraft" width="720" height="400" loading="lazy" />
+              <span class="tile-badge tool">Local</span>
+            </div>
+            <div class="game-tile-body">
+              <h3>Mindcraft Control Deck</h3>
+              <p>Local Java/Node agent ops.</p>
+              <div class="spec-row">
+                <span>Type<strong>Tool</strong></span>
+                <span>Route<strong>Info</strong></span>
+                <span>Status<strong>Local</strong></span>
+              </div>
+              <a class="btn btn-secondary" style="min-height:40px;width:100%;margin-top:8px" href="/ai-game-lab/mindcraft-info.html">Setup</a>
+            </div>
+          </article>
+          <article class="catalog-card game reveal" data-category="update">
+            <div class="game-tile-art">
+              <img src="/ai-game-lab/showcase/previews/deadtakeover.png" alt="v23" width="720" height="400" loading="lazy" />
+              <span class="tile-badge">v23</span>
+            </div>
+            <div class="game-tile-body">
+              <h3>Library OS redesign</h3>
+              <p>Side rail, acid lime, storefront shelves — full visual reset.</p>
+              <a class="btn btn-secondary" style="min-height:40px;width:100%;margin-top:8px" href="/ai-game-lab/updates/">Notes</a>
+            </div>
+          </article>
+          <article class="catalog-card game reveal" data-category="update">
+            <div class="game-tile-art">
+              <img src="/ai-game-lab/showcase/previews/deadtakeover.png" alt="v19-21" width="720" height="400" loading="lazy" />
+              <span class="tile-badge tool">v19–21</span>
+            </div>
+            <div class="game-tile-body">
+              <h3>Studio UI (retired)</h3>
+              <p>Previous pink glass hub — replaced by Library OS.</p>
+              <a class="btn btn-secondary" style="min-height:40px;width:100%;margin-top:8px" href="/ai-game-lab/updates/">Notes</a>
+            </div>
+          </article>
+          <article class="catalog-card game reveal" data-category="update">
+            <div class="game-tile-art">
+              <img src="/ai-game-lab/showcase/previews/deadtakeover.png" alt="v11" width="720" height="400" loading="lazy" />
+              <span class="tile-badge tool">v11</span>
+            </div>
+            <div class="game-tile-body">
+              <h3>Pointer-lock overhaul</h3>
+              <p>Iframe lock, click overlays, embed modes.</p>
+              <a class="btn btn-secondary" style="min-height:40px;width:100%;margin-top:8px" href="/ai-game-lab/updates/">Notes</a>
+            </div>
+          </article>
+        </div>
+        <button id="scrollTop" class="scroll-top" type="button" aria-label="Scroll to top" hidden>
+          <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 10 4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </main>
+      <footer class="site-footer">
+        <p>© <span id="copyrightYear">2026</span> AI Game Lab · Catalog</p>
+        <nav class="footer-links"><a href="/ai-game-lab/play/">Play</a>
+</nav>
+      </footer>
     </div>
-    <p class="footer-copy">© <span id="copyrightYear">2026</span> AI Game Lab.</p>
-  </footer>
-  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script src="/ai-game-lab/player-urls.js?v=21-neat"></script>
-  <script src="/ai-game-lab/script.js?v=21-neat"></script>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/ai-game-lab/config.js?v=24-library"></script>
+  <script src="/ai-game-lab/player-urls.js?v=24-library"></script>
+  <script src="/ai-game-lab/script.js?v=24-library"></script>
 </body>
 </html>

@@ -2,99 +2,76 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="aigl-theme" content="21-neat" />
-  <style id="aigl-theme-lock">:root:not([data-theme="light"]){--bg:#07080f!important;--bg-2:#0c0f1a!important;--accent:#ff4d9a!important}html:not([data-theme="light"]),html:not([data-theme="light"]) body{background-color:#07080f!important}</style>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Night of the Dead native desktop build notes for AI Game Lab." />
-  <meta name="theme-color" content="#07080f" />
-  <meta name="color-scheme" content="dark light" />
+  <meta name="theme-color" content="#0a0a0b" />
   <title>Night of the Dead — AI Game Lab</title>
-  <link rel="icon" type="image/svg+xml" href="/ai-game-lab/showcase/favicon.svg?v=21-neat" />
-  <link rel="manifest" href="/ai-game-lab/showcase/manifest.json" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/ai-game-lab/styles.css?v=21-neat" />
+  <link rel="icon" type="image/svg+xml" href="/ai-game-lab/showcase/favicon.svg?v=24-library" />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/ai-game-lab/styles.css?v=24-library" />
 </head>
 <body>
-  <div class="site-backdrop" aria-hidden="true"><div class="grid-plane"></div><div class="glow glow-a"></div><div class="glow glow-b"></div><div class="noise-layer"></div></div>
-  <header class="topbar" role="banner">
-    <div class="topbar-inner">
-      <a class="brand" href="/ai-game-lab/" aria-label="AI Game Lab home">
-        <img class="brand-mark" src="/ai-game-lab/showcase/brand-mark.svg?v=21-neat" alt="" width="36" height="36" decoding="async" aria-hidden="true" />
-        <span class="brand-copy"><strong>AI Game Lab</strong><small>Browser game studio</small></span>
+  <div class="app-shell">
+    <aside class="rail" id="siteRail">
+      <a class="rail-brand" href="/ai-game-lab/">
+        <img src="/ai-game-lab/showcase/brand-mark.svg?v=24-library" alt="" width="36" height="36" />
+        <span><strong>AI Game Lab</strong><small>Library OS · v24</small></span>
       </a>
-      <nav id="siteNav" class="nav" aria-label="Site navigation">
-        <a href="/ai-game-lab/">Home</a>
-        <a href="/ai-game-lab/showcase/">Showcase</a>
-        <a href="/ai-game-lab/play/">Play</a>
-        <a href="/ai-game-lab/story/">Story</a>
-        <a href="/ai-game-lab/showcase/updates/">Updates</a>
+      <nav id="siteNav" class="rail-nav">
+        <a href="/ai-game-lab/"><span class="nav-ico">▣</span> Library</a>
+        <a href="/ai-game-lab/play/"><span class="nav-ico">▶</span> Play</a>
+        <a href="/ai-game-lab/showcase/"><span class="nav-ico">▦</span> Catalog</a>
+        <a href="/ai-game-lab/story/"><span class="nav-ico">≡</span> Story</a>
+        <a href="/ai-game-lab/updates/"><span class="nav-ico">↻</span> Updates</a>
       </nav>
-      <div class="topbar-actions">
-        <a class="github-pill" href="https://github.com/xrctz/ai-game-lab" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <button id="themeBtn" class="icon-btn" type="button" aria-label="Toggle theme">
-          <svg class="ico-moon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-          <svg class="ico-sun" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M15 8h-2M3 8H1M13.07 2.93l-1.42 1.42M4.34 11.66l-1.41 1.41M13.07 13.07l-1.42-1.42M4.34 4.34 2.93 2.93" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        </button>
-        <button id="menuToggle" class="menu-toggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="siteNav">
-          <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-        </button>
+      <div class="rail-footer">
+        <a class="btn-rail primary" href="https://github.com/xrctz/ai-game-lab" target="_blank" rel="noopener noreferrer">Repo</a>
+        <a class="btn-rail" href="/ai-game-lab/play/">Theater</a>
       </div>
-    </div>
-  </header>
-
-  <main id="main">
-    <section class="page-hero compact">
-      <span class="hero-kicker reveal"><span class="pulse-dot"></span> Native desktop build</span>
-      <h1 class="hero-title reveal">Night of the Dead runs locally.</h1>
-      <p class="hero-lead reveal">A Raylib + .NET 10 zombie FPS with a Rust simulation core. GitHub Pages hosts the browser games—this one needs a desktop build on your machine.</p>
-      <div class="hero-actions reveal">
-        <a class="btn btn-primary" href="https://github.com/xrctz/ai-game-lab" target="_blank" rel="noopener noreferrer">Open AI Game Lab repo</a>
-        <a class="btn btn-secondary" href="/ai-game-lab/play/?game=nightofthedead">Back to player</a>
-      </div>
-    </section>
-    <article class="article-block">
-      <div class="story-card reveal">
-        <span class="story-index">01</span>
-        <div>
-          <h2>Why it is not embedded</h2>
-          <p>Night of the Dead uses OpenGL via Raylib and a native Rust sim library. It cannot run inside a browser iframe like the WebGL hub games.</p>
+    </aside>
+    <div class="main-col">
+      <div class="top-strip">
+        <div class="top-strip-left">
+          <button id="menuToggle" class="menu-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="siteRail">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </button>
+          <span class="page-label">Native build</span>
+        </div>
+        <div class="top-strip-actions">
+          <button id="themeBtn" class="icon-btn" type="button" aria-label="Theme">
+            <svg class="ico-moon" viewBox="0 0 16 16" fill="none"><path d="M13.5 9.5A6 6 0 1 1 6.5 2.5a5 5 0 0 0 7 7Z" stroke="currentColor" stroke-width="1.5"/></svg>
+            <svg class="ico-sun" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/></svg>
+          </button>
         </div>
       </div>
-      <div class="story-card reveal">
-        <span class="story-index">02</span>
-        <div>
-          <h2>Requirements</h2>
-          <p>Ubuntu (X11/Wayland + GPU drivers) and the <a href="https://dotnet.microsoft.com/download">.NET SDK 10+</a>. Source lives under <code>July 12th new games to upload/3D Zombie Game/native/NightOfTheDead/</code> in the repo.</p>
-        </div>
-      </div>
-      <div class="story-card reveal">
-        <span class="story-index">03</span>
-        <div>
-          <h2>Build &amp; run</h2>
-          <pre>cd native/NightOfTheDead
+      <main id="main" class="page-body">
+        <header class="page-hero">
+          <div class="eyebrow">Native desktop</div>
+          <h1>Night of the Dead</h1>
+          <p class="lede">Raylib + .NET zombie FPS with a Rust sim core. Needs a desktop build — not a browser iframe.</p>
+          <div class="hero-actions" style="justify-content:flex-start">
+            <a class="btn btn-primary" href="https://github.com/xrctz/ai-game-lab" target="_blank" rel="noopener noreferrer">Open repo</a>
+            <a class="btn btn-secondary" href="/ai-game-lab/play/?game=nightofthedead">Back to theater</a>
+          </div>
+        </header>
+        <div class="article-wrap">
+          <div class="story-card"><span class="story-index">01</span><div><h2>Why not embedded</h2><p>OpenGL via Raylib + native Rust — cannot run in a hub iframe like the WebGL games.</p></div></div>
+          <div class="story-card"><span class="story-index">02</span><div><h2>Requirements</h2><p>Ubuntu + GPU drivers and <a href="https://dotnet.microsoft.com/download" style="color:var(--accent);font-weight:700">.NET SDK 10+</a>. Source under the July 12 native folder in the repo.</p></div></div>
+          <div class="story-card"><span class="story-index">03</span><div><h2>Build &amp; run</h2>
+<pre>cd native/NightOfTheDead
 dotnet run -c Release
 
-# Or publish a self-contained Linux build:
 dotnet publish -c Release -r linux-x64 --self-contained true -o ../../dist
 ./dist/NightOfTheDead</pre>
+          </div></div>
+          <div class="story-card"><span class="story-index">04</span><div><h2>Controls</h2><p>WASD · Shift sprint · mouse look · LMB shoot · R reload · Space jump · Esc pause.</p></div></div>
         </div>
-      </div>
-      <div class="story-card reveal">
-        <span class="story-index">04</span>
-        <div>
-          <h2>Controls</h2>
-          <p>WASD move · Shift sprint · Mouse look (pointer locked) · Left click shoot · R reload · Space jump · Esc pause.</p>
-        </div>
-      </div>
-    </article>
-  </main>
-  <footer class="footer-block">
-    <p class="footer-copy">© <span id="copyrightYear">2026</span> AI Game Lab.</p>
-  </footer>
-  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script src="/ai-game-lab/player-urls.js?v=21-neat"></script>
-  <script src="/ai-game-lab/script.js?v=21-neat"></script>
+      </main>
+      <footer class="site-footer"><p>© <span id="copyrightYear">2026</span> AI Game Lab</p></footer>
+    </div>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/ai-game-lab/config.js?v=24-library"></script>
+  <script src="/ai-game-lab/player-urls.js?v=24-library"></script>
+  <script src="/ai-game-lab/script.js?v=24-library"></script>
 </body>
 </html>

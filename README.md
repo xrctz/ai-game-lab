@@ -39,7 +39,7 @@
 
 ## Features
 
-- **Studio UI (v19)** — Premium dark design system shared across home, showcase, play, story, and updates
+- **Library OS (v24)** — Side-rail game storefront: acid lime system, featured carousel, horizontal shelves, ambient FX
 - **Embedded player** — Click-to-play overlays, pointer-lock handling, and per-game quality controls
 - **Command launcher** — Press `Ctrl+K` to jump between pages and games
 - **GitHub Pages ready** — Static deploy with automated workflow on `main`

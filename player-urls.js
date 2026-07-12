@@ -1,6 +1,6 @@
 /**
- * AI Game Lab — pure player URL helpers (shipped hub code).
- * Used by script.js in the browser and by Node verification tests.
+ * AI Game Lab — player URL helpers
+ * Games stay at repo-root /games/; hub is the template shell only.
  */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
@@ -11,14 +11,17 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
+  var g = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : {});
+  var ROOT = (g.AIGL_Config && g.AIGL_Config.ROOT) || '/ai-game-lab';
+
   var GAME_URLS = {
-    zombie: '/ai-game-lab/games/zombie/index.html',
-    deadzone: '/ai-game-lab/games/deadzone/index.html',
-    voxel: '/ai-game-lab/games/voxel/index.html',
-    minecraft: '/ai-game-lab/games/voxel/index.html',
-    racing: '/ai-game-lab/games/racing/index.html',
-    fnaf: '/ai-game-lab/games/fnaf/index.html',
-    pokemon: '/ai-game-lab/games/pokemon/index.html'
+    zombie: ROOT + '/games/zombie/index.html',
+    deadzone: ROOT + '/games/deadzone/index.html',
+    voxel: ROOT + '/games/voxel/index.html',
+    minecraft: ROOT + '/games/voxel/index.html',
+    racing: ROOT + '/games/racing/index.html',
+    fnaf: ROOT + '/games/fnaf/index.html',
+    pokemon: ROOT + '/games/pokemon/index.html'
   };
 
   var GAME_NAMES = {
@@ -33,6 +36,17 @@
     nightofthedead: 'Night of the Dead'
   };
 
+  var GAME_META = {
+    zombie: { genre: 'FPS', engine: 'Three.js', status: 'playable', accent: '#ff4d6a' },
+    deadzone: { genre: 'FPS', engine: 'Three.js', status: 'playable', accent: '#f59e0b' },
+    voxel: { genre: 'Sandbox', engine: 'WebGL', status: 'playable', accent: '#34d399' },
+    racing: { genre: 'Racing', engine: 'Three.js', status: 'playable', accent: '#38bdf8' },
+    fnaf: { genre: 'Horror', engine: 'Three.js', status: 'playable', accent: '#a78bfa' },
+    pokemon: { genre: 'RPG', engine: 'Canvas + Three.js', status: 'playable', accent: '#fbbf24' },
+    mindcraft: { genre: 'Tool', engine: 'Java + Node', status: 'local', accent: '#94a3b8' },
+    nightofthedead: { genre: 'FPS', engine: 'Raylib + .NET', status: 'native', accent: '#fb7185' }
+  };
+
   function normalizeQuality(q) {
     if (q === 'low' || q === 'balanced' || q === 'high') return q;
     return 'balanced';
@@ -43,8 +57,7 @@
     var base = GAME_URLS[game];
     if (!base) return null;
     if (game === 'zombie') {
-      var quality = normalizeQuality(opts.quality);
-      return base + '?quality=' + encodeURIComponent(quality);
+      return base + '?quality=' + encodeURIComponent(normalizeQuality(opts.quality));
     }
     return base;
   }
@@ -63,8 +76,7 @@
     if (!base) return null;
     var url;
     if (game === 'zombie') {
-      var quality = normalizeQuality(opts.quality);
-      var params = ['quality=' + encodeURIComponent(quality), 'embed=1'];
+      var params = ['quality=' + encodeURIComponent(normalizeQuality(opts.quality)), 'embed=1'];
       if (opts.debug) params.push('debug=1');
       url = base + '?' + params.join('&');
     } else if (game === 'deadzone' || game === 'voxel' || game === 'minecraft' ||
@@ -84,13 +96,19 @@
     return GAME_NAMES[game] || game || 'Unknown';
   }
 
+  function getGameMeta(game) {
+    return GAME_META[game] || { genre: 'Other', engine: '—', status: 'unknown', accent: '#a78bfa' };
+  }
+
   return {
     GAME_URLS: GAME_URLS,
     GAME_NAMES: GAME_NAMES,
+    GAME_META: GAME_META,
     normalizeQuality: normalizeQuality,
     getStandaloneUrl: getStandaloneUrl,
     getEmbedUrl: getEmbedUrl,
     isPlayableGame: isPlayableGame,
-    getGameName: getGameName
+    getGameName: getGameName,
+    getGameMeta: getGameMeta
   };
 });
