@@ -10,7 +10,7 @@
   window.AIGLMobile.installFpsShim();
   window.AIGLMobile.mountFpsControls({
     id: 'aigl-mob-zombie',
-    banner: 'Touch controls — joystick moves, right side aims, Fire shoots.',
+    banner: 'Joystick move · drag upper-right to aim · Fire shoots',
     jump: true,
     reload: true,
   });

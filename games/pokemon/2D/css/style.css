@@ -1458,3 +1458,34 @@ html, body {
   text-align: center;
   max-width: 400px;
 }
+
+/* iPhone 14 portrait (~390px) — compact on-screen controls */
+@media (max-width: 430px) {
+  .mobile-controls {
+    gap: 10px;
+    margin-top: 2px;
+    opacity: 1;
+  }
+
+  .dpad {
+    grid-template-columns: 36px 36px 36px;
+    grid-template-rows: 36px 36px 36px;
+    gap: 2px;
+    padding: 4px;
+  }
+
+  .dpad button {
+    font-size: 10px;
+  }
+
+  .action-btns {
+    gap: 6px;
+  }
+
+  .action-btns button {
+    width: 40px;
+    height: 40px;
+    font-size: 8px;
+    border-width: 2px;
+  }
+}

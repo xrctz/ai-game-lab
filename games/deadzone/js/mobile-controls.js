@@ -16,8 +16,9 @@
     var root = window.AIGLMobile.createRoot('aigl-mob-deadzone', true);
     var banner = document.createElement('div');
     banner.className = 'aigl-mob-banner';
-    banner.textContent = 'Touch controls on — joystick moves, right side aims.';
+    banner.textContent = 'Joystick move · drag upper-right to aim';
     root.appendChild(banner);
+    scheduleBannerHide(banner);
 
     var move = { x: 0, y: 0 };
     function applyMove() {

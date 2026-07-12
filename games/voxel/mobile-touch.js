@@ -10,7 +10,7 @@
   window.AIGLMobile.installFpsShim();
   window.AIGLMobile.mountFpsControls({
     id: 'aigl-mob-voxel',
-    banner: 'Touch sandbox — joystick to move, right side to look.',
+    banner: 'Joystick move · drag upper-right to look',
     jump: true,
     reload: false,
     fire: false,

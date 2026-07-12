@@ -105,8 +105,43 @@
     if (/[?&](?:touch|mobile)=1/i.test(location.search)) {
       root.classList.add('aigl-mob-force');
     }
+    applyLayoutClasses(root);
     document.body.appendChild(root);
     return root;
+  }
+
+  function applyLayoutClasses(root) {
+    if (!root) return;
+    var w = global.innerWidth || 0;
+    var h = global.innerHeight || 0;
+    root.classList.toggle('aigl-mob-phone', w <= 430);
+    root.classList.toggle('aigl-mob-short', h <= 680);
+    root.classList.toggle('aigl-mob-iphone14', w >= 360 && w <= 400 && h >= 700);
+  }
+
+  function joystickRadius() {
+    var w = global.innerWidth || 0;
+    var h = global.innerHeight || 0;
+    if (h <= 680) return 22;
+    if (w <= 430) return 26;
+    return 34;
+  }
+
+  function scheduleBannerHide(banner) {
+    if (!banner) return;
+    setTimeout(function () {
+      banner.classList.add('aigl-mob-banner-hide');
+      setTimeout(function () {
+        if (banner.parentNode) banner.parentNode.removeChild(banner);
+      }, 600);
+    }, 3500);
+  }
+
+  if (!global.__aiglMobResizeBound) {
+    global.__aiglMobResizeBound = true;
+    global.addEventListener('resize', function () {
+      document.querySelectorAll('.aigl-mob-root').forEach(applyLayoutClasses);
+    }, { passive: true });
   }
 
   function bindDragSurface(el, onStart, onMove, onEnd) {
@@ -170,7 +205,7 @@
     root.appendChild(zone);
 
     var origin = { x: 0, y: 0 };
-    var radius = 44;
+    var radius = joystickRadius();
 
     function setStick(nx, ny) {
       stick.style.transform = 'translate(' + (nx * radius) + 'px,' + (ny * radius) + 'px)';
@@ -296,8 +331,11 @@
       if (opts.banner) {
         var banner = document.createElement('div');
         banner.className = 'aigl-mob-banner';
-        banner.textContent = opts.banner;
+        banner.textContent = (global.innerWidth <= 430)
+          ? 'Joystick · upper-right drag to aim'
+          : opts.banner;
         root.appendChild(banner);
+        scheduleBannerHide(banner);
       }
 
       var moveState = { x: 0, y: 0 };
@@ -389,10 +427,11 @@
     ensureCss();
     function build() {
       var root = createRoot(opts.id || 'aigl-mob-racing', true);
+      root.classList.add('aigl-mob-racing-layout');
       var steer = document.createElement('div');
       steer.className = 'aigl-mob-steer';
-      var left = makeBtn('◀ Steer');
-      var right = makeBtn('Steer ▶');
+      var left = makeBtn('◀');
+      var right = makeBtn('▶');
       steer.appendChild(left);
       steer.appendChild(right);
       root.appendChild(steer);
@@ -443,17 +482,17 @@
       var grid = document.createElement('div');
       grid.className = 'aigl-mob-fnaf';
 
-      var lookL = makeBtn('Look Left');
+      var lookL = makeBtn('◀');
       var lookC = makeBtn('Desk');
-      var lookR = makeBtn('Look Right');
-      var doorL = makeBtn('L Door');
-      var cam = makeBtn('Cameras', 'wide');
-      var doorR = makeBtn('R Door');
-      var lightL = makeBtn('L Light');
+      var lookR = makeBtn('▶');
+      var doorL = makeBtn('L Dr');
+      var doorR = makeBtn('R Dr');
+      var lightL = makeBtn('L Lt');
       var flash = makeBtn('Flash');
-      var lightR = makeBtn('R Light');
+      var lightR = makeBtn('R Lt');
+      var cam = makeBtn('Cameras', 'wide');
 
-      [lookL, lookC, lookR, doorL, cam, doorR, lightL, flash, lightR].forEach(function (b) {
+      [lookL, lookC, lookR, doorL, doorR, lightL, flash, lightR, cam].forEach(function (b) {
         grid.appendChild(b);
       });
       root.appendChild(grid);
