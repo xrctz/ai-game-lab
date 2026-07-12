@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pokémon Adventure</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23e3350d'/><path d='M5 50h90' stroke='%23222' stroke-width='8'/><circle cx='50' cy='50' r='12' fill='%23fff' stroke='%23222' stroke-width='4'/></svg>" />
+</head>
+<body>
+  <div id="app">
+    <!-- TITLE -->
+    <section id="title-screen" class="screen active">
+      <div class="pokeball-icon" aria-hidden="true"></div>
+      <img
+        class="title-trainer"
+        src="assets/sprites/player/title.png?v=3"
+        alt="Trainer"
+        width="128"
+        height="128"
+        draggable="false"
+      />
+      <div>
+        <h1 class="title-logo">POKÉMON<br>ADVENTURE</h1>
+        <p class="title-sub">A browser-based mini RPG</p>
+      </div>
+      <button id="btn-start" class="menu-btn primary"><span class="btn-glyph">&#9654;</span> NEW GAME</button>
+      <button id="btn-continue" class="menu-btn" hidden><span class="btn-glyph">&#9654;</span> CONTINUE</button>
+      <div class="controls-hint">
+        Move: WASD / Arrows<br>
+        Interact: E / Space · Party: M · Bag: B · Save: P<br>
+        Goal: Catch 6 species &amp; defeat Mewtwo!
+      </div>
+    </section>
+
+    <!-- STARTER SELECT -->
+    <section id="starter-screen" class="screen">
+      <h2>Choose your starter!</h2>
+      <p>Your partner for the journey ahead</p>
+      <div class="starter-row">
+        <div class="starter-card fire" data-species="charmander" role="button" tabindex="0">
+          <img class="starter-sprite-img" src="assets/sprites/artwork/charmander.png" alt="Charmander" />
+          <h3>Charmander</h3>
+          <span class="type-badge type-fire">FIRE</span>
+          <p class="desc">A rare fire lizard. Strong against grass &amp; bug types.</p>
+        </div>
+        <div class="starter-card water" data-species="squirtle" role="button" tabindex="0">
+          <img class="starter-sprite-img" src="assets/sprites/artwork/squirtle.png" alt="Squirtle" />
+          <h3>Squirtle</h3>
+          <span class="type-badge type-water">WATER</span>
+          <p class="desc">A tiny turtle. Excels against fire &amp; rock types.</p>
+        </div>
+        <div class="starter-card grass" data-species="bulbasaur" role="button" tabindex="0">
+          <img class="starter-sprite-img" src="assets/sprites/artwork/bulbasaur.png" alt="Bulbasaur" />
+          <h3>Bulbasaur</h3>
+          <span class="type-badge type-grass">GRASS</span>
+          <p class="desc">A seed Pokémon. Great vs water &amp; ground types.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- OVERWORLD -->
+    <section id="game-screen" class="screen">
+      <div class="hud">
+        <div class="hud-left">
+          <div class="hud-stat">
+            <label>LEAD</label>
+            <span id="hud-lead">—</span>
+          </div>
+          <div class="hud-stat">
+            <label>HP</label>
+            <span id="hud-hp">—</span>
+            <div class="hp-bar-bg" style="width:80px;margin-top:2px">
+              <div id="hud-hp-bar" class="hp-bar" style="width:100%"></div>
+            </div>
+          </div>
+          <div class="hud-stat">
+            <label>PARTY</label>
+            <span id="hud-party">0/0</span>
+          </div>
+        </div>
+        <div class="hud-right">
+          <div class="hud-stat">
+            <label>BALLS</label>
+            <span id="hud-balls">0</span>
+          </div>
+          <div class="hud-stat">
+            <label>POTIONS</label>
+            <span id="hud-potions">0</span>
+          </div>
+          <div class="hud-stat">
+            <label>CAUGHT</label>
+            <span id="hud-caught">0/6</span>
+          </div>
+          <div class="hud-stat">
+            <label>WINS</label>
+            <span id="hud-battles">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-frame">
+        <canvas id="game-canvas" width="720" height="480"></canvas>
+        <div id="dialogue" class="dialogue">
+          <div id="dialogue-text" class="dialogue-text"></div>
+          <div class="dialogue-continue"><span class="btn-glyph">&#9660;</span> E / Space</div>
+        </div>
+      </div>
+
+      <div class="mobile-controls">
+        <div class="dpad">
+          <button class="up" data-dir="up" type="button" aria-label="Up"><span class="btn-glyph">&#9650;</span></button>
+          <button class="left" data-dir="left" type="button" aria-label="Left"><span class="btn-glyph">&#9664;</span></button>
+          <button class="right" data-dir="right" type="button" aria-label="Right"><span class="btn-glyph">&#9654;</span></button>
+          <button class="down" data-dir="down" type="button" aria-label="Down"><span class="btn-glyph">&#9660;</span></button>
+        </div>
+        <div class="action-btns">
+          <button id="btn-a" type="button">A</button>
+          <button id="btn-menu" type="button">M</button>
+          <button id="btn-b" type="button">B</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- BATTLE -->
+    <section id="battle-screen" class="screen">
+      <div class="battle-arena" id="battle-arena">
+        <div class="battle-ground enemy-ground"></div>
+        <div class="battle-ground player-ground"></div>
+
+        <div class="battle-pokemon enemy">
+          <div class="hp-box">
+            <div class="name-row">
+              <span id="enemy-name">Wild</span>
+              <span class="level" id="enemy-level">Lv5</span>
+            </div>
+            <div class="hp-bar-bg"><div id="enemy-hp-bar" class="hp-bar"></div></div>
+          </div>
+          <img id="enemy-sprite" class="battle-sprite" src="assets/sprites/ani/pidgey.gif" alt="Enemy" draggable="false" />
+        </div>
+
+        <div class="battle-pokemon player">
+          <img
+            id="trainer-back-sprite"
+            class="trainer-back-sprite"
+            src="assets/sprites/player/battle_back.png?v=5"
+            alt="Trainer"
+            draggable="false"
+          />
+          <img id="player-sprite" class="battle-sprite" src="assets/sprites/ani-back/charmander.gif" alt="Player" draggable="false" />
+          <div class="hp-box">
+            <div class="name-row">
+              <span id="player-name">You</span>
+              <span class="level" id="player-level">Lv5</span>
+            </div>
+            <div class="hp-bar-bg"><div id="player-hp-bar" class="hp-bar"></div></div>
+            <div class="hp-text" id="player-hp-text">20/20</div>
+          </div>
+        </div>
+
+        <!-- VFX particle layer -->
+        <div id="vfx-layer" class="vfx-layer" aria-hidden="true"></div>
+
+        <div id="catch-overlay" class="catch-overlay">
+          <img id="catch-ball-img" class="catch-ball-img" src="assets/ui/pokeball.png" alt="Poké Ball" />
+        </div>
+      </div>
+
+      <div id="battle-log" class="battle-log">A wild Pokémon appeared!</div>
+
+      <div id="battle-menu-main" class="battle-menu">
+        <button id="btn-fight" type="button"><span class="menu-ico fight-ico" aria-hidden="true"></span> FIGHT</button>
+        <button id="btn-switch" type="button"><span class="menu-ico switch-ico" aria-hidden="true"></span> SWITCH</button>
+        <button id="btn-catch" type="button"><img class="btn-icon" src="assets/ui/pokeball.png" alt="" /> CATCH</button>
+        <button id="btn-bag-battle" type="button"><img class="btn-icon" src="assets/ui/potion.png" alt="" /> POTION</button>
+        <button id="btn-run" type="button" style="grid-column:1/-1"><span class="menu-ico run-ico" aria-hidden="true"></span> RUN</button>
+      </div>
+
+      <div id="battle-menu-moves" class="battle-menu moves hidden">
+        <div id="moves-list" style="display:contents"></div>
+        <button id="btn-back-moves" type="button" style="grid-column:1/-1">&#9664; BACK</button>
+      </div>
+
+      <div id="battle-menu-switch" class="battle-menu moves hidden">
+        <div id="switch-list" style="display:contents"></div>
+        <button id="btn-back-switch" type="button" style="grid-column:1/-1">&#9664; BACK</button>
+      </div>
+    </section>
+
+    <!-- END -->
+    <section id="end-screen" class="screen">
+      <h2><span class="btn-glyph">&#9733;</span> VICTORY!</h2>
+      <p>
+        You caught 6 species and defeated Mewtwo!<br>
+        You are the Champion of this little world.
+      </p>
+      <p id="end-stats" style="color:var(--accent);margin-bottom:24px"></p>
+      <button id="btn-restart" class="menu-btn primary"><span class="btn-glyph">&#9654;</span> PLAY AGAIN</button>
+    </section>
+  </div>
+
+  <!-- Party panel -->
+  <div id="party-panel" class="side-panel">
+    <div class="panel-box">
+      <h2>Pokémon Party</h2>
+      <div id="party-list" class="party-list"></div>
+      <button id="btn-close-party" class="panel-close">Close (Esc)</button>
+    </div>
+  </div>
+
+  <!-- Bag panel -->
+  <div id="bag-panel" class="side-panel">
+    <div class="panel-box">
+      <h2>Bag</h2>
+      <div id="bag-list" class="bag-list"></div>
+      <button id="btn-close-bag" class="panel-close">Close (Esc)</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <div id="encounter-flash" class="encounter-flash" aria-hidden="true"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/pokemon.js"></script>
+  <script src="js/vfx.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>

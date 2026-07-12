@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VEIL RUSH — Crystal Skimmer Racing</title>
+  <meta name="description" content="Pilot the Dawnshard through the Glass Meridian. A unique 3D crystalline racing experience." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <canvas id="game-canvas"></canvas>
+
+  <!-- MENU -->
+  <div id="menu-screen" class="screen active">
+    <div class="menu-panel">
+      <h1 class="logo">VEIL RUSH</h1>
+      <p class="tagline">Race the light before dawn</p>
+      <div class="vehicle-chip">
+        <img src="assets/images/vehicle_dawnshard.jpg" alt="Dawnshard skimmer" />
+        <div>
+          <div class="name">Dawnshard</div>
+          <div class="meta">Photon Skimmer · Spectrum Drive</div>
+        </div>
+      </div>
+      <p class="lore">
+        Once each twilight, the Veil opens above the crystal desert.
+        Only Veilrunners may pilot luminous skimmers across the floating
+        Glass Meridian. Collect Spectrum Orbs, drift through Prism Gates,
+        and claim the Dawn Spark.
+      </p>
+      <div class="menu-actions">
+        <button class="btn" id="btn-start">Enter the Veil</button>
+        <button class="btn btn-secondary" id="btn-watch-intro">Watch Intro</button>
+      </div>
+      <div class="controls-hint">
+        Auto-cruise on — <kbd>W</kbd> push harder · <kbd>S</kbd> brake · <kbd>A</kbd><kbd>D</kbd> steer<br />
+        <kbd>SPACE</kbd> Spectrum Boost · <kbd>SHIFT</kbd> Drift (charges boost) · <kbd>P</kbd> Pause
+      </div>
+    </div>
+  </div>
+
+  <!-- CINEMATIC -->
+  <div id="cinematic-screen" class="screen">
+    <video id="cinematic-video" playsinline muted></video>
+    <div class="cinematic-overlay">
+      <div class="cinematic-title" id="cinematic-title">VEIL RUSH</div>
+      <p class="cinematic-sub" id="cinematic-sub">The Glass Meridian awakens…</p>
+      <button class="btn" id="btn-skip-cinematic">Skip</button>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="loading-screen" class="screen">
+    <div class="loading-orb"></div>
+    <div class="loading-text">Forging the Meridian…</div>
+    <div class="loading-bar"><span id="loading-fill"></span></div>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="boost-flash" id="boost-flash"></div>
+    <div class="hud-left">
+      <div class="hud-card speed-card">
+        <div class="label">Velocity</div>
+        <div class="value"><span id="hud-speed">0</span></div>
+        <div class="unit">LUMENS</div>
+      </div>
+      <div class="hud-card spectrum-wrap">
+        <div class="label" id="spectrum-label">Spectrum</div>
+        <div class="spectrum-bar"><span id="spectrum-fill"></span></div>
+      </div>
+    </div>
+    <div class="hud-top">
+      <div class="hud-card">
+        <div class="label">Lap</div>
+        <div class="value"><span id="hud-lap">1</span>/<span id="hud-laps">3</span></div>
+      </div>
+      <div class="hud-card">
+        <div class="label">Place</div>
+        <div class="value"><span id="hud-place">1</span><span style="font-size:0.7em;color:var(--muted)"> / 4</span></div>
+      </div>
+      <div class="hud-card">
+        <div class="label">Time</div>
+        <div class="value" id="hud-time">0:00.0</div>
+      </div>
+    </div>
+    <div class="hud-right">
+      <canvas id="minimap" width="150" height="150"></canvas>
+    </div>
+    <div class="place-list">
+      <div class="label">Standings</div>
+      <div id="standings"></div>
+    </div>
+    <div class="countdown" id="countdown"></div>
+    <div class="race-msg" id="race-msg"></div>
+  </div>
+
+  <!-- PAUSE -->
+  <div id="pause-screen" class="screen">
+    <div class="result-panel">
+      <h2 class="result-title">Veil Suspended</h2>
+      <p class="result-sub">The Meridian holds still.</p>
+      <div class="menu-actions">
+        <button class="btn" id="btn-resume">Resume</button>
+        <button class="btn btn-secondary" id="btn-quit">Return to Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result-screen" class="screen">
+    <div class="result-panel">
+      <h2 class="result-title" id="result-title">Dawn Spark Claimed</h2>
+      <p class="result-sub" id="result-sub">You crossed the finish as first light broke.</p>
+      <div class="result-stats">
+        <div class="hud-card">
+          <div class="label">Place</div>
+          <div class="value" id="result-place">1st</div>
+        </div>
+        <div class="hud-card">
+          <div class="label">Time</div>
+          <div class="value" id="result-time">0:00.0</div>
+        </div>
+        <div class="hud-card">
+          <div class="label">Orbs</div>
+          <div class="value" id="result-orbs">0</div>
+        </div>
+        <div class="hud-card">
+          <div class="label">Best Lap</div>
+          <div class="value" id="result-best">—</div>
+        </div>
+      </div>
+      <div class="menu-actions">
+        <button class="btn" id="btn-replay">Race Again</button>
+        <button class="btn btn-secondary" id="btn-menu">Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.162.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.162.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

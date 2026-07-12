@@ -15,7 +15,10 @@
     zombie: '/ai-game-lab/games/zombie/index.html',
     deadzone: '/ai-game-lab/games/deadzone/index.html',
     voxel: '/ai-game-lab/games/voxel/index.html',
-    minecraft: '/ai-game-lab/games/voxel/index.html'
+    minecraft: '/ai-game-lab/games/voxel/index.html',
+    racing: '/ai-game-lab/games/racing/index.html',
+    fnaf: '/ai-game-lab/games/fnaf/index.html',
+    pokemon: '/ai-game-lab/games/pokemon/index.html'
   };
 
   var GAME_NAMES = {
@@ -23,7 +26,11 @@
     deadzone: 'Dead Zone: Evacuation',
     voxel: 'CraftVerse Engine',
     minecraft: 'CraftVerse Engine',
-    mindcraft: 'Mindcraft Control Deck'
+    mindcraft: 'Mindcraft Control Deck',
+    racing: 'VEIL RUSH',
+    fnaf: 'Midnight Watch',
+    pokemon: 'Pokémon Adventure',
+    nightofthedead: 'Night of the Dead'
   };
 
   function normalizeQuality(q) {
@@ -52,7 +59,8 @@
       if (opts.debug) params.push('debug=1');
       return base + '?' + params.join('&');
     }
-    if (game === 'deadzone' || game === 'voxel' || game === 'minecraft') {
+    if (game === 'deadzone' || game === 'voxel' || game === 'minecraft' ||
+        game === 'racing' || game === 'fnaf' || game === 'pokemon') {
       return base + '?embed=1';
     }
     return base;

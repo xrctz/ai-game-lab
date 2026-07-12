@@ -50,7 +50,7 @@
     <section class="page-hero compact">
       <span class="hero-kicker reveal"><span class="pulse-dot"></span> Runtime player</span>
       <h1 class="hero-title reveal">Load games without leaving the hub.</h1>
-      <p class="hero-lead reveal">DeadTakeover, Dead Zone, and CraftVerse run in iframes. Mindcraft stays a setup panel. Set quality before booting heavy builds.</p>
+      <p class="hero-lead reveal">DeadTakeover, Dead Zone, CraftVerse, VEIL RUSH, Midnight Watch, and Pokémon Adventure run in iframes. Mindcraft and Night of the Dead stay setup panels. Set quality before booting heavy builds.</p>
     </section>
 
     <section class="player-layout">
@@ -101,6 +101,22 @@
           <img src="/ai-game-lab/showcase/previews/craftverse.jpg?v=21-neat" alt="" width="96" height="62" loading="lazy" decoding="async" />
           <span><strong>CraftVerse Engine</strong><small>games/voxel</small></span>
         </button>
+        <button class="boot-option" data-play="racing" type="button">
+          <img src="/ai-game-lab/showcase/previews/racing.jpg" alt="" width="96" height="62" loading="lazy" decoding="async" />
+          <span><strong>VEIL RUSH</strong><small>games/racing</small></span>
+        </button>
+        <button class="boot-option" data-play="fnaf" type="button">
+          <img src="/ai-game-lab/showcase/previews/fnaf.png" alt="" width="96" height="62" loading="lazy" decoding="async" />
+          <span><strong>Midnight Watch</strong><small>games/fnaf</small></span>
+        </button>
+        <button class="boot-option" data-play="pokemon" type="button">
+          <img src="/ai-game-lab/showcase/previews/pokemon.png" alt="" width="96" height="62" loading="lazy" decoding="async" />
+          <span><strong>Pokémon Adventure</strong><small>games/pokemon</small></span>
+        </button>
+        <button class="boot-option" data-play="nightofthedead" type="button">
+          <img src="/ai-game-lab/showcase/previews/deadzone.svg" alt="" width="96" height="62" loading="lazy" decoding="async" />
+          <span><strong>Night of the Dead</strong><small>native desktop</small></span>
+        </button>
         <button class="boot-option" data-play="mindcraft" type="button">
           <img src="/ai-game-lab/showcase/previews/mindcraft.png" alt="" width="96" height="62" loading="lazy" decoding="async" />
           <span><strong>Mindcraft Control Deck</strong><small>local setup</small></span>
@@ -120,6 +136,9 @@
             <span data-route-check="zombie">Zombie route: checking</span>
             <span data-route-check="deadzone">Dead Zone route: checking</span>
             <span data-route-check="voxel">Voxel route: checking</span>
+            <span data-route-check="racing">Racing route: checking</span>
+            <span data-route-check="fnaf">FNAF route: checking</span>
+            <span data-route-check="pokemon">Pokémon route: checking</span>
           </div>
         </div>
         <div class="boot-note"><strong>Tip:</strong> Click the game surface to capture the mouse. Fullscreen cleans up the chrome for longer sessions.</div>
@@ -160,6 +179,38 @@ mode   playable</pre>
           <pre>route  /games/voxel/
 engine WebGL
 mode   playable</pre>
+        </article>
+        <article class="run-card reveal">
+          <div class="run-card-preview"><img src="/ai-game-lab/showcase/previews/racing.jpg" alt="VEIL RUSH preview" width="420" height="180" loading="lazy" decoding="async" /></div>
+          <div class="run-head"><h3>VEIL RUSH</h3><button class="btn-small primary" data-play="racing" type="button">Play</button></div>
+          <p>Crystalline skimmer racing across the Glass Meridian.</p>
+          <pre>route  /games/racing/
+engine Three.js
+mode   playable</pre>
+        </article>
+        <article class="run-card reveal">
+          <div class="run-card-preview"><img src="/ai-game-lab/showcase/previews/fnaf.png" alt="Midnight Watch preview" width="420" height="180" loading="lazy" decoding="async" /></div>
+          <div class="run-head"><h3>Midnight Watch</h3><button class="btn-small primary" data-play="fnaf" type="button">Play</button></div>
+          <p>Survival horror at Bruno's Pizzeria—cameras, doors, and power.</p>
+          <pre>route  /games/fnaf/
+engine Three.js
+mode   playable</pre>
+        </article>
+        <article class="run-card reveal">
+          <div class="run-card-preview"><img src="/ai-game-lab/showcase/previews/pokemon.png" alt="Pokémon Adventure preview" width="420" height="180" loading="lazy" decoding="async" /></div>
+          <div class="run-head"><h3>Pokémon Adventure</h3><button class="btn-small primary" data-play="pokemon" type="button">Play</button></div>
+          <p>2D canvas or full 3D RPG—catch six species and beat Mewtwo.</p>
+          <pre>route  /games/pokemon/
+engine Canvas + Three.js
+mode   playable</pre>
+        </article>
+        <article class="run-card reveal">
+          <div class="run-card-preview"><img src="/ai-game-lab/showcase/previews/deadzone.svg" alt="Night of the Dead preview" width="420" height="180" loading="lazy" decoding="async" /></div>
+          <div class="run-head"><h3>Night of the Dead</h3><button class="btn-small" data-play="nightofthedead" type="button">Info</button></div>
+          <p>Native Raylib + .NET zombie FPS—desktop download only.</p>
+          <pre>route  native app
+stack  C# + Raylib
+mode   setup info</pre>
         </article>
         <article class="run-card reveal">
           <div class="run-card-preview"><img src="/ai-game-lab/showcase/previews/mindcraft.png" alt="Mindcraft preview" width="420" height="180" loading="lazy" decoding="async" /></div>

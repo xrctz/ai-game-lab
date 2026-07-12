@@ -246,14 +246,21 @@ function showToast(msg, duration){
     zombie: '/ai-game-lab/games/zombie/index.html',
     deadzone: '/ai-game-lab/games/deadzone/index.html',
     voxel: '/ai-game-lab/games/voxel/index.html',
-    minecraft: '/ai-game-lab/games/voxel/index.html'
+    minecraft: '/ai-game-lab/games/voxel/index.html',
+    racing: '/ai-game-lab/games/racing/index.html',
+    fnaf: '/ai-game-lab/games/fnaf/index.html',
+    pokemon: '/ai-game-lab/games/pokemon/index.html'
   };
   var GAME_NAMES = (urlsApi && urlsApi.GAME_NAMES) || {
     zombie: 'DeadTakeover Protocol',
     deadzone: 'Dead Zone: Evacuation',
     voxel: 'CraftVerse Engine',
     minecraft: 'CraftVerse Engine',
-    mindcraft: 'Mindcraft Control Deck'
+    mindcraft: 'Mindcraft Control Deck',
+    racing: 'VEIL RUSH',
+    fnaf: 'Midnight Watch',
+    pokemon: 'Pokémon Adventure',
+    nightofthedead: 'Night of the Dead'
   };
   var currentGame = null;
   var currentIframe = null;
@@ -297,7 +304,7 @@ function showToast(msg, duration){
       if (opts.debug) params.set('debug', '1');
       return url + '?' + params.toString();
     }
-    if (game === 'deadzone' || game === 'voxel') {
+    if (game === 'deadzone' || game === 'voxel' || game === 'racing' || game === 'fnaf' || game === 'pokemon') {
       return url + '?embed=1';
     }
     return url;
@@ -312,7 +319,7 @@ function showToast(msg, duration){
   }
 
   function rememberGame(game){
-    if (!game || game === 'mindcraft') return;
+    if (!game || game === 'mindcraft' || game === 'nightofthedead') return;
     try { localStorage.setItem(LAST_KEY, game); } catch(e) {}
   }
 
@@ -381,19 +388,26 @@ function showToast(msg, duration){
       }
     }
   }
-  function showMindcraft(){
+  function showInfoPanel(game, kicker, title, body, primaryHref, primaryLabel, secondaryHref, secondaryLabel, toastMsg){
     if (window.__particleResume) window.__particleResume();
-    clearIframe(); currentGame = 'mindcraft'; markBootActive('mindcraft');
+    clearIframe(); currentGame = game; markBootActive(game);
     if (playerEmpty) playerEmpty.style.display = 'none';
     var panel = document.createElement('div');
     panel.className = 'info-panel';
-    panel.innerHTML = '<div><span class="hero-kicker"><span class="pulse-dot"></span> Local launcher</span><h3>Mindcraft runs on your machine.</h3><p>GitHub Pages can only host static files, so this hub shows setup info instead of trying to iframe a missing local Java/Node app.</p><div class="hero-actions"><a class="btn btn-primary" href="https://github.com/xrctz/mindcraft" target="_blank" rel="noopener noreferrer">Open repo</a><a class="btn btn-secondary" href="/ai-game-lab/mindcraft-info.html">Setup notes</a></div></div>';
+    panel.innerHTML = '<div><span class="hero-kicker"><span class="pulse-dot"></span> ' + kicker + '</span><h3>' + title + '</h3><p>' + body + '</p><div class="hero-actions"><a class="btn btn-primary" href="' + primaryHref + '" target="_blank" rel="noopener noreferrer">' + primaryLabel + '</a><a class="btn btn-secondary" href="' + secondaryHref + '">' + secondaryLabel + '</a></div></div>';
     playerScreen.appendChild(panel);
-    setStatus(true, 'mindcraft');
-    showToast('Mindcraft setup panel opened');
+    setStatus(true, game);
+    showToast(toastMsg);
+  }
+  function showMindcraft(){
+    showInfoPanel('mindcraft', 'Local launcher', 'Mindcraft runs on your machine.', 'GitHub Pages can only host static files, so this hub shows setup info instead of trying to iframe a missing local Java/Node app.', 'https://github.com/xrctz/mindcraft', 'Open repo', '/ai-game-lab/mindcraft-info.html', 'Setup notes', 'Mindcraft setup panel opened');
+  }
+  function showNightOfTheDead(){
+    showInfoPanel('nightofthedead', 'Native desktop build', 'Night of the Dead is a native FPS.', 'This Raylib + .NET build runs on your machine with GPU drivers—it cannot be embedded in the browser hub like the WebGL games.', 'https://github.com/xrctz/ai-game-lab/tree/main/games', 'Browse builds', '/ai-game-lab/nightofthedead-info.html', 'Setup notes', 'Night of the Dead setup panel opened');
   }
   function loadGame(game){
     if (game === 'mindcraft') { showMindcraft(); return; }
+    if (game === 'nightofthedead') { showNightOfTheDead(); return; }
     var url = getGameUrl(game);
     if (!url) { showToast('Unknown game: ' + game); return; }
     rememberGame(game);
@@ -543,6 +557,9 @@ function showToast(msg, duration){
     {title:'Play DeadTakeover Lab+', detail:'Boot the zombie game with visual effects and director HUD', href:'/ai-game-lab/play/?game=zombie', tag:'game'},
     {title:'Play Dead Zone: Evacuation', detail:'3D squad FPS with two maps and 15 waves', href:'/ai-game-lab/play/?game=deadzone', tag:'game'},
     {title:'Play CraftVerse', detail:'Boot the voxel sandbox', href:'/ai-game-lab/play/?game=voxel', tag:'game'},
+    {title:'Play VEIL RUSH', detail:'Crystal skimmer racing across the Glass Meridian', href:'/ai-game-lab/play/?game=racing', tag:'game'},
+    {title:'Play Midnight Watch', detail:'FNAF-inspired survival horror in the browser', href:'/ai-game-lab/play/?game=fnaf', tag:'game'},
+    {title:'Play Pokémon Adventure', detail:'2D and 3D RPG editions in one launcher', href:'/ai-game-lab/play/?game=pokemon', tag:'game'},
     {title:'Story', detail:'Read the project origin log', href:'/ai-game-lab/story/', tag:'page'},
     {title:'Updates', detail:'Read release notes and runtime status', href:'/ai-game-lab/showcase/updates/', tag:'page'},
     {title:'Mindcraft Setup', detail:'Open local AI tool notes', href:'/ai-game-lab/mindcraft-info.html', tag:'tool'},
@@ -607,7 +624,7 @@ function showToast(msg, duration){
   var lastBtn = document.getElementById('btnLastGame');
   if (lastBtn) lastBtn.addEventListener('click', function(){
     var game = localStorage.getItem(lastKey) || 'zombie';
-    if (game === 'mindcraft') game = 'zombie';
+    if (game === 'mindcraft' || game === 'nightofthedead') game = 'zombie';
     var target = document.querySelector('[data-play="' + game + '"]');
     if (target) target.click(); else location.href = '/ai-game-lab/play/?game=' + encodeURIComponent(game);
   });
@@ -630,7 +647,10 @@ function showToast(msg, duration){
   var checks = [
     ['zombie','/ai-game-lab/games/zombie/index.html','Zombie'],
     ['deadzone','/ai-game-lab/games/deadzone/index.html','Dead Zone'],
-    ['voxel','/ai-game-lab/games/voxel/index.html','Voxel']
+    ['voxel','/ai-game-lab/games/voxel/index.html','Voxel'],
+    ['racing','/ai-game-lab/games/racing/index.html','Racing'],
+    ['fnaf','/ai-game-lab/games/fnaf/index.html','FNAF'],
+    ['pokemon','/ai-game-lab/games/pokemon/index.html','Pokémon']
   ];
   checks.forEach(function(item){
     var el = document.querySelector('[data-route-check="' + item[0] + '"]');

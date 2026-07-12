@@ -61,11 +61,14 @@
           <span class="eyebrow">Filter projects</span>
           <h2>Lab catalog.</h2>
         </div>
-        <p id="resultsNote">7 projects</p>
+        <p id="resultsNote">11 projects</p>
       </div>
       <div class="filter-bar reveal" role="tablist" aria-label="Project filters">
         <button class="filter-btn active" type="button" data-filter="all" aria-selected="true">All</button>
         <button class="filter-btn" type="button" data-filter="fps" aria-selected="false">FPS</button>
+        <button class="filter-btn" type="button" data-filter="racing" aria-selected="false">Racing</button>
+        <button class="filter-btn" type="button" data-filter="horror" aria-selected="false">Horror</button>
+        <button class="filter-btn" type="button" data-filter="rpg" aria-selected="false">RPG</button>
         <button class="filter-btn" type="button" data-filter="sandbox" aria-selected="false">Sandbox</button>
         <button class="filter-btn" type="button" data-filter="tools" aria-selected="false">Tools</button>
         <button class="filter-btn" type="button" data-filter="update" aria-selected="false">Updates</button>
@@ -127,6 +130,82 @@
             </div>
             <div class="tag-row"><span>Voxels</span><span>Terrain</span><span>Browser</span></div>
             <a class="btn btn-card" href="/ai-game-lab/play/?game=voxel">Launch</a>
+          </div>
+        </article>
+
+        <article class="feature-card game reveal" data-category="racing">
+          <div class="media-frame">
+            <img src="/ai-game-lab/showcase/previews/racing.jpg" alt="VEIL RUSH preview" width="720" height="450" loading="lazy" decoding="async" />
+            <span class="screen-badge hot">New</span>
+          </div>
+          <div class="card-body">
+            <p class="card-kicker">3D racing</p>
+            <h3>VEIL RUSH</h3>
+            <p>Crystalline skimmer racing across the floating Glass Meridian circuit.</p>
+            <div class="spec-grid">
+              <span>Genre<strong>Racing</strong></span>
+              <span>Route<strong>/games/racing</strong></span>
+              <span>Status<strong>Playable</strong></span>
+            </div>
+            <div class="tag-row"><span>Three.js</span><span>Drift</span><span>Browser</span></div>
+            <a class="btn btn-card" href="/ai-game-lab/play/?game=racing">Launch</a>
+          </div>
+        </article>
+
+        <article class="feature-card game reveal" data-category="horror">
+          <div class="media-frame">
+            <img src="/ai-game-lab/showcase/previews/fnaf.png" alt="Midnight Watch preview" width="720" height="450" loading="lazy" decoding="async" />
+            <span class="screen-badge hot">New</span>
+          </div>
+          <div class="card-body">
+            <p class="card-kicker">Survival horror</p>
+            <h3>Midnight Watch</h3>
+            <p>Guard Bruno's Pizzeria—cameras, doors, power, and five nights of escalating AI.</p>
+            <div class="spec-grid">
+              <span>Genre<strong>Horror</strong></span>
+              <span>Route<strong>/games/fnaf</strong></span>
+              <span>Status<strong>Playable</strong></span>
+            </div>
+            <div class="tag-row"><span>Three.js</span><span>Cameras</span><span>5 nights</span></div>
+            <a class="btn btn-card" href="/ai-game-lab/play/?game=fnaf">Launch</a>
+          </div>
+        </article>
+
+        <article class="feature-card game reveal" data-category="rpg">
+          <div class="media-frame">
+            <img src="/ai-game-lab/showcase/previews/pokemon.png" alt="Pokémon Adventure preview" width="720" height="450" loading="lazy" decoding="async" />
+            <span class="screen-badge hot">New</span>
+          </div>
+          <div class="card-body">
+            <p class="card-kicker">RPG adventure</p>
+            <h3>Pokémon Adventure</h3>
+            <p>2D canvas or 3D Three.js editions—catch, battle, heal, and save your progress.</p>
+            <div class="spec-grid">
+              <span>Genre<strong>RPG</strong></span>
+              <span>Route<strong>/games/pokemon</strong></span>
+              <span>Status<strong>Playable</strong></span>
+            </div>
+            <div class="tag-row"><span>Canvas</span><span>Three.js</span><span>2 editions</span></div>
+            <a class="btn btn-card" href="/ai-game-lab/play/?game=pokemon">Launch</a>
+          </div>
+        </article>
+
+        <article class="feature-card game reveal" data-category="fps tools">
+          <div class="media-frame">
+            <img src="/ai-game-lab/showcase/previews/deadzone.svg" alt="Night of the Dead preview" width="720" height="450" loading="lazy" decoding="async" />
+            <span class="screen-badge tool">Native</span>
+          </div>
+          <div class="card-body">
+            <p class="card-kicker">Desktop FPS</p>
+            <h3>Night of the Dead</h3>
+            <p>Raylib + .NET native zombie arena. Hosted hub shows build notes, not a fake embed.</p>
+            <div class="spec-grid">
+              <span>Genre<strong>FPS</strong></span>
+              <span>Route<strong>Info panel</strong></span>
+              <span>Status<strong>Native</strong></span>
+            </div>
+            <div class="tag-row"><span>C#</span><span>Raylib</span><span>Desktop</span></div>
+            <a class="btn btn-card" href="/ai-game-lab/nightofthedead-info.html">Read setup</a>
           </div>
         </article>
 
