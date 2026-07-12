@@ -49,21 +49,31 @@
     return base;
   }
 
+  function appendTouch(url, opts) {
+    if (!url) return url;
+    if (opts && opts.touch) {
+      return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'touch=1';
+    }
+    return url;
+  }
+
   function getEmbedUrl(game, opts) {
     opts = opts || {};
     var base = GAME_URLS[game];
     if (!base) return null;
+    var url;
     if (game === 'zombie') {
       var quality = normalizeQuality(opts.quality);
       var params = ['quality=' + encodeURIComponent(quality), 'embed=1'];
       if (opts.debug) params.push('debug=1');
-      return base + '?' + params.join('&');
-    }
-    if (game === 'deadzone' || game === 'voxel' || game === 'minecraft' ||
+      url = base + '?' + params.join('&');
+    } else if (game === 'deadzone' || game === 'voxel' || game === 'minecraft' ||
         game === 'racing' || game === 'fnaf' || game === 'pokemon') {
-      return base + '?embed=1';
+      url = base + '?embed=1';
+    } else {
+      url = base;
     }
-    return base;
+    return appendTouch(url, opts);
   }
 
   function isPlayableGame(game) {

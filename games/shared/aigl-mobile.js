@@ -1,38 +1,86 @@
 /**
- * AI Game Lab — shared mobile / touch control helpers
+ * AI Game Lab — shared mobile / touch control helpers (v23)
+ * Reliable on iPhone Safari and hub iframes.
  */
 (function (global) {
   'use strict';
 
-  function isCoarsePointer() {
+  var mounted = {};
+
+  function isTouchDevice() {
     try {
+      if (/[?&](?:touch|mobile)=1(?:&|$)/i.test(location.search)) return true;
+      if (global.navigator && global.navigator.maxTouchPoints > 0) return true;
+      if ('ontouchstart' in global) return true;
+      var ua = global.navigator && global.navigator.userAgent || '';
+      if (/iPhone|iPad|iPod|Android|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua)) return true;
       if (global.matchMedia('(pointer: coarse)').matches) return true;
       if (global.matchMedia('(hover: none)').matches) return true;
+      if (global.matchMedia('(any-pointer: coarse)').matches) return true;
     } catch (e) {}
-    return Math.min(global.innerWidth, global.innerHeight) < 820;
+    return Math.min(global.innerWidth || 0, global.innerHeight || 0) < 900;
+  }
+
+  function sharedAssetUrl(file) {
+    var scripts = document.getElementsByTagName('script');
+    for (var i = scripts.length - 1; i >= 0; i--) {
+      var src = scripts[i].src || '';
+      if (src.indexOf('/games/shared/aigl-mobile.js') !== -1) {
+        return src.replace(/aigl-mobile\.js.*$/, file);
+      }
+    }
+    var path = location.pathname || '';
+    var gamesIdx = path.indexOf('/games/');
+    if (gamesIdx >= 0) {
+      return path.slice(0, gamesIdx) + '/games/shared/' + file;
+    }
+    return '/ai-game-lab/games/shared/' + file;
+  }
+
+  function ensureCss() {
+    if (document.getElementById('aigl-mobile-css')) return;
+    var link = document.createElement('link');
+    link.id = 'aigl-mobile-css';
+    link.rel = 'stylesheet';
+    link.href = sharedAssetUrl('aigl-mobile.css');
+    document.head.appendChild(link);
   }
 
   function synthKey(code, down, key) {
-    var ev = new KeyboardEvent(down ? 'keydown' : 'keyup', {
+    var opts = {
       code: code,
       key: key || code.replace('Key', '').toLowerCase(),
       bubbles: true,
       cancelable: true,
-    });
+      view: global,
+    };
+    var ev;
+    try {
+      ev = new KeyboardEvent(down ? 'keydown' : 'keyup', opts);
+    } catch (err) {
+      ev = document.createEvent('KeyboardEvent');
+      ev.initKeyboardEvent(down ? 'keydown' : 'keyup', true, true, global.view, key || '', '', false, '', false, false);
+    }
     global.dispatchEvent(ev);
+    document.dispatchEvent(ev);
   }
 
   function bindHoldButton(btn, code, key) {
     var down = function (e) {
       e.preventDefault();
+      e.stopPropagation();
       btn.classList.add('is-active');
       synthKey(code, true, key);
     };
     var up = function (e) {
       e.preventDefault();
+      e.stopPropagation();
       btn.classList.remove('is-active');
       synthKey(code, false, key);
     };
+    btn.addEventListener('touchstart', down, { passive: false });
+    btn.addEventListener('touchend', up, { passive: false });
+    btn.addEventListener('touchcancel', up, { passive: false });
     btn.addEventListener('pointerdown', down);
     btn.addEventListener('pointerup', up);
     btn.addEventListener('pointerleave', up);
@@ -53,9 +101,64 @@
     if (root) return root;
     root = document.createElement('div');
     root.id = id;
-    root.className = 'aigl-mob-root' + (coarseOnly !== false ? ' aigl-mob-coarse-only' : '');
+    root.className = 'aigl-mob-root aigl-mob-active' + (coarseOnly !== false ? ' aigl-mob-coarse-only' : '');
+    if (/[?&](?:touch|mobile)=1/i.test(location.search)) {
+      root.classList.add('aigl-mob-force');
+    }
     document.body.appendChild(root);
     return root;
+  }
+
+  function bindDragSurface(el, onStart, onMove, onEnd) {
+    function getPoint(e) {
+      if (e.touches && e.touches[0]) {
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY, id: e.touches[0].identifier };
+      }
+      return { x: e.clientX, y: e.clientY, id: e.pointerId };
+    }
+
+    var active = false;
+    var captureId = null;
+
+    function start(e) {
+      active = true;
+      var p = getPoint(e);
+      captureId = p.id;
+      if (el.setPointerCapture && e.pointerId != null) {
+        try { el.setPointerCapture(e.pointerId); } catch (err) {}
+      }
+      onStart(p);
+      e.preventDefault();
+    }
+
+    function move(e) {
+      if (!active) return;
+      var p = getPoint(e);
+      if (captureId != null && p.id != null && p.id !== captureId) return;
+      onMove(p);
+      e.preventDefault();
+    }
+
+    function end(e) {
+      if (!active) return;
+      active = false;
+      captureId = null;
+      onEnd();
+      e.preventDefault();
+    }
+
+    el.addEventListener('touchstart', start, { passive: false });
+    el.addEventListener('touchmove', move, { passive: false });
+    el.addEventListener('touchend', end, { passive: false });
+    el.addEventListener('touchcancel', end, { passive: false });
+    el.addEventListener('pointerdown', start);
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+    el.addEventListener('pointerleave', function (e) {
+      if (!active) return;
+      end(e);
+    });
   }
 
   function createJoystick(root, onMove) {
@@ -66,9 +169,8 @@
     zone.appendChild(stick);
     root.appendChild(zone);
 
-    var active = false;
     var origin = { x: 0, y: 0 };
-    var radius = 42;
+    var radius = 44;
 
     function setStick(nx, ny) {
       stick.style.transform = 'translate(' + (nx * radius) + 'px,' + (ny * radius) + 'px)';
@@ -76,23 +178,16 @@
     }
 
     function reset() {
-      active = false;
       setStick(0, 0);
     }
 
-    zone.addEventListener('pointerdown', function (e) {
-      active = true;
-      zone.setPointerCapture(e.pointerId);
+    bindDragSurface(zone, function (p) {
       var rect = zone.getBoundingClientRect();
       origin.x = rect.left + rect.width / 2;
       origin.y = rect.top + rect.height / 2;
-      e.preventDefault();
-    });
-
-    zone.addEventListener('pointermove', function (e) {
-      if (!active) return;
-      var dx = e.clientX - origin.x;
-      var dy = e.clientY - origin.y;
+    }, function (p) {
+      var dx = p.x - origin.x;
+      var dy = p.y - origin.y;
       var len = Math.sqrt(dx * dx + dy * dy) || 1;
       var nx = Math.max(-1, Math.min(1, dx / radius));
       var ny = Math.max(-1, Math.min(1, dy / radius));
@@ -101,18 +196,7 @@
         ny = dy / len;
       }
       setStick(nx, ny);
-      e.preventDefault();
-    });
-
-    zone.addEventListener('pointerup', function (e) {
-      reset();
-      e.preventDefault();
-    });
-    zone.addEventListener('pointercancel', reset);
-    zone.addEventListener('pointerleave', function (e) {
-      if (!active) return;
-      reset();
-    });
+    }, reset);
 
     return { reset: reset };
   }
@@ -123,31 +207,19 @@
     root.appendChild(zone);
 
     var last = null;
-    zone.addEventListener('pointerdown', function (e) {
-      last = { x: e.clientX, y: e.clientY };
-      zone.setPointerCapture(e.pointerId);
-      e.preventDefault();
-    });
-    zone.addEventListener('pointermove', function (e) {
+    bindDragSurface(zone, function (p) {
+      last = p;
+    }, function (p) {
       if (!last) return;
-      var dx = e.clientX - last.x;
-      var dy = e.clientY - last.y;
-      last.x = e.clientX;
-      last.y = e.clientY;
-      onDelta(dx, dy);
-      e.preventDefault();
+      onDelta(p.x - last.x, p.y - last.y);
+      last = p;
+    }, function () {
+      last = null;
     });
-    function end() { last = null; }
-    zone.addEventListener('pointerup', end);
-    zone.addEventListener('pointercancel', end);
 
     return zone;
   }
 
-  /**
-   * FPS shim: virtual pointer lock + injected movementX/Y on mousemove.
-   * Load BEFORE game bundles that pause without pointer lock.
-   */
   function installFpsShim() {
     if (global.__aiglFpsShim) return global.__aiglFpsShim;
     var shim = {
@@ -173,12 +245,6 @@
           return listener.call(this, e);
         };
         return origAdd.call(this, type, wrapped, options);
-      }
-      if (this === global && type === 'pointerlockchange' && typeof listener === 'function') {
-        var wrappedLock = function () {
-          return listener.call(this);
-        };
-        return origAdd.call(this, type, wrappedLock, options);
       }
       return origAdd.call(this, type, listener, options);
     };
@@ -209,11 +275,21 @@
     return shim;
   }
 
+  function whenReady(fn) {
+    if (document.body) {
+      fn();
+      return;
+    }
+    document.addEventListener('DOMContentLoaded', fn, { once: true });
+  }
+
   function mountFpsControls(opts) {
-    if (!isCoarsePointer()) return null;
+    if (!isTouchDevice()) return null;
+    if (mounted[opts.id || 'aigl-mob-fps']) return mounted[opts.id || 'aigl-mob-fps'];
+
+    ensureCss();
     var shim = installFpsShim();
     shim.enabled = true;
-    shim.sensitivity = opts.sensitivity || 0.0024;
 
     function build() {
       var root = createRoot(opts.id || 'aigl-mob-fps', true);
@@ -225,15 +301,10 @@
       }
 
       var moveState = { x: 0, y: 0 };
-      var keyMap = opts.keyMap || {
-        up: 'KeyW',
-        down: 'KeyS',
-        left: 'KeyA',
-        right: 'KeyD',
-      };
+      var keyMap = opts.keyMap || { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD' };
 
       function applyMove() {
-        var thr = 0.28;
+        var thr = 0.25;
         synthKey(keyMap.up, moveState.y < -thr, 'w');
         synthKey(keyMap.down, moveState.y > thr, 's');
         synthKey(keyMap.left, moveState.x < -thr, 'a');
@@ -256,15 +327,23 @@
 
       if (opts.fire !== false) {
         var fire = makeBtn(opts.fireLabel || 'Fire');
+        fire.addEventListener('touchstart', function (e) {
+          e.preventDefault();
+          fire.classList.add('is-active');
+          document.dispatchEvent(new MouseEvent('mousedown', { button: 0, bubbles: true }));
+        }, { passive: false });
+        fire.addEventListener('touchend', function () {
+          fire.classList.remove('is-active');
+          document.dispatchEvent(new MouseEvent('mouseup', { button: 0, bubbles: true }));
+        });
         fire.addEventListener('pointerdown', function (e) {
           e.preventDefault();
           fire.classList.add('is-active');
-          var down = new MouseEvent('mousedown', { button: 0, bubbles: true });
-          global.dispatchEvent(down);
+          document.dispatchEvent(new MouseEvent('mousedown', { button: 0, bubbles: true }));
         });
         fire.addEventListener('pointerup', function () {
           fire.classList.remove('is-active');
-          global.dispatchEvent(new MouseEvent('mouseup', { button: 0, bubbles: true }));
+          document.dispatchEvent(new MouseEvent('mouseup', { button: 0, bubbles: true }));
         });
         actions.appendChild(fire);
       }
@@ -287,126 +366,132 @@
         row.appendChild(reload);
       }
 
-      function enableVirtualLock() {
+      (function enableVirtualLock() {
         if (document.querySelector('canvas')) {
           shim.setVirtualLock(true);
           return;
         }
         requestAnimationFrame(enableVirtualLock);
-      }
-      enableVirtualLock();
-      return { root: root, shim: shim };
+      })();
+
+      mounted[opts.id || 'aigl-mob-fps'] = { root: root, shim: shim };
+      return mounted[opts.id || 'aigl-mob-fps'];
     }
 
-    if (document.body) return build();
-    document.addEventListener('DOMContentLoaded', build, { once: true });
+    whenReady(build);
     return { shim: shim };
   }
 
   function mountRacingControls(opts) {
-    if (!isCoarsePointer()) return null;
+    if (!isTouchDevice()) return null;
+    if (mounted['aigl-mob-racing']) return mounted['aigl-mob-racing'];
 
+    ensureCss();
     function build() {
       var root = createRoot(opts.id || 'aigl-mob-racing', true);
+      var steer = document.createElement('div');
+      steer.className = 'aigl-mob-steer';
+      var left = makeBtn('◀ Steer');
+      var right = makeBtn('Steer ▶');
+      steer.appendChild(left);
+      steer.appendChild(right);
+      root.appendChild(steer);
 
-    var steer = document.createElement('div');
-    steer.className = 'aigl-mob-steer';
-    var left = makeBtn('◀ Steer');
-    var right = makeBtn('Steer ▶');
-    steer.appendChild(left);
-    steer.appendChild(right);
-    root.appendChild(steer);
+      var actions = document.createElement('div');
+      actions.className = 'aigl-mob-actions';
+      var boost = makeBtn('Boost');
+      var drift = makeBtn('Drift');
+      actions.appendChild(boost);
+      actions.appendChild(drift);
+      root.appendChild(actions);
 
-    var actions = document.createElement('div');
-    actions.className = 'aigl-mob-actions';
-    var boost = makeBtn('Boost');
-    var drift = makeBtn('Drift');
-    actions.appendChild(boost);
-    actions.appendChild(drift);
-    root.appendChild(actions);
+      var set = opts.setInput || function () {};
+      function steerDown(side, on) {
+        set(side === 'left' ? 'left' : 'right', on);
+      }
+      left.addEventListener('touchstart', function (e) { e.preventDefault(); steerDown('left', true); left.classList.add('is-active'); }, { passive: false });
+      left.addEventListener('touchend', function () { steerDown('left', false); left.classList.remove('is-active'); });
+      right.addEventListener('touchstart', function (e) { e.preventDefault(); steerDown('right', true); right.classList.add('is-active'); }, { passive: false });
+      right.addEventListener('touchend', function () { steerDown('right', false); right.classList.remove('is-active'); });
+      left.addEventListener('pointerdown', function (e) { e.preventDefault(); steerDown('left', true); left.classList.add('is-active'); });
+      left.addEventListener('pointerup', function () { steerDown('left', false); left.classList.remove('is-active'); });
+      left.addEventListener('pointerleave', function () { steerDown('left', false); left.classList.remove('is-active'); });
+      right.addEventListener('pointerdown', function (e) { e.preventDefault(); steerDown('right', true); right.classList.add('is-active'); });
+      right.addEventListener('pointerup', function () { steerDown('right', false); right.classList.remove('is-active'); });
+      right.addEventListener('pointerleave', function () { steerDown('right', false); right.classList.remove('is-active'); });
 
-    var set = opts.setInput || function () {};
-    function steerDown(side, on) {
-      set(side === 'left' ? 'left' : 'right', on);
-    }
-    left.addEventListener('pointerdown', function (e) { e.preventDefault(); steerDown('left', true); left.classList.add('is-active'); });
-    left.addEventListener('pointerup', function () { steerDown('left', false); left.classList.remove('is-active'); });
-    left.addEventListener('pointerleave', function () { steerDown('left', false); left.classList.remove('is-active'); });
-    right.addEventListener('pointerdown', function (e) { e.preventDefault(); steerDown('right', true); right.classList.add('is-active'); });
-    right.addEventListener('pointerup', function () { steerDown('right', false); right.classList.remove('is-active'); });
-    right.addEventListener('pointerleave', function () { steerDown('right', false); right.classList.remove('is-active'); });
+      boost.addEventListener('pointerdown', function (e) { e.preventDefault(); set('boost', true); boost.classList.add('is-active'); });
+      boost.addEventListener('pointerup', function () { set('boost', false); boost.classList.remove('is-active'); });
+      drift.addEventListener('pointerdown', function (e) { e.preventDefault(); set('drift', true); drift.classList.add('is-active'); });
+      drift.addEventListener('pointerup', function () { set('drift', false); drift.classList.remove('is-active'); });
 
-    boost.addEventListener('pointerdown', function (e) { e.preventDefault(); set('boost', true); boost.classList.add('is-active'); });
-    boost.addEventListener('pointerup', function () { set('boost', false); boost.classList.remove('is-active'); });
-    drift.addEventListener('pointerdown', function (e) { e.preventDefault(); set('drift', true); drift.classList.add('is-active'); });
-    drift.addEventListener('pointerup', function () { set('drift', false); drift.classList.remove('is-active'); });
-
+      mounted['aigl-mob-racing'] = root;
       return root;
     }
 
-    if (document.body) return build();
-    document.addEventListener('DOMContentLoaded', build, { once: true });
+    whenReady(build);
     return null;
   }
 
   function mountFnafControls() {
-    if (!isCoarsePointer()) return null;
+    if (!isTouchDevice()) return null;
+    if (mounted['aigl-mob-fnaf']) return mounted['aigl-mob-fnaf'];
 
+    ensureCss();
     function build() {
       var root = createRoot('aigl-mob-fnaf', true);
+      var grid = document.createElement('div');
+      grid.className = 'aigl-mob-fnaf';
 
-    var grid = document.createElement('div');
-    grid.className = 'aigl-mob-fnaf';
+      var lookL = makeBtn('Look Left');
+      var lookC = makeBtn('Desk');
+      var lookR = makeBtn('Look Right');
+      var doorL = makeBtn('L Door');
+      var cam = makeBtn('Cameras', 'wide');
+      var doorR = makeBtn('R Door');
+      var lightL = makeBtn('L Light');
+      var flash = makeBtn('Flash');
+      var lightR = makeBtn('R Light');
 
-    var lookL = makeBtn('Look Left');
-    var lookC = makeBtn('Desk');
-    var lookR = makeBtn('Look Right');
-    grid.appendChild(lookL);
-    grid.appendChild(lookC);
-    grid.appendChild(lookR);
+      [lookL, lookC, lookR, doorL, cam, doorR, lightL, flash, lightR].forEach(function (b) {
+        grid.appendChild(b);
+      });
+      root.appendChild(grid);
 
-    var doorL = makeBtn('L Door');
-    var cam = makeBtn('Cameras', 'wide');
-    var doorR = makeBtn('R Door');
-    grid.appendChild(doorL);
-    grid.appendChild(cam);
-    grid.appendChild(doorR);
+      function tap(code, key) {
+        synthKey(code, true, key);
+        setTimeout(function () { synthKey(code, false, key); }, 80);
+      }
 
-    var lightL = makeBtn('L Light');
-    var flash = makeBtn('Flash');
-    var lightR = makeBtn('R Light');
-    grid.appendChild(lightL);
-    grid.appendChild(flash);
-    grid.appendChild(lightR);
+      lookL.addEventListener('click', function () { tap('KeyA', 'a'); });
+      lookC.addEventListener('click', function () { tap('KeyS', 's'); });
+      lookR.addEventListener('click', function () { tap('KeyD', 'd'); });
+      doorL.addEventListener('click', function () { tap('KeyQ', 'q'); });
+      doorR.addEventListener('click', function () { tap('KeyE', 'e'); });
+      cam.addEventListener('click', function () { tap('Space', ' '); });
+      flash.addEventListener('click', function () { tap('KeyF', 'f'); });
+      bindHoldButton(lightL, 'KeyZ', 'z');
+      bindHoldButton(lightR, 'KeyC', 'c');
 
-    root.appendChild(grid);
-
-    function tap(code, key) {
-      synthKey(code, true, key);
-      setTimeout(function () { synthKey(code, false, key); }, 80);
-    }
-
-    lookL.addEventListener('click', function () { tap('KeyA', 'a'); });
-    lookC.addEventListener('click', function () { tap('KeyS', 's'); });
-    lookR.addEventListener('click', function () { tap('KeyD', 'd'); });
-    doorL.addEventListener('click', function () { tap('KeyQ', 'q'); });
-    doorR.addEventListener('click', function () { tap('KeyE', 'e'); });
-    cam.addEventListener('click', function () { tap('Space', ' '); });
-    flash.addEventListener('click', function () { tap('KeyF', 'f'); });
-
-    bindHoldButton(lightL, 'KeyZ', 'z');
-    bindHoldButton(lightR, 'KeyC', 'c');
-
+      mounted['aigl-mob-fnaf'] = root;
       return root;
     }
 
-    if (document.body) return build();
-    document.addEventListener('DOMContentLoaded', build, { once: true });
+    whenReady(build);
     return null;
   }
 
+  function autoInit() {
+    if (!isTouchDevice()) return;
+    ensureCss();
+    installFpsShim();
+  }
+
   global.AIGLMobile = {
-    isCoarsePointer: isCoarsePointer,
+    isTouchDevice: isTouchDevice,
+    isCoarsePointer: isTouchDevice,
+    sharedAssetUrl: sharedAssetUrl,
+    ensureCss: ensureCss,
     synthKey: synthKey,
     bindHoldButton: bindHoldButton,
     makeBtn: makeBtn,
@@ -418,4 +503,6 @@
     mountRacingControls: mountRacingControls,
     mountFnafControls: mountFnafControls,
   };
+
+  autoInit();
 })(window);

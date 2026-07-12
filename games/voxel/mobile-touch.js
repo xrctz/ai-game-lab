@@ -1,25 +1,16 @@
 /**
- * CraftVerse — mobile touch controls (v22)
+ * CraftVerse — mobile touch controls (v23)
  * Load BEFORE the Vite bundle so the FPS shim can wrap listeners.
  */
 (function () {
   'use strict';
-  if (!window.AIGLMobile || !window.AIGLMobile.isCoarsePointer()) return;
+  if (!window.AIGLMobile || !window.AIGLMobile.isTouchDevice()) return;
 
-  function linkCss() {
-    if (document.getElementById('aigl-mobile-css')) return;
-    var link = document.createElement('link');
-    link.id = 'aigl-mobile-css';
-    link.rel = 'stylesheet';
-    link.href = '../shared/aigl-mobile.css';
-    document.head.appendChild(link);
-  }
-
-  linkCss();
+  window.AIGLMobile.ensureCss();
   window.AIGLMobile.installFpsShim();
   window.AIGLMobile.mountFpsControls({
     id: 'aigl-mob-voxel',
-    banner: 'Touch sandbox — joystick to move, right side to look, Jump for space.',
+    banner: 'Touch sandbox — joystick to move, right side to look.',
     jump: true,
     reload: false,
     fire: false,

@@ -290,10 +290,26 @@ function showToast(msg, duration){
     return base;
   }
 
+  function isHubTouchDevice() {
+    try {
+      if (navigator.maxTouchPoints > 0) return true;
+      if ('ontouchstart' in window) return true;
+      if (/iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent || '')) return true;
+      if (window.matchMedia('(hover: none)').matches) return true;
+    } catch (e) {}
+    return Math.min(window.innerWidth, window.innerHeight) < 900;
+  }
+
+  function withTouchParam(url) {
+    if (!url || !isHubTouchDevice()) return url;
+    return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'touch=1';
+  }
+
   function getGameUrl(game){
+    var touch = isHubTouchDevice();
     if (urlsApi && urlsApi.getEmbedUrl) {
-      if (game === 'zombie') return urlsApi.getEmbedUrl(game, readZombieOpts());
-      return urlsApi.getEmbedUrl(game);
+      if (game === 'zombie') return urlsApi.getEmbedUrl(game, Object.assign({}, readZombieOpts(), { touch: touch }));
+      return urlsApi.getEmbedUrl(game, { touch: touch });
     }
     var url = GAME_URLS[game];
     if (game === 'zombie') {
@@ -302,12 +318,12 @@ function showToast(msg, duration){
       params.set('quality', opts.quality);
       params.set('embed', '1');
       if (opts.debug) params.set('debug', '1');
-      return url + '?' + params.toString();
+      return withTouchParam(url + '?' + params.toString());
     }
     if (game === 'deadzone' || game === 'voxel' || game === 'racing' || game === 'fnaf' || game === 'pokemon') {
-      return url + '?embed=1';
+      return withTouchParam(url + '?embed=1');
     }
-    return url;
+    return withTouchParam(url);
   }
 
   function markBootActive(game){

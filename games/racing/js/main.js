@@ -682,6 +682,19 @@ function bindInput() {
         else if (name === 'drift') input.drift = on;
       },
     });
+  } else {
+    window.addEventListener('load', function () {
+      if (window.AIGLMobile) {
+        window.AIGLMobile.mountRacingControls({
+          setInput(name, on) {
+            if (name === 'left') input.left = on;
+            else if (name === 'right') input.right = on;
+            else if (name === 'boost') input.boost = on;
+            else if (name === 'drift') input.drift = on;
+          },
+        });
+      }
+    }, { once: true });
   }
 }
 

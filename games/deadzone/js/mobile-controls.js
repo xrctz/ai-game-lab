@@ -1,18 +1,11 @@
 /**
- * Dead Zone — mobile touch controls (v22)
+ * Dead Zone — mobile touch controls (v23)
  */
 (function () {
   'use strict';
-  if (!window.AIGLMobile || !window.AIGLMobile.isCoarsePointer()) return;
+  if (!window.AIGLMobile || !window.AIGLMobile.isTouchDevice()) return;
 
-  function linkCss() {
-    if (document.getElementById('aigl-mobile-css')) return;
-    var link = document.createElement('link');
-    link.id = 'aigl-mobile-css';
-    link.rel = 'stylesheet';
-    link.href = '../shared/aigl-mobile.css';
-    document.head.appendChild(link);
-  }
+  window.AIGLMobile.ensureCss();
 
   function attach(game) {
     if (!game || !game.input || game.__mobileAttached) return;
@@ -23,12 +16,12 @@
     var root = window.AIGLMobile.createRoot('aigl-mob-deadzone', true);
     var banner = document.createElement('div');
     banner.className = 'aigl-mob-banner';
-    banner.textContent = 'Touch controls enabled — drag right side to aim, joystick to move.';
+    banner.textContent = 'Touch controls on — joystick moves, right side aims.';
     root.appendChild(banner);
 
     var move = { x: 0, y: 0 };
     function applyMove() {
-      var t = 0.28;
+      var t = 0.25;
       input.setMobileKey('KeyW', move.y < -t);
       input.setMobileKey('KeyS', move.y > t);
       input.setMobileKey('KeyA', move.x < -t);
@@ -48,6 +41,15 @@
     var actions = document.createElement('div');
     actions.className = 'aigl-mob-actions';
     var fire = window.AIGLMobile.makeBtn('Fire');
+    fire.addEventListener('touchstart', function (e) {
+      e.preventDefault();
+      fire.classList.add('is-active');
+      input.setMobileFire(true);
+    }, { passive: false });
+    fire.addEventListener('touchend', function () {
+      fire.classList.remove('is-active');
+      input.setMobileFire(false);
+    });
     fire.addEventListener('pointerdown', function (e) {
       e.preventDefault();
       fire.classList.add('is-active');
@@ -77,7 +79,6 @@
     if (overlay) overlay.style.display = 'none';
   }
 
-  linkCss();
   var tries = 0;
   var timer = setInterval(function () {
     if (window.__deadZoneGame) {
@@ -85,6 +86,6 @@
       attach(window.__deadZoneGame);
       return;
     }
-    if (++tries > 120) clearInterval(timer);
-  }, 250);
+    if (++tries > 160) clearInterval(timer);
+  }, 200);
 })();
