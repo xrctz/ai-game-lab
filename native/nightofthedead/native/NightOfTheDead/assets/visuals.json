@@ -1,0 +1,11 @@
+{
+  "comment": "Brighter readable night — lower vignette, mild contrast",
+  "post": {
+    "contrast": 1.05,
+    "vignette": 0.75,
+    "grain": 0.02
+  },
+  "fogDensity": 0.012,
+  "window": { "width": 1600, "height": 900 },
+  "targetFps": 120
+}

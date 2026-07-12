@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>NightOfTheDead</RootNamespace>
+    <AssemblyName>NightOfTheDead</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Raylib-cs" Version="8.0.0" />
+  </ItemGroup>
+  <!-- Ship multi-language assets: GLSL shaders + Python-baked textures -->
+  <ItemGroup>
+    <None Update="assets/**/*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libnotd_sim.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <!-- Bake textures before build if Python is available -->
+  <Target Name="BakeTextures" BeforeTargets="BeforeBuild">
+    <Exec Command="python3 tools/generate_textures.py" WorkingDirectory="$(MSBuildProjectDirectory)" IgnoreExitCode="true" />
+  </Target>
+  <!-- Build Rust sim crate and copy .so next to the game -->
+  <Target Name="BuildRustSim" BeforeTargets="BeforeBuild">
+    <Exec Command="bash -c 'export PATH=&quot;$HOME/.cargo/bin:$PATH&quot;; cargo build --release --manifest-path ../rust_sim/Cargo.toml &amp;&amp; cp -a ../rust_sim/target/release/libnotd_sim.so ./libnotd_sim.so'"
+          WorkingDirectory="$(MSBuildProjectDirectory)"
+          IgnoreExitCode="true" />
+  </Target>
+</Project>

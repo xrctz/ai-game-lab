@@ -5,12 +5,29 @@ Thumbs.db
 # Secrets and local env
 .env
 .env.*
+*.env
 !.env.example
 
 # Dependencies and build artifacts
 node_modules/
 dist/
 *.local
+
+# Native game build output (.NET / Rust)
+bin/
+obj/
+target/
+*.so
+*.dll
+*.pdb
+
+# Blender working files (not used at runtime; export glb/png instead)
+*.blend
+*.blend1
+
+# Python caches
+__pycache__/
+*.pyc
 
 # Editor / agent session files (may contain local paths or notes)
 .cursor/

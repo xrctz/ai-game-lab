@@ -1,0 +1,4 @@
+{
+  "generator": "tools/generate_textures.py",
+  "files": ["ground.png", "brick.png", "metal.png", "zombie_skin.png", "concrete.png", "glow.png", "noise.png"]
+}
