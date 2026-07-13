@@ -374,6 +374,45 @@ function vfxStatusSparkle(side, kind) {
   }
 }
 
+/** Rainbow-gold burst that calls out a shiny Pokémon on encounter/battle start. */
+function vfxShinySparkle(side) {
+  vfxInit();
+  const el = document.getElementById(side === 'player' ? 'player-sprite' : 'enemy-sprite');
+  if (!el) return;
+  const r = vfxRect(el);
+  const colors = ['#ffcb05', '#fff5b8', '#ffe9a3', '#ffffff'];
+  for (let i = 0; i < 22; i++) {
+    const ang = Math.random() * Math.PI * 2;
+    const speed = 30 + Math.random() * 70;
+    spawnParticle({
+      className: 'vfx-spark shiny-spark',
+      char: i % 3 === 0 ? '★' : '✦',
+      color: colors[i % colors.length],
+      x: r.cx + (Math.random() - 0.5) * r.w * 0.7,
+      y: r.cy + (Math.random() - 0.5) * r.h * 0.7,
+      vx: Math.cos(ang) * speed,
+      vy: Math.sin(ang) * speed - 30,
+      life: 0.9 + Math.random() * 0.5,
+      gravity: -10,
+      size: 10 + Math.random() * 10,
+      spin: (Math.random() - 0.5) * 260,
+      scale: 0.6 + Math.random() * 0.6,
+    });
+  }
+  // Golden ring pulse, echoing vfxShockwave but gold-toned + slower for a
+  // "ta-da" reveal feel rather than an impact hit.
+  if (VFX.layer) {
+    const ring = document.createElement('div');
+    ring.className = 'vfx-shockwave shiny-ring big';
+    ring.style.left = r.cx + 'px';
+    ring.style.top = r.cy + 'px';
+    ring.style.borderColor = '#ffcb05';
+    ring.style.boxShadow = '0 0 24px #ffcb05, inset 0 0 16px #fff5b8';
+    VFX.layer.appendChild(ring);
+    setTimeout(() => ring.remove(), 700);
+  }
+}
+
 function vfxFaint(side) {
   const el = document.getElementById(side === 'player' ? 'player-sprite' : 'enemy-sprite');
   if (!el) return;

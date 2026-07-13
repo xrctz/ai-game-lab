@@ -8,6 +8,10 @@ const PALETTES = {
   rival2: { body: 0x6ee7b7, accent: 0x34d399, glow: 0x10b981, trail: 0x34d399 },
 };
 
+/** Shared trail point-cloud size — kept as one constant so the buffer
+ * allocation and the circular-index write always agree. */
+const TRAIL_COUNT = 40;
+
 /** Shared texture pack set by main after load. */
 let texturePack = null;
 export function setSkimmerTextures(pack) {
@@ -126,8 +130,7 @@ export function createSkimmer(paletteKey = 'player') {
   light.position.set(0, 0.8, 0.4);
   root.add(light);
 
-  const trailCount = 40;
-  const trailPos = new Float32Array(trailCount * 3);
+  const trailPos = new Float32Array(TRAIL_COUNT * 3);
   const trailGeo = new THREE.BufferGeometry();
   trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPos, 3));
   const trail = new THREE.Points(
@@ -145,6 +148,16 @@ export function createSkimmer(paletteKey = 'player') {
   );
   root.add(trail);
 
+  // Precomputed target colors for the drift/boost trail polish: a punchier,
+  // lighter version of the trail hue while drifting, and a hot streak
+  // blended toward white while boosting — reusing the same palette so no new
+  // textures/materials are introduced.
+  const trailColors = {
+    base: new THREE.Color(pal.trail),
+    drift: new THREE.Color(pal.trail).offsetHSL(0, 0.2, 0.16),
+    boost: new THREE.Color(pal.accent).lerp(new THREE.Color(0xffffff), 0.45),
+  };
+
   return {
     root,
     wings: [wingL, wingR],
@@ -152,6 +165,7 @@ export function createSkimmer(paletteKey = 'player') {
     trail,
     trailPos,
     trailIdx: 0,
+    trailColors,
     palette: pal,
   };
 }
@@ -186,6 +200,10 @@ export class Racer {
     this.finishedPlace = null;
     this.totalDistance = 0;
     this.gateHits = new Map();
+    // Dynamic rubber-band multiplier applied on top of per-rival AI tuning
+    // (see updateAI). 1 = neutral; ramps within [0.85, 1.15].
+    this.rubberBand = 1;
+    this._rubberWarmup = 0;
   }
 
   get raceMetric() {
@@ -207,13 +225,35 @@ export class Racer {
     const targetLat = THREE.MathUtils.clamp(weave + (this.ai.laneBias || 0), -0.88, 0.88);
     this.lateral += (targetLat - this.lateral) * dt * (0.9 + skill * 0.5);
 
-    this.throttle = this.ai.throttle ?? 0.78;
-
     if (this.boostCooldown > 0) this.boostCooldown -= dt;
 
     const player = racers.find((r) => r.isPlayer);
     let gap = 0;
     if (player) gap = this.raceMetric - player.raceMetric;
+
+    // --- Dynamic rubber-banding ---
+    // Nudges a rival's effective aggressiveness up when it's badly behind the
+    // player and down when it's way out in front, as a small bounded
+    // multiplier on top of the rival's own personality (skill/throttle/etc.),
+    // never replacing it. Changes are damped (no jitter in close races) and
+    // fade in gradually over the first few seconds of racing so nothing odd
+    // happens right at the start.
+    this._rubberWarmup = Math.min(1, this._rubberWarmup + dt / 4);
+    const DEADZONE = 0.05; // no adjustment for close, fair fights
+    const MAX_GAP = 0.35; // gap (in laps) at which the band hits its cap
+    const BAND_RANGE = 0.15; // bounds the multiplier to [0.85, 1.15]
+    const absGap = Math.abs(gap);
+    let rawBand = 0;
+    if (absGap > DEADZONE) {
+      const t = THREE.MathUtils.clamp((absGap - DEADZONE) / (MAX_GAP - DEADZONE), 0, 1);
+      // gap < 0 means this rival is behind the player -> speed up (positive).
+      // gap > 0 means this rival is ahead -> ease off (negative).
+      rawBand = t * BAND_RANGE * Math.sign(-gap);
+    }
+    const targetBand = THREE.MathUtils.clamp(1 + rawBand * this._rubberWarmup, 0.85, 1.15);
+    this.rubberBand = THREE.MathUtils.damp(this.rubberBand, targetBand, 1.1, dt);
+
+    this.throttle = THREE.MathUtils.clamp((this.ai.throttle ?? 0.78) * this.rubberBand, 0, 1);
 
     const minCharge = this.ai.boostMinCharge ?? 70;
     const canBoost = this.spectrum >= minCharge && this.boostCooldown <= 0 && this.boostTimer <= 0;
@@ -223,15 +263,12 @@ export class Racer {
       if (behind) chance = this.ai.boostRateBehind ?? 0.12;
       else if (gap < 0.08) chance = this.ai.boostRateClose ?? 0.04;
       else chance = this.ai.boostRateAhead ?? 0.008;
+      chance *= this.rubberBand;
 
       if (Math.random() < dt * chance) this.tryBoost();
     }
 
-    let speedScale = 1;
-    if (gap > 0.15) speedScale = 0.88;
-    else if (gap > 0.08) speedScale = 0.94;
-    else if (gap < -0.2) speedScale = 1.04;
-    this.maxSpeed = this.ai.baseMax * speedScale;
+    this.maxSpeed = this.ai.baseMax * this.rubberBand;
   }
 
   tryBoost() {
@@ -337,10 +374,26 @@ export class Racer {
       this.mesh.wings[0].rotation.z = 0.25 + flap;
       this.mesh.wings[1].rotation.z = -0.25 - flap;
     }
-    this.mesh.light.intensity = this.boostTimer > 0 ? 3.2 : 1.3;
+    // Drift trail / light-wake polish: the wake glows hotter and wider while
+    // boosting, and picks up a punchier tint while actively drifting (the
+    // same drift flag that charges Spectrum). Smoothly damped so it eases
+    // in/out instead of popping.
+    const isDrifting = this.drift && this.speed > 10;
+    const isBoosting = this.boostTimer > 0;
+    const lightTarget = isBoosting ? 3.4 : isDrifting ? 2.05 : 1.3;
+    this.mesh.light.intensity = THREE.MathUtils.damp(this.mesh.light.intensity, lightTarget, 6, dt);
+
+    const trailMat = this.mesh.trail.material;
+    const trailColors = this.mesh.trailColors;
+    const targetTrailColor = isBoosting ? trailColors.boost : isDrifting ? trailColors.drift : trailColors.base;
+    trailMat.color.lerp(targetTrailColor, 1 - Math.exp(-8 * dt));
+    const targetOpacity = isBoosting ? 0.95 : isDrifting ? 0.9 : 0.75;
+    const targetSize = isBoosting ? 0.62 : isDrifting ? 0.52 : 0.42;
+    trailMat.opacity = THREE.MathUtils.damp(trailMat.opacity, targetOpacity, 7, dt);
+    trailMat.size = THREE.MathUtils.damp(trailMat.size, targetSize, 7, dt);
 
     if (this.speed > 5) {
-      const idx = this.mesh.trailIdx % 40;
+      const idx = this.mesh.trailIdx % TRAIL_COUNT;
       const back = pos.clone().addScaledVector(lookDir, -2.2);
       this.mesh.trailPos[idx * 3] = back.x + (Math.random() - 0.5) * 0.4;
       this.mesh.trailPos[idx * 3 + 1] = back.y;

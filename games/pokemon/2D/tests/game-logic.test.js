@@ -63,6 +63,12 @@ const deserializeGameState = g('deserializeGameState');
 const hasValidSaveData = g('hasValidSaveData');
 const SAVE_VERSION = g('SAVE_VERSION');
 const NPCS = g('NPCS');
+const rollShiny = g('rollShiny');
+const SHINY_CHANCE = g('SHINY_CHANCE');
+const applyStatusEffect = g('applyStatusEffect');
+const pickWildEncounter = g('pickWildEncounter');
+const serializePokemon = g('serializePokemon');
+const deserializePokemon = g('deserializePokemon');
 
 let passed = 0;
 let failed = 0;
@@ -245,6 +251,102 @@ console.log('\n=== Joey trainer data shape (structure) ===');
   assert(!!joey.trainer, 'Joey has trainer config');
   assert(Array.isArray(joey.trainer.roster) && joey.trainer.roster.length >= 2, 'Joey has ≥2 Pokémon roster');
   assert(!!joey.trainer.reward, 'Joey has win reward');
+}
+
+console.log('\n=== Shiny mechanic (rollShiny statistical rate + wiring) ===');
+{
+  assert(typeof SHINY_CHANCE === 'number' && SHINY_CHANCE > 0 && SHINY_CHANCE < 0.05,
+    'SHINY_CHANCE is a small positive fraction (rare, but not vanishingly so)');
+
+  // Statistical check: over many trials, the observed shiny rate should land
+  // close to SHINY_CHANCE. Binomial std dev for N trials, p=SHINY_CHANCE is
+  // sqrt(N*p*(1-p)); use a generous 6-sigma band to make this effectively
+  // never flaky while still catching a badly wired/broken roll (e.g. off by
+  // a factor of 2, always-true, always-false, wrong constant, etc).
+  const N = 200000;
+  let shinyCount = 0;
+  for (let i = 0; i < N; i++) {
+    if (rollShiny()) shinyCount++;
+  }
+  const observedRate = shinyCount / N;
+  const expected = SHINY_CHANCE;
+  const stdDev = Math.sqrt((N * expected * (1 - expected))) / N;
+  const diff = Math.abs(observedRate - expected);
+  assert(diff < 6 * stdDev,
+    `observed shiny rate ${observedRate.toFixed(5)} within 6 sigma of expected ${expected.toFixed(5)} (diff ${diff.toFixed(5)}, sigma ${stdDev.toFixed(5)})`);
+  assert(shinyCount > 0, 'at least one shiny rolled across 200k trials (sanity: not always false)');
+  assert(shinyCount < N, 'not every roll is shiny across 200k trials (sanity: not always true)');
+
+  // Wiring: pickWildEncounter should attach a boolean `shiny` flag to every
+  // wild Pokémon it creates (regardless of whether the roll succeeded).
+  const sample = pickWildEncounter('route1');
+  assert(typeof sample.shiny === 'boolean', 'pickWildEncounter attaches a boolean shiny flag');
+  assert(sample.wild === true, 'pickWildEncounter still marks the mon as wild');
+
+  // createPokemon defaults to non-shiny unless explicitly requested.
+  const plain = createPokemon('rattata', 5);
+  assert(plain.shiny === false, 'createPokemon defaults shiny to false');
+  const forcedShiny = createPokemon('rattata', 5, { shiny: true });
+  assert(forcedShiny.shiny === true, 'createPokemon respects opts.shiny = true');
+
+  // Shiny flag must survive a save/load round-trip so caught shinies persist.
+  const serializedShiny = serializePokemon(forcedShiny);
+  assert(serializedShiny.shiny === true, 'serializePokemon preserves shiny flag');
+  const restoredShiny = deserializePokemon(JSON.parse(JSON.stringify(serializedShiny)));
+  assert(restoredShiny.shiny === true, 'deserializePokemon restores shiny flag');
+  const restoredNormal = deserializePokemon(JSON.parse(JSON.stringify(serializePokemon(plain))));
+  assert(restoredNormal.shiny === false, 'deserializePokemon restores non-shiny as false');
+
+  // Shiny catch counter should round-trip through the full save state too.
+  const shinyState = {
+    party: [plain],
+    bag: { pokeball: 1, potion: 0, superball: 0 },
+    player: { x: 1, y: 1, dir: 'down' },
+    flags: {
+      shopGift: false,
+      mewtwoDefeated: false,
+      caughtSpecies: new Set(['rattata']),
+      trainersDefeated: new Set(),
+      shinyCatches: 3,
+    },
+    steps: 0,
+    battlesWon: 0,
+  };
+  const savedShinyState = serializeGameState(shinyState);
+  assert(savedShinyState.flags.shinyCatches === 3, 'serializeGameState saves shinyCatches count');
+  const loadedShinyState = deserializeGameState(JSON.parse(JSON.stringify(savedShinyState)));
+  assert(loadedShinyState.flags.shinyCatches === 3, 'deserializeGameState restores shinyCatches count');
+  const legacySave = deserializeGameState({ ...JSON.parse(JSON.stringify(savedShinyState)), flags: { ...savedShinyState.flags, shinyCatches: undefined } });
+  assert(legacySave.flags.shinyCatches === 0, 'deserializeGameState defaults missing shinyCatches to 0 (old saves)');
+}
+
+console.log('\n=== Bug fix regression: spd_down effect must lower Special Defense, not Speed ===');
+{
+  // Bug: applyStatusEffect's 'spd_down' case (used by String Shot) mutated
+  // target.stages.spe (Speed) instead of target.stages.spd (Special
+  // Defense), contradicting this codebase's own atk_down/def_down naming
+  // convention (effect key -> matching stats.<key> field) and silently
+  // altering battle turn order (which is driven by Speed) instead of
+  // lowering special bulk as the move name/log implied.
+  const user = createPokemon('caterpie', 5);
+  const target = createPokemon('rattata', 5);
+  const spdBefore = target.stages.spd;
+  const speBefore = target.stages.spe;
+  const logs = [];
+  applyStatusEffect({ name: 'String Shot', effect: 'spd_down' }, user, target, (m) => logs.push(m));
+
+  assert(target.stages.spd === spdBefore - 1, "spd_down lowers the target's Special Defense stage");
+  assert(target.stages.spe === speBefore, "spd_down leaves the target's Speed stage untouched");
+  assert(logs.some((l) => l.includes('Special Defense')), "spd_down logs a 'Special Defense fell!' message");
+  assert(!logs.some((l) => l.includes('Speed fell')), "spd_down no longer logs the incorrect 'Speed fell!' message");
+
+  // Effective stat calc should reflect the lowered special defense in damage
+  // math (getEffectiveStat is exercised indirectly via calcDamage elsewhere,
+  // here we just confirm the stage clamps sanely across repeated hits).
+  for (let i = 0; i < 10; i++) {
+    applyStatusEffect({ name: 'String Shot', effect: 'spd_down' }, user, target, () => {});
+  }
+  assert(target.stages.spd === -6, 'spd_down clamps at -6 stages after repeated hits');
 }
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);

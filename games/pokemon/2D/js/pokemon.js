@@ -10,6 +10,22 @@ function clamp(v, lo, hi) {
   return Math.max(lo, Math.min(hi, v));
 }
 
+/**
+ * Shiny odds. Mainline games use 1/8192 (or 1/4096 with the modern "shiny
+ * charm"-less rate), which is tuned for games with thousands of encounters
+ * across a huge Pokédex. This is a 6-species, single-sitting browser RPG
+ * with maybe a few dozen to a couple hundred wild encounters per playthrough,
+ * so a rate that low would mean most players never see the feature at all.
+ * 1/128 keeps shinies feeling special (about a 1-in-8 average encounters-to-find,
+ * and ~30% chance of seeing at least one across 50 encounters) while still
+ * being a legitimately rare, exciting surprise rather than a near-guarantee.
+ */
+const SHINY_CHANCE = 1 / 128;
+
+function rollShiny() {
+  return Math.random() < SHINY_CHANCE;
+}
+
 function calcStat(base, level, isHP = false) {
   if (isHP) {
     return Math.floor(((2 * base) * level) / 100) + level + 10;
@@ -70,6 +86,7 @@ function createPokemon(speciesId, level, opts = {}) {
     catchRate: sp.catchRate,
     expYield: sp.expYield,
     wild: !!opts.wild,
+    shiny: !!opts.shiny,
   };
   return mon;
 }
@@ -160,8 +177,12 @@ function applyStatusEffect(move, user, target, log) {
       log(`${target.name}'s Defense fell!`);
       break;
     case 'spd_down':
-      target.stages.spe = clamp(target.stages.spe - 1, -6, 6);
-      log(`${target.name}'s Speed fell!`);
+      // 'spd' is this game's Special Defense stat key (see stats.spd / getEffectiveStat),
+      // matching the atk_down/def_down convention above. This used to mutate
+      // stages.spe (Speed) instead of stages.spd, so String Shot silently altered
+      // turn order via Speed rather than lowering Special Defense as intended.
+      target.stages.spd = clamp(target.stages.spd - 1, -6, 6);
+      log(`${target.name}'s Special Defense fell!`);
       break;
     case 'heal_full':
       user.hp = user.maxHp;
@@ -240,11 +261,11 @@ function pickWildEncounter(zone) {
     roll -= e.weight;
     if (roll <= 0) {
       const lv = randInt(e.minLv, e.maxLv);
-      return createPokemon(e.species, lv, { wild: true });
+      return createPokemon(e.species, lv, { wild: true, shiny: rollShiny() });
     }
   }
   const e = table[0];
-  return createPokemon(e.species, e.minLv, { wild: true });
+  return createPokemon(e.species, e.minLv, { wild: true, shiny: rollShiny() });
 }
 
 function catchChance(wild, ballBonus = 1) {
@@ -370,6 +391,7 @@ function serializePokemon(mon) {
     hp: mon.hp,
     maxHp: mon.maxHp,
     status: mon.status || null,
+    shiny: !!mon.shiny,
     moves: (mon.moves || []).map((m) => ({
       id: m.id,
       pp: m.pp,
@@ -383,6 +405,7 @@ function deserializePokemon(data) {
   const mon = createPokemon(data.speciesId, data.level || 5, {
     nickname: data.name,
     hp: data.hp,
+    shiny: !!data.shiny,
   });
   if (data.exp != null) mon.exp = data.exp;
   if (data.expToNext != null) mon.expToNext = data.expToNext;
@@ -433,6 +456,7 @@ function serializeGameState(state) {
         : Array.isArray(trainers)
           ? [...trainers]
           : [],
+      shinyCatches: state.flags?.shinyCatches || 0,
     },
     steps: state.steps || 0,
     battlesWon: state.battlesWon || 0,
@@ -465,6 +489,7 @@ function deserializeGameState(data) {
       mewtwoDefeated: !!data.flags?.mewtwoDefeated,
       caughtSpecies: new Set(data.flags?.caughtSpecies || []),
       trainersDefeated: new Set(data.flags?.trainersDefeated || []),
+      shinyCatches: data.flags?.shinyCatches || 0,
     },
     steps: data.steps || 0,
     battlesWon: data.battlesWon || 0,

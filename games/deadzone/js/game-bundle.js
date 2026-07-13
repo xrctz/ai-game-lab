@@ -1191,6 +1191,24 @@ class WeaponSystem {
                 pellets: 1,
                 aimSpreadMultiplier: 0.3,
                 aimRecoilMultiplier: 0.5
+            }),
+            new Weapon({
+                name: 'M24 SNIPER',
+                damage: 85,
+                headshotMultiplier: 3.5,
+                fireRate: 1.1,
+                reloadTime: 3.0,
+                magazineSize: 5,
+                reserveAmmo: 25,
+                maxReserve: 25,
+                spread: 0.006,
+                recoilX: 0.02,
+                recoilY: 0.05,
+                range: 150,
+                automatic: false,
+                pellets: 1,
+                aimSpreadMultiplier: 0.1,
+                aimRecoilMultiplier: 0.45
             })
         ];
 
@@ -4476,6 +4494,11 @@ class ZombieManager {
         this.scene = scene;
         this.zombies = [];
         this.maxZombies = 80;
+        // Applied per-wave scaling multipliers (set by WaveManager.startWave).
+        // See spawn() below — these were previously computed by WaveManager
+        // but never actually applied to spawned zombies.
+        this.healthMultiplier = 1.0;
+        this.speedMultiplier = 1.0;
     }
 
     spawn(type, x, z) {
@@ -4500,6 +4523,14 @@ class ZombieManager {
                 break;
             default:
                 zombie = new RunnerZombie(x, z, this.scene);
+        }
+
+        if (this.healthMultiplier !== 1.0) {
+            zombie.health = Math.round(zombie.health * this.healthMultiplier);
+            zombie.maxHealth = zombie.health;
+        }
+        if (this.speedMultiplier !== 1.0) {
+            zombie.speed *= this.speedMultiplier;
         }
 
         this.zombies.push(zombie);
@@ -4556,6 +4587,8 @@ class ZombieManager {
 
     reset() {
         this.clear();
+        this.healthMultiplier = 1.0;
+        this.speedMultiplier = 1.0;
     }
 }
 
@@ -7062,6 +7095,7 @@ class WaveManager {
         this.betweenTimer = 0;
         this.betweenDuration = 5;
         this.difficulty = 1.0;
+        this.speedMultiplier = 1.0;
         this.maxWaves = 15;
     }
 
@@ -7094,6 +7128,14 @@ class WaveManager {
 
         const config = this.getWaveConfig(this.currentWave);
         this.difficulty = config.healthMultiplier;
+        this.speedMultiplier = config.speedMultiplier;
+
+        // BUG FIX: healthMultiplier/speedMultiplier were computed per-wave but
+        // never actually applied to spawned zombies (only `this.difficulty` was
+        // stored, and nothing ever read it). Push both onto the ZombieManager so
+        // spawn() can scale each zombie's health/speed for the current wave.
+        zombieManager.healthMultiplier = config.healthMultiplier;
+        zombieManager.speedMultiplier = config.speedMultiplier;
 
         this.spawnQueue = [];
         for (const entry of config.types) {
@@ -7193,6 +7235,7 @@ class WaveManager {
         this.spawnTimer = 0;
         this.betweenTimer = 0;
         this.difficulty = 1.0;
+        this.speedMultiplier = 1.0;
     }
 }
 
@@ -8053,6 +8096,7 @@ class Game {
         if (this.input.isKeyJustPressed('Digit1')) { this.weaponSystem.switchTo(0); this.player.switchViewmodel(0); this.player.playViewmodelSwap(); }
         if (this.input.isKeyJustPressed('Digit2')) { this.weaponSystem.switchTo(1); this.player.switchViewmodel(1); this.player.playViewmodelSwap(); }
         if (this.input.isKeyJustPressed('Digit3')) { this.weaponSystem.switchTo(2); this.player.switchViewmodel(2); this.player.playViewmodelSwap(); }
+        if (this.input.isKeyJustPressed('Digit4')) { this.weaponSystem.switchTo(3); this.player.switchViewmodel(3); this.player.playViewmodelSwap(); }
 
         if (this.input.isKeyJustPressed('KeyG')) {
             this._throwGrenade();

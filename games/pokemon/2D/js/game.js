@@ -2,15 +2,7 @@
  * Pokemon Adventure — Main Game Engine
  */
 
-const TILE_SIZE = 32;
-const VIEW_W = 15; // tiles visible
-const VIEW_H = 15;
-const CANVAS_W = VIEW_W * TILE_SIZE; // 480
-const CANVAS_H = VIEW_H * TILE_SIZE; // 480 — wait, CSS says 720x480
-// Use 22.5 x 15 at 32px = 720x480
-// Better: scale rendering. Internal: 15x10 tiles * 48px? Or 22x15 * 32?
-// Use 720x480 canvas, 24x16 tiles at 30px — messy.
-// Standard: 15 tiles wide * 48 = 720, 10 tall * 48 = 480
+// Canvas viewport: VW x VH tiles at TS px each -> 15 * 48 = 720w, 10 * 48 = 480h.
 const TS = 48;
 const VW = 15;
 const VH = 10;
@@ -359,6 +351,7 @@ const Game = {
     mewtwoDefeated: false,
     caughtSpecies: new Set(),
     trainersDefeated: new Set(),
+    shinyCatches: 0,
   },
   steps: 0,
   battlesWon: 0,
@@ -587,6 +580,7 @@ function startGame(starterId) {
   Game.party = [createPokemon(starterId, 5)];
   Game.flags.caughtSpecies = new Set([starterId]);
   Game.flags.trainersDefeated = new Set();
+  Game.flags.shinyCatches = 0;
   // Spawn on town path, facing north (away from the pond)
   Game.player.x = 12;
   Game.player.y = 12;
@@ -1849,7 +1843,7 @@ function updateHUD() {
   const lead = Game.party[firstAlive(Game.party)] || Game.party[0];
   if (lead) {
     const leadEl = document.getElementById('hud-lead');
-    leadEl.innerHTML = `<img class="hud-mini" src="${lead.sprite}" alt="" /> ${lead.name} Lv${lead.level}`;
+    leadEl.innerHTML = `<img class="hud-mini${lead.shiny ? ' shiny-sprite' : ''}" src="${lead.sprite}" alt="" /> ${lead.name} Lv${lead.level}${lead.shiny ? ' ✨' : ''}`;
     const pct = Math.round((lead.hp / lead.maxHp) * 100);
     document.getElementById('hud-hp').textContent = `${lead.hp}/${lead.maxHp}`;
     const bar = document.getElementById('hud-hp-bar');
@@ -1877,11 +1871,12 @@ function openPartyMenu() {
     div.tabIndex = 0;
     div.innerHTML = `
       <div class="party-sprite-wrap">
-        <img class="sprite-img" src="${art}" alt="${mon.name}" width="72" height="72" />
+        <img class="sprite-img${mon.shiny ? ' shiny-sprite' : ''}" src="${art}" alt="${mon.name}" width="72" height="72" />
       </div>
       <div class="info">
         <h4>${mon.name} <span style="color:var(--accent)">Lv${mon.level}</span>
-          ${isLead ? '<span class="lead-badge">LEAD</span>' : ''}</h4>
+          ${isLead ? '<span class="lead-badge">LEAD</span>' : ''}
+          ${mon.shiny ? '<span class="shiny-badge">✨ SHINY</span>' : ''}</h4>
         <div class="meta">${mon.types.map((t) => `<span class="type-badge type-${t}">${t}</span>`).join(' ')}
           ${mon.status ? ` · ${mon.status}` : ''}${fainted ? ' · FAINTED' : ''}</div>
         <div class="hp-bar-bg"><div class="hp-bar ${pct <= 20 ? 'low' : pct <= 50 ? 'mid' : ''}" style="width:${pct}%"></div></div>
@@ -1935,6 +1930,7 @@ function openBagMenu() {
       <span class="count">×${Game.bag.superball}</span>
     </div>
     <p class="bag-hint">Click Potion to heal your lead. Super Balls auto-use in battle when available. Press P to save.</p>
+    <p class="bag-hint shiny-stat">✨ Shiny Pokémon caught: ${Game.flags.shinyCatches || 0}</p>
   `;
   document.getElementById('bag-use-potion')?.addEventListener('click', () => {
     usePotionOnLead();
@@ -2034,6 +2030,16 @@ function startBattle(wild, opts = {}) {
   }
   showMainBattleMenu();
 
+  // Shiny wild encounter: no separate pre-battle "encounter" screen exists in
+  // this game (wild encounters jump straight into the battle screen), so the
+  // sparkle callout plays right as the enemy sprite enters battle — covering
+  // both "on encounter" and "on battle start" in a single moment.
+  if (!isTrainer && wild.shiny) {
+    vfxShinySparkle('enemy');
+    showToast(`✨ A shiny ${wild.name} appeared!`);
+    setTimeout(() => setBattleLog(`✨ Whoa! That ${wild.name} is shiny!!`), 900);
+  }
+
   // Legendary fanfare
   if (SPECIES[wild.speciesId]?.legendary) {
     setBattleLog(`A legendary ${wild.name} appeared!`);
@@ -2071,6 +2077,7 @@ function setBattleSprite(imgId, mon, facing) {
   img.alt = mon.name;
   img.style.opacity = mon.hp <= 0 ? '0' : '1';
   img.classList.remove('faint', 'hit', 'hit-super', 'hit-crit', 'attack', 'attack-enemy');
+  img.classList.toggle('shiny-sprite', !!mon.shiny);
 }
 
 function setHpBar(who, hp, maxHp) {
@@ -2576,9 +2583,12 @@ async function battleCatch() {
     await sleep(800);
 
     Game.flags.caughtSpecies.add(wild.speciesId);
+    if (wild.shiny) {
+      Game.flags.shinyCatches = (Game.flags.shinyCatches || 0) + 1;
+    }
 
     if (Game.party.length < 6) {
-      const caught = createPokemon(wild.speciesId, wild.level);
+      const caught = createPokemon(wild.speciesId, wild.level, { shiny: wild.shiny });
       caught.hp = Math.max(1, wild.hp);
       Game.party.push(caught);
       setBattleLog(`${wild.name} joined your party!`);
