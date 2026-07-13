@@ -507,6 +507,10 @@ html, body {
   backdrop-filter: blur(8px);
 }
 
+#pause-screen .result-panel {
+  animation: none;
+}
+
 /* Vehicle showcase on menu */
 .vehicle-chip {
   display: flex;
