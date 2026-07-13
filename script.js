@@ -2,11 +2,11 @@
    AI Game Lab — Library OS (live hub) + FX polish
    ================================================================ */
 var AIGL = window.AIGL_Config || {
-  BUILD: '24-library',
+  BUILD: '25-motion',
   ROOT: '/ai-game-lab',
   HUB: '/ai-game-lab'
 };
-var AIGL_ASSET_BUILD = AIGL.BUILD || '24-library';
+var AIGL_ASSET_BUILD = AIGL.BUILD || '25-motion';
 var AIGL_HUB = AIGL.HUB || '/ai-game-lab';
 var AIGL_ROOT = AIGL.ROOT || '/ai-game-lab';
 var AIGL_REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -675,12 +675,12 @@ function showToast(msg, duration){
 })();
 
 (function initBuildBadge(){
-  document.documentElement.dataset.build = 'v24-library';
+  document.documentElement.dataset.build = 'v25-motion';
   window.__aiGameLabBuild = {
-    version: 'v24-library',
+    version: 'v25-motion',
     assets: AIGL_ASSET_BUILD,
     hub: AIGL_HUB,
-    note: 'Library OS + FX polish — live hub'
+    note: 'Library OS + motion polish — cursor aura, transitions, magnetic CTAs'
   };
 })();
 
@@ -939,4 +939,106 @@ function showToast(msg, duration){
     overlay.innerHTML = '<span>▶ View</span>';
     art.appendChild(overlay);
   });
+})();
+
+/* ---- v25-motion: scroll progress rail (all pages) ---- */
+(function initScrollProgress(){
+  var bar = document.createElement('div');
+  bar.className = 'scroll-progress';
+  bar.setAttribute('aria-hidden', 'true');
+  bar.innerHTML = '<i id="scrollProgressFill"></i>';
+  document.body.appendChild(bar);
+  var fill = bar.querySelector('#scrollProgressFill');
+  var ticking = false;
+  function update(){
+    var doc = document.documentElement;
+    var max = doc.scrollHeight - doc.clientHeight;
+    var pct = max > 0 ? Math.min(1, Math.max(0, doc.scrollTop / max)) : 0;
+    fill.style.width = (pct * 100).toFixed(2) + '%';
+    ticking = false;
+  }
+  addEventListener('scroll', function(){
+    if (!ticking) { requestAnimationFrame(update); ticking = true; }
+  }, { passive: true });
+  addEventListener('resize', update, { passive: true });
+  update();
+})();
+
+/* ---- v25-motion: cursor aura (fine pointer + motion-safe only) ---- */
+(function initCursorAura(){
+  if (AIGL_REDUCED) return;
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  var html = document.documentElement;
+  html.classList.add('cursor-fx');
+  var aura = document.createElement('div');
+  aura.className = 'cursor-aura';
+  aura.setAttribute('aria-hidden', 'true');
+  var dot = document.createElement('div');
+  dot.className = 'cursor-dot';
+  dot.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(aura);
+  document.body.appendChild(dot);
+  var tx = innerWidth / 2, ty = innerHeight / 2;
+  var ax = tx, ay = ty;
+  var raf = null;
+  var HOVER_SEL = 'a, button, [data-tilt], .game-tile, .catalog-card, .btn, .btn-small, .btn-rail, .filter-btn, input, select, .command-item, .boot-option, .banner-dots button';
+  function frame(){
+    ax += (tx - ax) * 0.22;
+    ay += (ty - ay) * 0.22;
+    aura.style.transform = 'translate(' + ax + 'px,' + ay + 'px) translate(-50%,-50%)';
+    dot.style.transform = 'translate(' + tx + 'px,' + ty + 'px) translate(-50%,-50%)';
+    raf = requestAnimationFrame(frame);
+  }
+  window.addEventListener('pointermove', function(e){
+    tx = e.clientX; ty = e.clientY;
+    if (!html.classList.contains('cursor-ready')) html.classList.add('cursor-ready');
+    if (!raf) raf = requestAnimationFrame(frame);
+    var hoverTarget = e.target.closest && e.target.closest(HOVER_SEL);
+    html.classList.toggle('cursor-hover', !!hoverTarget);
+  }, { passive: true });
+  window.addEventListener('pointerdown', function(){ dot.style.opacity = '0.4'; });
+  window.addEventListener('pointerup', function(){ dot.style.opacity = ''; });
+  document.addEventListener('mouseleave', function(){ html.classList.remove('cursor-ready'); });
+  document.addEventListener('mouseenter', function(){ html.classList.add('cursor-ready'); });
+})();
+
+/* ---- v25-motion: magnetic CTAs ---- */
+(function initMagneticButtons(){
+  if (AIGL_REDUCED || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  var MAX = 7;
+  document.querySelectorAll('.btn-primary, .rail-footer .btn-rail.primary, .launch-orb').forEach(function(el){
+    if (el._magnetBound) return;
+    el._magnetBound = true;
+    el.addEventListener('pointermove', function(e){
+      var r = el.getBoundingClientRect();
+      var mx = ((e.clientX - r.left) / r.width - 0.5) * 2 * MAX;
+      var my = ((e.clientY - r.top) / r.height - 0.5) * 2 * MAX;
+      el.style.setProperty('--mx', mx.toFixed(1) + 'px');
+      el.style.setProperty('--my', my.toFixed(1) + 'px');
+    }, { passive: true });
+    el.addEventListener('pointerleave', function(){
+      el.style.setProperty('--mx', '0px');
+      el.style.setProperty('--my', '0px');
+    });
+  });
+})();
+
+/* ---- v25-motion: homepage roster marquee ---- */
+(function initMarquee(){
+  var track = document.getElementById('marqueeTrack');
+  if (!track) return;
+  var roster = [
+    ['DeadTakeover Protocol', 'FPS'],
+    ['Dead Zone: Evacuation', 'Squad FPS'],
+    ['CraftVerse Engine', 'Sandbox'],
+    ['VEIL RUSH', 'Racing'],
+    ['Midnight Watch', 'Horror'],
+    ['Pokémon Adventure', 'RPG'],
+    ['Night of the Dead', 'Native FPS'],
+    ['Mindcraft Control Deck', 'Tool']
+  ];
+  var html = roster.map(function(g){
+    return '<span><b>' + g[0] + '</b>' + g[1] + '</span>';
+  }).join('');
+  track.innerHTML = html + html;
 })();

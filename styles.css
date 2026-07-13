@@ -1697,6 +1697,11 @@ body.player-active .launch-orb { opacity: 0.25; pointer-events: none; }
    v24-library — motion, ambient depth, cinematic polish
    ================================================================ */
 
+/* ================================================================
+   v25-motion — cursor aura, scroll progress, page transitions,
+   cascading reveals, magnetic buttons, marquee strip
+   ================================================================ */
+
 .ambient-stage {
   position: fixed;
   inset: 0;
@@ -2316,4 +2321,276 @@ body.player-active .launch-orb { opacity: 0.25; pointer-events: none; }
   }
   .shelf-wrap::before,
   .shelf-wrap::after { width: 20px; }
+}
+
+/* ================================================================
+   v25-motion — cross-page transitions, scroll progress, cursor aura,
+   magnetic CTAs, cascading grid reveals, marquee strip, page-in fade
+   ================================================================ */
+
+/* Smooth native cross-document navigation (progressive enhancement;
+   browsers without support simply ignore this and navigate as usual). */
+@view-transition {
+  navigation: auto;
+}
+::view-transition-old(root) {
+  animation: aigl-vt-out 0.22s var(--ease) both;
+}
+::view-transition-new(root) {
+  animation: aigl-vt-in 0.32s var(--ease) both;
+}
+@keyframes aigl-vt-out {
+  to { opacity: 0; transform: scale(0.99) translateY(6px); }
+}
+@keyframes aigl-vt-in {
+  from { opacity: 0; transform: scale(1.01) translateY(-6px); }
+}
+
+/* Whole-page entrance fade */
+body {
+  opacity: 1;
+  animation: aigl-page-in 0.5s var(--ease) both;
+}
+@keyframes aigl-page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Scroll progress rail */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 100;
+  background: transparent;
+  pointer-events: none;
+}
+.scroll-progress > i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-3), var(--accent-2));
+  box-shadow: 0 0 12px rgba(200, 245, 66, 0.55);
+  transition: width 0.08s linear;
+}
+
+/* Cursor aura — desktop, fine-pointer only (enabled via JS on <html>) */
+.cursor-aura,
+.cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 95;
+  pointer-events: none;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+}
+.cursor-aura {
+  width: 34px;
+  height: 34px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: 0 0 22px rgba(200, 245, 66, 0.25);
+  transition: width 0.2s var(--ease), height 0.2s var(--ease), border-color 0.2s, opacity 0.2s;
+  opacity: 0;
+}
+.cursor-dot {
+  width: 5px;
+  height: 5px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.12s var(--ease);
+}
+html.cursor-fx.cursor-ready .cursor-aura,
+html.cursor-fx.cursor-ready .cursor-dot { opacity: 1; }
+html.cursor-fx.cursor-hover .cursor-aura {
+  width: 54px;
+  height: 54px;
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+html.cursor-fx.cursor-hover .cursor-dot { transform: translate(-50%, -50%) scale(0); }
+html.cursor-fx * { cursor: none !important; }
+html.cursor-fx input,
+html.cursor-fx textarea,
+html.cursor-fx select { cursor: text !important; }
+
+/* Magnetic CTAs — nudged by JS via --mx/--my within a small radius */
+.btn-primary,
+.rail-footer .btn-rail.primary,
+.launch-orb {
+  transform: translate(var(--mx, 0), var(--my, 0));
+}
+.btn-primary:hover,
+.rail-footer .btn-rail.primary:hover {
+  transform: translate(var(--mx, 0), var(--my, 0)) translateY(-2px);
+}
+
+/* Cascading reveal delays for grouped grids/lists */
+.grid-3.reveal.visible > .panel,
+.catalog-grid > .reveal.visible,
+.status-matrix > .reveal.visible,
+.run-grid > .run-card.reveal.visible,
+.release-list > .reveal.visible,
+.article-wrap > .reveal.visible {
+  animation: stagger-up 0.5s var(--ease) both;
+}
+.grid-3 > .panel:nth-child(1),
+.catalog-grid > *:nth-child(1),
+.status-matrix > *:nth-child(1),
+.run-grid > *:nth-child(1),
+.release-list > *:nth-child(1),
+.article-wrap > *:nth-child(1) { animation-delay: 0.02s; }
+.grid-3 > .panel:nth-child(2),
+.catalog-grid > *:nth-child(2),
+.status-matrix > *:nth-child(2),
+.run-grid > *:nth-child(2),
+.release-list > *:nth-child(2),
+.article-wrap > *:nth-child(2) { animation-delay: 0.07s; }
+.grid-3 > .panel:nth-child(3),
+.catalog-grid > *:nth-child(3),
+.status-matrix > *:nth-child(3),
+.run-grid > *:nth-child(3),
+.release-list > *:nth-child(3),
+.article-wrap > *:nth-child(3) { animation-delay: 0.12s; }
+.catalog-grid > *:nth-child(4),
+.status-matrix > *:nth-child(4),
+.run-grid > *:nth-child(4),
+.release-list > *:nth-child(4),
+.article-wrap > *:nth-child(4) { animation-delay: 0.17s; }
+.catalog-grid > *:nth-child(5),
+.status-matrix > *:nth-child(5),
+.run-grid > *:nth-child(5),
+.release-list > *:nth-child(5),
+.article-wrap > *:nth-child(5) { animation-delay: 0.22s; }
+.catalog-grid > *:nth-child(6),
+.status-matrix > *:nth-child(6),
+.run-grid > *:nth-child(6),
+.release-list > *:nth-child(6) { animation-delay: 0.27s; }
+.catalog-grid > *:nth-child(7),
+.status-matrix > *:nth-child(7),
+.run-grid > *:nth-child(7) { animation-delay: 0.32s; }
+.catalog-grid > *:nth-child(8),
+.status-matrix > *:nth-child(8),
+.run-grid > *:nth-child(8) { animation-delay: 0.37s; }
+.catalog-grid > *:nth-child(9) { animation-delay: 0.42s; }
+.catalog-grid > *:nth-child(10) { animation-delay: 0.47s; }
+.catalog-grid > *:nth-child(11) { animation-delay: 0.52s; }
+
+/* Section heading underline sweep-in */
+.section-head {
+  position: relative;
+}
+.section-head::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.6s var(--ease);
+}
+.section-head.reveal.visible::after { transform: scaleX(1); }
+
+/* Nav rail icon micro-motion */
+.rail-nav a .nav-ico {
+  display: inline-block;
+  transition: transform 0.2s var(--ease), opacity 0.15s;
+}
+.rail-nav a:hover .nav-ico {
+  transform: translateX(2px) scale(1.12);
+  opacity: 1;
+}
+
+/* Marquee strip — infinite scrolling roster ticker */
+.marquee-strip {
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 12px 0;
+  margin: 28px 0 0;
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 0;
+  animation: marquee-scroll 32s linear infinite;
+}
+.marquee-strip:hover .marquee-track { animation-play-state: paused; }
+.marquee-track span {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 28px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dim);
+  white-space: nowrap;
+  border-right: 1px solid var(--line-soft);
+}
+.marquee-track span b {
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+.marquee-track span::before {
+  content: "●";
+  color: var(--accent);
+  font-size: 0.55rem;
+}
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* Rail brand wordmark shimmer */
+.rail-brand strong {
+  background: linear-gradient(100deg, var(--text) 0%, var(--text) 42%, var(--accent) 50%, var(--text) 58%, var(--text) 100%);
+  background-size: 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: wordmark-shimmer 7s ease-in-out infinite;
+}
+@keyframes wordmark-shimmer {
+  0%, 40% { background-position: 100% 0; }
+  60%, 100% { background-position: -60% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation: none !important; }
+  body { animation: none !important; opacity: 1 !important; }
+  .cursor-aura, .cursor-dot { display: none !important; }
+  html.cursor-fx * { cursor: auto !important; }
+  .marquee-track { animation: none !important; }
+  .rail-brand strong { animation: none !important; background: none !important; -webkit-background-clip: unset !important; background-clip: unset !important; color: var(--text) !important; }
+  .grid-3.reveal.visible > .panel,
+  .catalog-grid > .reveal.visible,
+  .status-matrix > .reveal.visible,
+  .run-grid > .run-card.reveal.visible,
+  .release-list > .reveal.visible,
+  .article-wrap > .reveal.visible { animation: none !important; }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .cursor-aura, .cursor-dot { display: none !important; }
+  html.cursor-fx * { cursor: auto !important; }
+}
+
+@media (max-width: 640px) {
+  .marquee-track span { padding: 0 18px; font-size: 0.72rem; }
 }
