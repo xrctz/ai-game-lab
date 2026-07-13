@@ -14,7 +14,7 @@
     catch (_) { return false; }
   })();
   var IS_MOBILE  = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-  window.__craftverseLabVersion = "v3";
+  window.__craftverseLabVersion = "v4";
 
   /* ── State ── */
   var clickOverlay  = null;
@@ -131,15 +131,23 @@
     clickOverlay = makeEl("div", PREFIX + "click-overlay");
 
     var icon  = makeEl("div", null, PREFIX + "overlay-icon");
-    icon.textContent = "\u{1F3AE}";
+    icon.textContent = "\u25A3";
     var title = makeEl("div", null, PREFIX + "overlay-title");
     title.textContent = "Click to capture mouse";
     var sub   = makeEl("div", null, PREFIX + "overlay-sub");
-    sub.textContent = "Look controls need pointer lock. Press Esc to release. WASD move · Space jump · E inventory.";
+    sub.textContent = "Look controls need pointer lock. Press Esc to release.";
+
+    var tips = makeEl("div", null, PREFIX + "overlay-tips");
+    tips.innerHTML =
+      "<span><kbd>WASD</kbd> move</span>" +
+      "<span><kbd>Space</kbd> jump</span>" +
+      "<span><kbd>E</kbd> inventory</span>" +
+      "<span><kbd>F</kbd> craft</span>";
 
     clickOverlay.appendChild(icon);
     clickOverlay.appendChild(title);
     clickOverlay.appendChild(sub);
+    clickOverlay.appendChild(tips);
 
     if (IS_EMBED) {
       var link = makeEl("a", PREFIX + "open-tab", PREFIX + "open-tab");
@@ -233,6 +241,18 @@
     document.body.appendChild(badge);
   }
 
+  function createQuickHint() {
+    if (IS_MOBILE) return;
+    var hint = makeEl("div", PREFIX + "quick-hint");
+    hint.innerHTML =
+      "<strong>CraftVerse</strong> — punch to break · place with right-click · " +
+      "<kbd>/</kbd> chat · Esc pause";
+    document.body.appendChild(hint);
+    setTimeout(function () {
+      hint.classList.add(PREFIX + "hint-hide");
+    }, 7000);
+  }
+
   function preferReducedMotion() {
     try {
       return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -258,6 +278,7 @@
     createLockMsg();
     createMobileBanner();
     createBrandBadge();
+    createQuickHint();
     if (preferReducedMotion()) {
       document.documentElement.classList.add(PREFIX + "reduced-motion");
     }

@@ -1,7 +1,8 @@
 ﻿/**
- * DeadTakeover v10 Visual Effects Engine.
+ * DeadTakeover v11 Visual Effects Engine.
  * Floating damage numbers, wave announcements, atmospheric effects,
- * kill streak banners, weapon HUD, crosshair feedback, screen shake.
+ * kill streak banners, weapon HUD, crosshair feedback, screen shake,
+ * rotating field tips while in combat.
  * Works via DOM observation - no bundle modification needed.
  */
 (function(){
@@ -12,12 +13,24 @@
   var KILL_STREAK_NAMES = ['Killing Spree', 'Rampage', 'Unstoppable', 'Legendary', 'GODLIKE'];
   var KILL_STREAK_DURATION = 2500;
   var WAVE_ANNOUNCE_DURATION = 2800;
+  var FIELD_TIPS = [
+    'Loot buildings for scrap, cloth, and ammo packs.',
+    'Sprint in short bursts — stamina keeps you alive.',
+    'Craft molotovs before a wave crest hits.',
+    'Use cover; open streets invite flanks.',
+    'Press I for the field guide mid-run.',
+    'Low ammo? Swap weapons instead of dry-firing.',
+    'Headshots refill momentum — aim high.',
+    'When the compass pings, treat it as a hard priority.'
+  ];
 
   var damageNumbers = [];
   var lastKills = -1;
   var lastWave = -1;
   var streakTimer = null;
   var waveTimer = null;
+  var tipTimer = null;
+  var tipIndex = 0;
   var sessionStartTime = Date.now();
   var totalKills = 0;
   var hudObserver = null;
@@ -127,6 +140,9 @@
     waveTimer = setTimeout(function(){
       el.classList.remove('active');
     }, WAVE_ANNOUNCE_DURATION);
+
+    // Soft tip after wave banner settles
+    setTimeout(function(){ showFieldTip(false); }, WAVE_ANNOUNCE_DURATION + 400);
   }
 
   function showKillStreak(streakCount){
@@ -308,6 +324,60 @@
     return pad2(m) + ':' + pad2(s % 60);
   }
 
+  function ensureFieldTipStyles(){
+    if($('dt-fx-tip-style')) return;
+    var s = document.createElement('style');
+    s.id = 'dt-fx-tip-style';
+    s.textContent = [
+      '#dt-fx-field-tip{position:fixed;left:50%;bottom:78px;transform:translateX(-50%);',
+      'z-index:18;max-width:min(520px,88vw);padding:8px 14px;border-radius:10px;',
+      'background:rgba(6,10,22,.72);border:1px solid rgba(53,231,255,.22);',
+      'color:#c9d6ff;font:600 12px/1.35 JetBrains Mono,ui-monospace,monospace;',
+      'letter-spacing:.02em;opacity:0;pointer-events:none;transition:opacity .45s ease;',
+      'text-align:center;backdrop-filter:blur(6px);box-shadow:0 8px 28px rgba(0,0,0,.35)}',
+      '#dt-fx-field-tip.visible{opacity:1}',
+      '#dt-fx-field-tip .tip-kicker{display:block;color:#35e7ff;font-size:10px;',
+      'text-transform:uppercase;letter-spacing:.12em;margin-bottom:3px;font-weight:700}',
+      'html.dt-menu-open #dt-fx-field-tip{opacity:0!important}'
+    ].join('');
+    document.head.appendChild(s);
+  }
+
+  function ensureFieldTip(){
+    ensureFieldTipStyles();
+    var el = $('dt-fx-field-tip');
+    if(el) return el;
+    el = document.createElement('div');
+    el.id = 'dt-fx-field-tip';
+    el.innerHTML = '<span class="tip-kicker">Field tip</span><span class="tip-body"></span>';
+    document.body.appendChild(el);
+    return el;
+  }
+
+  function showFieldTip(force){
+    if(!isGameplayActive() && !force) return;
+    var el = ensureFieldTip();
+    var body = el.querySelector('.tip-body');
+    if(!body) return;
+    tipIndex = (tipIndex + 1) % FIELD_TIPS.length;
+    body.textContent = FIELD_TIPS[tipIndex];
+    el.classList.add('visible');
+    clearTimeout(tipTimer);
+    tipTimer = setTimeout(function(){
+      el.classList.remove('visible');
+    }, 4200);
+  }
+
+  function startTipRotation(){
+    ensureFieldTip();
+    setInterval(function(){
+      if(isGameplayActive()) showFieldTip(false);
+    }, 28000);
+    setTimeout(function(){
+      if(isGameplayActive()) showFieldTip(false);
+    }, 9000);
+  }
+
   window.__dtVisualEffects = {
     spawnDamageNumber: spawnDamageNumber,
     announceWave: announceWave,
@@ -315,6 +385,7 @@
     crosshairHitConfirm: crosshairHitConfirm,
     screenShake: screenShake,
     updateWeaponHUD: updateWeaponHUD,
+    showFieldTip: showFieldTip,
     getTotalKills: function(){ return totalKills; },
     getSessionTime: getSessionTime,
     isGameplayActive: isGameplayActive
@@ -326,6 +397,7 @@
   function init(){
     observeHUD();
     syncBaselineFromHUD();
+    startTipRotation();
 
     var menu = $('menu-overlay');
     if(menu){
@@ -337,12 +409,14 @@
           if(overlay) overlay.classList.remove('active', 'critical');
           var banner = $('kill-streak-banner');
           if(banner) banner.classList.remove('active', 'fade-out');
+          var tip = $('dt-fx-field-tip');
+          if(tip) tip.classList.remove('visible');
         }
         updateWeaponHUD();
       }).observe(menu, { attributes: true, attributeFilter: ['style', 'class'] });
     }
 
-    console.log('[visual-effects] v10 effects engine active');
+    console.log('[visual-effects] v11 effects engine active');
   }
 
   if(document.readyState === 'loading'){

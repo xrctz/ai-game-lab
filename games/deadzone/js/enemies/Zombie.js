@@ -21,6 +21,8 @@ export class Zombie {
         this.damage = config.damage || 15;
         this.attackRange = config.attackRange || 1.8;
         this.attackCooldown = config.attackCooldown || 1.0;
+        this.attackWindup = config.attackWindup ?? 0.18;
+        this.attackWindupTimer = 0;
         this.detectionRange = config.detectionRange || 35;
         this.staggerThreshold = config.staggerThreshold || 30;
         this.headshotMultiplier = config.headshotMultiplier || 2.5;
@@ -169,7 +171,7 @@ export class Zombie {
         const eyeGeo = new THREE.SphereGeometry(0.04 * s, 6, 4);
         const eyeMat = this._createMaterial(this.eyeColor, {
             emissive: this.eyeColor,
-            emissiveIntensity: 3.0,
+            emissiveIntensity: 4.0,
             roughness: 0.2
         });
         const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
@@ -182,7 +184,7 @@ export class Zombie {
         headGroup.add(rightEye);
 
         // Tiny point light on head so zombies cast a faint glow visible from afar
-        const eyeGlow = new THREE.PointLight(this.eyeColor, 0.25, 8, 2);
+        const eyeGlow = new THREE.PointLight(this.eyeColor, 0.4, 10, 2);
         eyeGlow.position.set(0, 1.78 * s, 0.2 * s);
         group.add(eyeGlow);
 
@@ -522,6 +524,32 @@ export class Zombie {
     }
 
     _animateAttack(dt, parts, s) {
+        const windingUp = this.attackWindupTimer > 0;
+        const windupT = windingUp
+            ? 1 - this.attackWindupTimer / (this.attackWindup || 0.18)
+            : 0;
+
+        if (windingUp) {
+            if (parts.torsoGroup) {
+                parts.torsoGroup.rotation.x = -0.35 - windupT * 0.2;
+            }
+            if (parts.leftArmGroup) {
+                parts.leftArmGroup.rotation.x = -0.6 - windupT * 0.9;
+                parts.leftArmGroup.rotation.z = 0.4;
+            }
+            if (parts.rightArmGroup) {
+                parts.rightArmGroup.rotation.x = -0.6 - windupT * 0.9;
+                parts.rightArmGroup.rotation.z = -0.4;
+            }
+            if (parts.headGroup) {
+                parts.headGroup.rotation.x = -0.1 - windupT * 0.25;
+            }
+            if (parts.jaw) {
+                parts.jaw.rotation.x = windupT * 0.35;
+            }
+            return;
+        }
+
         this._attackAnim += dt * 8;
         const swing = Math.sin(this._attackAnim);
 
@@ -749,10 +777,16 @@ export class Zombie {
         }
 
         if (this.state === ZOMBIE_STATES.ATTACKING) {
+            if (this.attackWindupTimer > 0) {
+                this.attackWindupTimer -= dt;
+                return;
+            }
+
             this.attackTimer -= dt;
             if (this.attackTimer <= 0) {
                 this.attackTimer = this.attackCooldown;
                 this._performAttack();
+                this._attackAnim = 0;
             }
         }
     }
@@ -778,6 +812,13 @@ export class Zombie {
         this.health -= finalDamage;
         this.hitFlashTimer = this.hitFlashDuration;
 
+        if (this.scene.__gameRef?.particles && sourcePos) {
+            const hitPos = this.position.clone();
+            hitPos.y += 1.2 * this.scale;
+            const hitDir = hitPos.clone().sub(sourcePos).normalize();
+            this.scene.__gameRef.particles.emitHitImpact(hitPos, hitDir);
+        }
+
         if (this.health <= 0) {
             this.health = 0;
             this._die();
@@ -798,6 +839,19 @@ export class Zombie {
         this._deathFallDir = this.rotation;
         this._changeState(ZOMBIE_STATES.DYING);
 
+        if (this.scene.__gameRef) {
+            const game = this.scene.__gameRef;
+            const burstPos = this.position.clone();
+            burstPos.y += 1.1 * this.scale;
+            if (game.particles) {
+                game.particles.emitDeathBurst(burstPos, this.type);
+            }
+            if (game.cameraShake) {
+                const shakeByType = { tank: 0.07, exploder: 0.055, spitter: 0.03, crawler: 0.022, runner: 0.02 };
+                game.cameraShake.shake(shakeByType[this.type] || 0.02, 0.18);
+            }
+        }
+
         setTimeout(() => {
             if (this.mesh.parent) this.scene.remove(this.mesh);
             if (this.healthBar.parent) this.scene.remove(this.healthBar);
@@ -809,6 +863,12 @@ export class Zombie {
         this.prevState = this.state;
         this.state = newState;
         this.stateTimer = 0;
+
+        if (newState === ZOMBIE_STATES.ATTACKING) {
+            const windup = this.attackWindup || 0.18;
+            this.attackWindupTimer = windup * (0.75 + Math.random() * 0.5);
+            this._attackAnim = 0;
+        }
     }
 
     _updateHealthBarTexture() {
@@ -828,6 +888,7 @@ export class Zombie {
         this.alive = true;
         this.position.set(x, this.baseY, z);
         this.target = null;
+        this.attackWindupTimer = 0;
         this._changeState(ZOMBIE_STATES.IDLE);
         this.mesh.visible = true;
         this.mesh.rotation.set(0, 0, 0);

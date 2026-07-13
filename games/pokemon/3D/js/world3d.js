@@ -97,12 +97,23 @@ export class World3D {
     this.group = new THREE.Group();
     this.group.name = 'World';
     scene.add(this.group);
+    this.landmarkGroup = new THREE.Group();
+    this.landmarkGroup.name = 'Landmarks';
+    this.group.add(this.landmarkGroup);
+    this.cueGroup = new THREE.Group();
+    this.cueGroup.name = 'InteractCues';
+    this.group.add(this.cueGroup);
     this.loader = new GLTFLoader();
     this.models = {};
     this.npcMeshes = [];
     this.propMeshes = [];
+    this.landmarkMeshes = [];
+    this.interactCues = [];
+    this.encounterCue = null;
     this.materials = {};
     this.minimapCanvas = null;
+    this._sun = null;
+    this._hemi = null;
   }
 
   async loadModels(onProgress) {
@@ -247,13 +258,47 @@ export class World3D {
     return this.materials[id];
   }
 
-  build() {
-    // Clear previous
-    while (this.group.children.length) {
-      this.group.remove(this.group.children[0]);
+  /** Configure overworld fog + sun for depth and landmark readability. */
+  setupAtmosphere(scene, renderer) {
+    if (!scene) return;
+    scene.background = new THREE.Color(0x7eb8e8);
+    scene.fog = new THREE.FogExp2(0x9ec8e8, 0.012);
+
+    if (renderer) {
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.05;
     }
+
+    // Retune existing lights if present on scene
+    scene.traverse((o) => {
+      if (o.isDirectionalLight && o.castShadow) this._sun = o;
+      if (o.isHemisphereLight) this._hemi = o;
+    });
+    if (this._hemi) {
+      this._hemi.color.setHex(0xfff6e8);
+      this._hemi.groundColor.setHex(0x2d5a28);
+      this._hemi.intensity = 0.92;
+    }
+    if (this._sun) {
+      this._sun.color.setHex(0xfff0d4);
+      this._sun.intensity = 1.25;
+    }
+  }
+
+  build() {
+    // Clear world geometry but keep landmark/cue container groups
+    const keep = new Set([this.landmarkGroup, this.cueGroup]);
+    [...this.group.children].forEach((ch) => {
+      if (!keep.has(ch)) this.group.remove(ch);
+    });
+    if (!this.group.children.includes(this.landmarkGroup)) this.group.add(this.landmarkGroup);
+    if (!this.group.children.includes(this.cueGroup)) this.group.add(this.cueGroup);
+    while (this.landmarkGroup.children.length) this.landmarkGroup.remove(this.landmarkGroup.children[0]);
+    while (this.cueGroup.children.length) this.cueGroup.remove(this.cueGroup.children[0]);
     this.npcMeshes = [];
     this.propMeshes = [];
+    this.landmarkMeshes = [];
+    this.interactCues = [];
 
     const T = window.TILE;
     const map = window.WORLD_MAP;
@@ -369,6 +414,13 @@ export class World3D {
 
     // Ambient decorations: path edge stones
     this._addBoundaryFence();
+
+    // Landmark beacons for navigation (Center, Mart, Lab, Cave)
+    this._buildLandmarkMarkers();
+
+    // Interact rings on NPCs + key tiles
+    this._buildInteractCues();
+    this._buildEncounterCue();
 
     // Water animation markers
     this.waterMeshes = [];
@@ -608,6 +660,169 @@ export class World3D {
     // Soft fog volume edges already handled by fog; skip heavy fence
   }
 
+  _buildLandmarkMarkers() {
+    const landmarks = window.LANDMARKS || [];
+    for (const lm of landmarks) {
+      const pos = tileToWorld(lm.tx, lm.ty);
+      const sy = tileSurfaceY(lm.tx, lm.ty);
+      const g = new THREE.Group();
+      g.position.set(pos.x, sy, pos.z);
+      g.userData.landmark = lm;
+
+      // Glowing pillar beacon
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.1, 2.6, 6),
+        this.mat(lm.color, { emissive: lm.color, emissiveIntensity: 0.55, roughness: 0.4 })
+      );
+      pole.position.y = 1.3;
+      g.add(pole);
+
+      // Floating ring at top
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.42, 0.05, 6, 20),
+        this.mat(lm.color, { emissive: lm.color, emissiveIntensity: 0.7, transparent: true, opacity: 0.85 })
+      );
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = 2.75;
+      ring.userData.pulse = true;
+      ring.userData.phase = lm.tx * 0.7 + lm.ty;
+      g.add(ring);
+
+      // Ground halo for readability at distance
+      const halo = new THREE.Mesh(
+        new THREE.RingGeometry(0.55, 0.95, 24),
+        this.mat(lm.color, { emissive: lm.color, emissiveIntensity: 0.35, transparent: true, opacity: 0.45 })
+      );
+      halo.rotation.x = -Math.PI / 2;
+      halo.position.y = 0.04;
+      halo.userData.pulse = true;
+      halo.userData.phase = lm.tx + lm.ty * 0.5;
+      g.add(halo);
+
+      this.landmarkGroup.add(g);
+      this.landmarkMeshes.push(g);
+    }
+
+    // Extra cave mouth warning glow
+    const cavePos = tileToWorld(3, 3);
+    const caveY = tileSurfaceY(3, 3);
+    const warn = new THREE.PointLight(0x9b7bff, 0.9, 8, 2);
+    warn.position.set(cavePos.x, caveY + 2.2, cavePos.z - 0.5);
+    warn.userData.pulse = true;
+    warn.userData.phase = 0;
+    this.landmarkGroup.add(warn);
+    this.landmarkMeshes.push(warn);
+  }
+
+  _buildInteractCues() {
+    // NPC foot rings
+    for (const mesh of this.npcMeshes) {
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.55, 0.72, 24),
+        this.mat(0xffcb05, { emissive: 0xffcb05, emissiveIntensity: 0.5, transparent: true, opacity: 0.55 })
+      );
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.copy(mesh.position);
+      ring.position.y += 0.06;
+      ring.userData.isInteractCue = true;
+      ring.userData.npc = mesh.userData.npc;
+      ring.userData.phase = mesh.userData.idlePhase || 0;
+      ring.visible = false;
+      this.cueGroup.add(ring);
+      this.interactCues.push(ring);
+      mesh.userData.interactCue = ring;
+    }
+
+    // Heal pad tiles — persistent soft ring
+    const T = window.TILE;
+    const map = window.WORLD_MAP;
+    for (let y = 0; y < mapH(); y++) {
+      for (let x = 0; x < mapW(); x++) {
+        if (map[y][x] !== T.HEAL) continue;
+        const pos = tileToWorld(x, y);
+        const sy = tileSurfaceY(x, y);
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(0.5, 0.85, 28),
+          this.mat(0xff6688, { emissive: 0xff4466, emissiveIntensity: 0.45, transparent: true, opacity: 0.5 })
+        );
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.set(pos.x, sy + 0.08, pos.z);
+        ring.userData.isHealCue = true;
+        ring.userData.phase = x + y;
+        ring.userData.tileX = x;
+        ring.userData.tileY = y;
+        this.cueGroup.add(ring);
+        this.interactCues.push(ring);
+      }
+    }
+  }
+
+  _buildEncounterCue() {
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.35, 0.92, 32),
+      this.mat(0x88ff66, { emissive: 0x55cc44, emissiveIntensity: 0.4, transparent: true, opacity: 0 })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.userData.isEncounterCue = true;
+    this.cueGroup.add(ring);
+    this.encounterCue = ring;
+  }
+
+  /** Show rustle ring when player stands on wild-grass tiles. */
+  setEncounterCue(tx, ty, visible) {
+    if (!this.encounterCue) return;
+    if (!visible) {
+      this.encounterCue.material.opacity = 0;
+      return;
+    }
+    const pos = tileToWorld(tx, ty);
+    const sy = tileSurfaceY(tx, ty);
+    this.encounterCue.position.set(pos.x, sy + 0.1, pos.z);
+    this.encounterCue.material.opacity = 0.28;
+  }
+
+  /** Highlight interact cue for the tile the player is facing. */
+  setActiveInteractCue(targetNpc) {
+    for (const cue of this.interactCues) {
+      if (!cue.userData?.isInteractCue) continue;
+      const match = targetNpc && cue.userData.npc === targetNpc;
+      cue.visible = !!match;
+      if (match) {
+        cue.material.opacity = 0.85;
+        cue.material.emissiveIntensity = 0.85;
+      }
+    }
+  }
+
+  /** Find NPC or tile the player can interact with from current tile + facing. */
+  findInteractTarget(tx, ty, dir, flags = {}) {
+    let fx = tx;
+    let fy = ty;
+    if (dir === 'up') fy--;
+    else if (dir === 'down') fy++;
+    else if (dir === 'left') fx--;
+    else if (dir === 'right') fx++;
+
+    const npc = (window.NPCS || []).find((n) => n.x === fx && n.y === fy);
+    if (npc) {
+      let label = `Talk to ${npc.name}`;
+      if (npc.healsParty || npc.role === 'nurse') label = 'Heal at Pokémon Center';
+      else if (npc.trainer && npc.trainerId && !flags.trainersDefeated?.has(npc.trainerId)) {
+        label = `Battle ${npc.name}`;
+      } else if (npc.giveItems) label = 'Visit Poké Mart';
+      return { type: 'npc', npc, label, tx: fx, ty: fy };
+    }
+
+    if (fx >= 0 && fy >= 0 && fx < mapW() && fy < mapH()) {
+      const T = window.TILE;
+      const tile = window.WORLD_MAP[fy][fx];
+      if (tile === T.WATER) return { type: 'tile', label: 'Look at water', tx: fx, ty: fy };
+      if (tile === T.TREE) return { type: 'tile', label: 'Inspect tree', tx: fx, ty: fy };
+      if (tile === T.HEAL) return { type: 'tile', label: 'Stand on heal pad', tx: fx, ty: fy };
+    }
+    return null;
+  }
+
   _buildMinimap() {
     const MW = mapW();
     const MH = mapH();
@@ -703,6 +918,45 @@ export class World3D {
       npc.position.y = baseY + Math.sin(t * 2 + phase) * 0.04;
       const breath = 1 + Math.sin(t * 2 + phase) * 0.015;
       npc.scale.set(breath, 1 + Math.sin(t * 2 + phase + 0.5) * 0.02, breath);
+      if (npc.userData.interactCue) {
+        npc.userData.interactCue.position.x = npc.position.x;
+        npc.userData.interactCue.position.z = npc.position.z;
+      }
+    }
+
+    // Landmark + heal cue pulse
+    for (const lm of this.landmarkMeshes) {
+      if (lm.isPointLight && lm.userData?.pulse) {
+        const ph = lm.userData.phase || 0;
+        lm.intensity = 0.7 + Math.sin(t * 2.2 + ph) * 0.25;
+      } else {
+        lm.traverse((c) => {
+          if (c.userData?.pulse && c.material) {
+            const ph = c.userData.phase || 0;
+            const s = 1 + Math.sin(t * 2.5 + ph) * 0.08;
+            c.scale.set(s, s, s);
+            if (c.material.emissiveIntensity != null) {
+              c.material.emissiveIntensity = 0.45 + Math.sin(t * 3 + ph) * 0.2;
+            }
+          }
+        });
+      }
+    }
+    for (const cue of this.interactCues) {
+      if (cue.userData?.isHealCue && cue.material) {
+        const ph = cue.userData.phase || 0;
+        cue.material.opacity = 0.35 + Math.sin(t * 2.8 + ph) * 0.15;
+        cue.rotation.z = t * 0.4;
+      }
+      if (cue.userData?.isInteractCue && cue.visible && cue.material) {
+        const ph = cue.userData.phase || 0;
+        cue.material.opacity = 0.65 + Math.sin(t * 4 + ph) * 0.2;
+        cue.scale.setScalar(1 + Math.sin(t * 3.5 + ph) * 0.06);
+      }
+    }
+    if (this.encounterCue?.material?.opacity > 0) {
+      this.encounterCue.rotation.z = t * 0.6;
+      this.encounterCue.material.opacity = 0.22 + Math.sin(t * 3) * 0.08;
     }
   }
 }

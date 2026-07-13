@@ -11,6 +11,49 @@ export class ZombieManager {
         this.scene = scene;
         this.zombies = [];
         this.maxZombies = 80;
+        this._recentSpawns = [];
+        this._maxRecentSpawns = 6;
+    }
+
+    pickSpawnPosition(spawnPoints) {
+        if (!spawnPoints || spawnPoints.length === 0) {
+            const offset = MathUtils.randomPointInCircle(8);
+            return { x: offset.x, z: offset.z };
+        }
+
+        const alive = this.zombies.filter(z => z.alive);
+        let bestPoint = spawnPoints[0];
+        let bestScore = -Infinity;
+
+        const shuffled = spawnPoints.slice().sort(() => Math.random() - 0.5);
+        for (const point of shuffled) {
+            let score = MathUtils.randomRange(0, 2);
+
+            for (const recent of this._recentSpawns) {
+                const dist = MathUtils.distance2D(point.x, point.z, recent.x, recent.z);
+                if (dist < 4) score -= (4 - dist) * 3;
+            }
+
+            for (const zombie of alive) {
+                const dist = MathUtils.distance2D(point.x, point.z, zombie.position.x, zombie.position.z);
+                if (dist < 3) score -= (3 - dist) * 2;
+            }
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestPoint = point;
+            }
+        }
+
+        const offset = MathUtils.randomPointInCircle(5 + Math.random() * 3);
+        const pos = { x: bestPoint.x + offset.x, z: bestPoint.z + offset.z };
+
+        this._recentSpawns.push({ x: pos.x, z: pos.z });
+        if (this._recentSpawns.length > this._maxRecentSpawns) {
+            this._recentSpawns.shift();
+        }
+
+        return pos;
     }
 
     spawn(type, x, z) {
@@ -47,13 +90,8 @@ export class ZombieManager {
 
         for (const entry of types) {
             for (let i = 0; i < entry.count; i++) {
-                const point = spawnPoints[MathUtils.randomInt(0, spawnPoints.length - 1)];
-                const offset = MathUtils.randomPointInCircle(5);
-                const zombie = this.spawn(
-                    entry.type,
-                    point.x + offset.x,
-                    point.z + offset.z
-                );
+                const pos = this.pickSpawnPosition(spawnPoints);
+                const zombie = this.spawn(entry.type, pos.x, pos.z);
                 if (zombie) spawned.push(zombie);
             }
         }
@@ -91,5 +129,6 @@ export class ZombieManager {
 
     reset() {
         this.clear();
+        this._recentSpawns = [];
     }
 }

@@ -24,6 +24,8 @@ export class CrawlerZombie extends Zombie {
             x, z
         }, scene);
 
+        this.attackWindup = 0.06 + Math.random() * 0.16;
+        this.attackCooldown = 0.35 + Math.random() * 0.3;
         this.dodgeTimer = 0;
         this.dodgeDir = 1;
         this.position.y = 0.3;
@@ -62,7 +64,7 @@ export class CrawlerZombie extends Zombie {
         const eyeMat = new THREE.MeshStandardMaterial({
             color: this.eyeColor,
             emissive: this.eyeColor,
-            emissiveIntensity: 3.5,
+            emissiveIntensity: 4.5,
             roughness: 0.2,
         });
         const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
@@ -74,7 +76,7 @@ export class CrawlerZombie extends Zombie {
         group.add(rightEye);
 
         // Glow light so crawlers are visible from a distance
-        const eyeGlow = new THREE.PointLight(this.eyeColor, 0.3, 8, 2);
+        const eyeGlow = new THREE.PointLight(this.eyeColor, 0.45, 10, 2);
         eyeGlow.position.set(0, 0.42 * s, 0.5 * s);
         group.add(eyeGlow);
 
@@ -239,14 +241,26 @@ export class CrawlerZombie extends Zombie {
     }
 
     _animateCrawlerAttack(dt, parts, s) {
-        this._attackAnim += dt * 10;
+        if (this.attackWindupTimer > 0) {
+            const windupT = 1 - this.attackWindupTimer / (this.attackWindup || 0.12);
+            if (parts.headGroup) {
+                parts.headGroup.rotation.x = 0.15 - windupT * 0.45;
+            }
+            if (parts.jaw) {
+                parts.jaw.rotation.x = windupT * 0.3;
+            }
+            this.position.y = this.baseY - windupT * 0.03 * s;
+            return;
+        }
+
+        this._attackAnim += dt * 12;
         if (parts.headGroup) {
-            parts.headGroup.rotation.x = -0.3 + Math.sin(this._attackAnim) * 0.4;
+            parts.headGroup.rotation.x = -0.3 + Math.sin(this._attackAnim) * 0.5;
         }
         if (parts.jaw) {
-            parts.jaw.rotation.x = Math.abs(Math.sin(this._attackAnim * 2)) * 0.5;
+            parts.jaw.rotation.x = Math.abs(Math.sin(this._attackAnim * 2)) * 0.6;
         }
-        this.position.y = this.baseY + Math.sin(this._attackAnim) * 0.04 * s;
+        this.position.y = this.baseY + Math.sin(this._attackAnim) * 0.05 * s;
     }
 
     _animateCrawlerIdle(dt, parts, s) {

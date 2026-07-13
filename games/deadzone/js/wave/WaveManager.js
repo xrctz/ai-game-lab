@@ -22,12 +22,16 @@ export class WaveManager {
     }
 
     getWaveConfig(waveNum) {
-        const base = Math.floor(10 + waveNum * 5);
-        const runnerCount = Math.max(6, Math.floor(base * 0.5));
-        const crawlerCount = waveNum >= 2 ? Math.floor(base * 0.2) : 0;
-        const spitterCount = waveNum >= 3 ? Math.floor(base * 0.12) : 0;
-        const tankCount = waveNum >= 4 ? Math.floor(waveNum / 2) : 0;
-        const exploderCount = waveNum >= 5 ? Math.floor(waveNum / 3) : 0;
+        const base = 8 + waveNum * 6;
+        const t = MathUtils.clamp(waveNum / this.maxWaves, 0, 1);
+
+        const runnerCount = Math.max(4, Math.floor(base * (0.48 - t * 0.12)));
+        const crawlerCount = waveNum >= 1
+            ? Math.max(waveNum === 1 ? 2 : 0, Math.floor(base * (waveNum >= 4 ? 0.22 : 0.14)))
+            : 0;
+        const spitterCount = waveNum >= 2 ? Math.floor(base * (0.07 + waveNum * 0.012)) : 0;
+        const tankCount = waveNum >= 3 ? Math.max(1, Math.floor((waveNum - 2) * 0.55 + t * 2)) : 0;
+        const exploderCount = waveNum >= 4 ? Math.max(0, Math.floor((waveNum - 3) * 0.55)) : 0;
 
         return {
             wave: waveNum,
@@ -38,7 +42,7 @@ export class WaveManager {
                 { type: 'tank', count: tankCount },
                 { type: 'exploder', count: exploderCount }
             ].filter(t => t.count > 0),
-            spawnDelay: Math.max(0.15, 0.8 - waveNum * 0.04),
+            spawnDelay: Math.max(0.12, 0.75 - waveNum * 0.035),
             healthMultiplier: 1 + (waveNum - 1) * 0.18,
             speedMultiplier: 1 + (waveNum - 1) * 0.04,
         };
@@ -89,9 +93,8 @@ export class WaveManager {
                 this.spawnTimer = this.spawnDelay;
 
                 const type = this.spawnQueue.shift();
-                const point = spawnPoints[MathUtils.randomInt(0, spawnPoints.length - 1)];
-                const offset = MathUtils.randomPointInCircle(6);
-                zombieManager.spawn(type, point.x + offset.x, point.z + offset.z);
+                const spawnPos = zombieManager.pickSpawnPosition(spawnPoints);
+                zombieManager.spawn(type, spawnPos.x, spawnPos.z);
             }
         }
 

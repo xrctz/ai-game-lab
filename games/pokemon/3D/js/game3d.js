@@ -41,6 +41,11 @@ const isWalkable = (...a) => G('isWalkable')(...a);
 const isEncounterTile = (...a) => G('isEncounterTile')(...a);
 const clamp = (...a) => G('clamp')(...a);
 const randInt = (...a) => G('randInt')(...a);
+const hpPercent = (...a) => G('hpPercent')(...a);
+const formatHp = (...a) => G('formatHp')(...a);
+const hpBarClass = (...a) => G('hpBarClass')(...a);
+const parseDialogueLine = (...a) => G('parseDialogueLine')(...a);
+const formatSaveTimestamp = (...a) => G('formatSaveTimestamp')(...a);
 
 const SAVE_KEY = 'pokemon-adventure-save-v1-3d';
 
@@ -75,6 +80,8 @@ const Game = {
   camAngle: 0.65, // radians around player
   camPitch: 0.55,
   camDist: 9,
+  camVelAngle: 0,
+  camVelPitch: 0,
   dragging: false,
   lastMX: 0,
   lastMY: 0,
@@ -100,8 +107,6 @@ async function init3D() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x87b8e0);
-  scene.fog = new THREE.Fog(0x87b8e0, 28, 70);
 
   camera = new THREE.PerspectiveCamera(50, 16 / 10, 0.1, 200);
 
@@ -129,6 +134,7 @@ async function init3D() {
   setLoad(0.1);
   await world.loadModels((p) => setLoad(0.1 + p * 0.7));
   world.build();
+  world.setupAtmosphere(scene, renderer);
   setLoad(0.9);
 
   playerMesh = createPlayerMesh(world);
@@ -197,12 +203,24 @@ function updateCamera(instant = false) {
   const cx = px + Math.sin(ang) * dist * Math.cos(pitch);
   const cy = 1.2 + Math.sin(pitch) * dist;
   const cz = pz + Math.cos(ang) * dist * Math.cos(pitch);
+  const target = new THREE.Vector3(cx, cy, cz);
   if (instant) {
-    camera.position.set(cx, cy, cz);
+    camera.position.copy(target);
+    Game.camVelAngle = 0;
+    Game.camVelPitch = 0;
   } else {
-    camera.position.lerp(new THREE.Vector3(cx, cy, cz), 0.12);
+    // Smooth follow with slight momentum after orbit drag
+    const lerp = Game.dragging ? 0.18 : 0.11;
+    camera.position.lerp(target, lerp);
+    if (!Game.dragging) {
+      Game.camAngle += Game.camVelAngle;
+      Game.camPitch = clamp(Game.camPitch + Game.camVelPitch, 0.2, 1.2);
+      Game.camVelAngle *= 0.88;
+      Game.camVelPitch *= 0.88;
+    }
   }
-  camera.lookAt(px, 1.1, pz);
+  const lookY = 1.05 + Math.sin(pitch) * 0.15;
+  camera.lookAt(px, lookY, pz);
 }
 
 function showScreen(id) {
@@ -221,12 +239,12 @@ function showScreen(id) {
   }
 }
 
-function showToast(msg, ms = 2500) {
+function showToast(msg, ms = 2500, kind = '') {
   const t = document.getElementById('toast');
   t.textContent = msg;
-  t.classList.add('visible');
+  t.className = 'toast visible' + (kind ? ` toast-${kind}` : '');
   clearTimeout(showToast._t);
-  showToast._t = setTimeout(() => t.classList.remove('visible'), ms);
+  showToast._t = setTimeout(() => { t.className = 'toast'; }, ms);
 }
 
 function updateHUD() {
@@ -240,12 +258,35 @@ function updateHUD() {
   if (lead) {
     document.getElementById('hud-lead').textContent = lead.name;
     document.getElementById('hud-hp').textContent = `${lead.hp}/${lead.maxHp}`;
-    const pct = clamp(Math.round((lead.hp / lead.maxHp) * 100), 0, 100);
+    const pct = hpPercent(lead);
     const bar = document.getElementById('hud-hp-bar');
     bar.style.width = pct + '%';
-    bar.className = 'hp-bar' + (pct <= 20 ? ' low' : pct <= 50 ? ' mid' : '');
+    bar.className = 'hp-bar' + (hpBarClass(pct) ? ` ${hpBarClass(pct)}` : '');
   }
+  updateInteractPrompt();
   world?.updateMinimap(Game.player.x, Game.player.y);
+}
+
+function updateInteractPrompt() {
+  const el = document.getElementById('interact-prompt');
+  const tile = WORLD_MAP()[Game.player.y]?.[Game.player.x];
+  const onGrass = Game.state === 'overworld' && !Game.player.moving && isEncounterTile(tile);
+  world?.setEncounterCue(Game.player.x, Game.player.y, onGrass);
+
+  if (!el || Game.state !== 'overworld' || Game.player.moving) {
+    if (el) el.classList.remove('visible');
+    world?.setActiveInteractCue(null);
+    return;
+  }
+  const target = world?.findInteractTarget(Game.player.x, Game.player.y, Game.player.dir, Game.flags);
+  if (!target) {
+    el.classList.remove('visible');
+    world?.setActiveInteractCue(null);
+    return;
+  }
+  el.textContent = `[E] ${target.label}`;
+  el.classList.add('visible');
+  world?.setActiveInteractCue(target.type === 'npc' ? target.npc : null);
 }
 
 // ---- Movement ----
@@ -412,7 +453,18 @@ function startDialogue(lines, cb = null) {
   Game.state = 'dialogue';
   const box = document.getElementById('dialogue');
   box.classList.add('visible');
-  document.getElementById('dialogue-text').textContent = lines[0] || '';
+  renderDialogueLine(lines[0] || '');
+}
+
+function renderDialogueLine(line) {
+  const parsed = parseDialogueLine(line);
+  const speakerEl = document.getElementById('dialogue-speaker');
+  const textEl = document.getElementById('dialogue-text');
+  if (speakerEl) {
+    speakerEl.textContent = parsed.speaker || '';
+    speakerEl.style.display = parsed.speaker ? 'block' : 'none';
+  }
+  if (textEl) textEl.textContent = parsed.text || line || '';
 }
 
 function advanceDialogue() {
@@ -425,7 +477,7 @@ function advanceDialogue() {
     if (cb) cb();
     return;
   }
-  document.getElementById('dialogue-text').textContent = Game.dialogueQueue[Game.dialogueIndex];
+  renderDialogueLine(Game.dialogueQueue[Game.dialogueIndex]);
 }
 
 function startNurseHeal(npc) {
@@ -507,15 +559,29 @@ function setBattleLog(msg) {
   document.getElementById('battle-log').textContent = msg;
 }
 
-function setHpBar(who, hp, maxHp) {
-  const pct = clamp(Math.round((hp / maxHp) * 100), 0, 100);
+function setHpBar(who, hp, maxHp, animate = true) {
+  const pct = hpPercent({ hp, maxHp });
   const bar = document.getElementById(`${who}-hp-bar`);
   const text = document.getElementById(`${who}-hp-text`);
   if (bar) {
+    const prev = parseFloat(bar.dataset.pct || '100');
     bar.style.width = pct + '%';
-    bar.className = 'hp-bar' + (pct <= 20 ? ' low' : pct <= 50 ? ' mid' : '');
+    bar.className = 'hp-bar' + (hpBarClass(pct) ? ` ${hpBarClass(pct)}` : '');
+    bar.dataset.pct = String(pct);
+    if (animate && pct < prev) {
+      bar.classList.add('hp-damage');
+      clearTimeout(bar._dmgT);
+      bar._dmgT = setTimeout(() => bar.classList.remove('hp-damage'), 450);
+      const trail = document.getElementById(`${who}-hp-trail`);
+      if (trail) {
+        trail.style.width = prev + '%';
+        trail.classList.add('visible');
+        clearTimeout(trail._t);
+        trail._t = setTimeout(() => trail.classList.remove('visible'), 500);
+      }
+    }
   }
-  if (text) text.textContent = `${Math.max(0, hp)}/${maxHp}`;
+  if (text) text.textContent = formatHp({ hp, maxHp });
 }
 
 function renderBattle() {
@@ -610,7 +676,8 @@ async function executeMove(user, target, move, side) {
   }
   if (move.pp != null && move.pp > 0) move.pp--;
   setBattleLog(`${user.name} used ${move.name}!`);
-  await sleep(400);
+  battle3d?.attackLunge(side);
+  await sleep(280);
   const result = calcDamage(user, target, move);
   if (result.missed) {
     setBattleLog(`${user.name}'s attack missed!`);
@@ -624,7 +691,10 @@ async function executeMove(user, target, move, side) {
       return;
     }
     target.hp = Math.max(0, target.hp - result.damage);
-    battle3d?.flashHit(side === 'player' ? 'enemy' : 'player');
+    battle3d?.flashHit(side === 'player' ? 'enemy' : 'player', move.type, {
+      critical: result.critical,
+      effectiveness: result.effectiveness,
+    });
     renderBattle();
     let msg = `It dealt ${result.damage} damage!`;
     if (result.critical) msg = 'A critical hit! ' + msg;
@@ -930,8 +1000,11 @@ function openPartyMenu() {
     const div = document.createElement('div');
     div.className = 'party-card' + (isLead ? ' is-lead' : '') + (fainted ? ' is-fainted' : '');
     div.innerHTML = `<img src="${mon.spriteArt || mon.sprite}" alt="" />
-      <div><div>${mon.name} · Lv${mon.level}</div>
-      <div style="font-size:7px;color:var(--text-dim)">HP ${mon.hp}/${mon.maxHp}${fainted ? ' · FAINTED' : ''}</div></div>`;
+      <div class="party-card-body">
+        <div class="party-card-name">${mon.name} · Lv${mon.level}${isLead ? ' ★' : ''}</div>
+        <div class="party-card-hp">${formatHp(mon)}${fainted ? ' · FAINTED' : ''}</div>
+        <div class="hp-bar-bg party-hp-bar"><div class="hp-bar ${hpBarClass(hpPercent(mon))}" style="width:${hpPercent(mon)}%"></div></div>
+      </div>`;
     if (!isLead && !fainted) {
       div.addEventListener('click', () => {
         Game.party.splice(idx, 1);
@@ -992,7 +1065,13 @@ function saveGame() {
   });
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
-    showToast('Game saved!');
+    const stamp = formatSaveTimestamp();
+    showToast(`Game saved! (${stamp})`, 3200, 'save');
+    const saveEl = document.getElementById('save-indicator');
+    if (saveEl) {
+      saveEl.textContent = `Last save: ${stamp}`;
+      saveEl.classList.add('visible');
+    }
     refreshContinue();
   } catch (e) {
     showToast('Save failed.');
@@ -1087,13 +1166,17 @@ function bindInput() {
     const dy = e.clientY - Game.lastMY;
     Game.lastMX = e.clientX;
     Game.lastMY = e.clientY;
-    Game.camAngle -= dx * 0.008;
-    Game.camPitch = clamp(Game.camPitch + dy * 0.005, 0.2, 1.2);
+    const dAng = -dx * 0.008;
+    const dPitch = dy * 0.005;
+    Game.camAngle += dAng;
+    Game.camPitch = clamp(Game.camPitch + dPitch, 0.2, 1.2);
+    Game.camVelAngle = dAng * 0.35;
+    Game.camVelPitch = dPitch * 0.35;
   });
   canvas.addEventListener('pointerup', () => { Game.dragging = false; });
   canvas.addEventListener('pointercancel', () => { Game.dragging = false; });
   canvas.addEventListener('wheel', (e) => {
-    Game.camDist = clamp(Game.camDist + e.deltaY * 0.01, 5, 18);
+    Game.camDist = clamp(Game.camDist + e.deltaY * 0.012, 5, 18);
     e.preventDefault();
   }, { passive: false });
 
@@ -1127,10 +1210,8 @@ function handleKey(key) {
     if (key === 'm') openPartyMenu();
     if (key === 'b') openBagMenu();
     if (key === 'p') saveGame();
-    if (key === 'q') Game.camAngle += 0.15;
-    if (key === 'e' && Game.keys['shift']) { /* reserved */ }
-    // Rotate camera with Q / period-comma style: use Q and R
-    if (key === 'r') Game.camAngle -= 0.15;
+    if (key === 'q') Game.camAngle += 0.12;
+    if (key === 'r') Game.camAngle -= 0.12;
   }
 }
 
@@ -1188,6 +1269,7 @@ function loop() {
     }
     world?.animate(t);
     updateCamera(false);
+    updateInteractPrompt();
     if (renderer && scene && camera) {
       renderer.render(scene, camera);
     }

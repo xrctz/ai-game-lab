@@ -475,6 +475,41 @@ function hasValidSaveData(data) {
   return deserializeGameState(data) != null;
 }
 
+// ---------- 3D UI helpers (display only — no battle math changes) ----------
+
+function hpPercent(mon) {
+  if (!mon || !mon.maxHp) return 0;
+  return clamp(Math.round((mon.hp / mon.maxHp) * 100), 0, 100);
+}
+
+function formatHp(mon) {
+  if (!mon) return '—';
+  return `${Math.max(0, mon.hp)}/${mon.maxHp}`;
+}
+
+function hpBarClass(pct) {
+  if (pct <= 20) return 'low';
+  if (pct <= 50) return 'mid';
+  return '';
+}
+
+/** Split "Name: line" dialogue into speaker + body for HUD. */
+function parseDialogueLine(line) {
+  const raw = String(line || '');
+  const idx = raw.indexOf(':');
+  if (idx > 0 && idx < 28) {
+    return { speaker: raw.slice(0, idx).trim(), text: raw.slice(idx + 1).trim() };
+  }
+  return { speaker: null, text: raw };
+}
+
+function formatSaveTimestamp(ms = Date.now()) {
+  const d = new Date(ms);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${d.toLocaleDateString()} ${hh}:${mm}`;
+}
+
 // Expose for ES modules (game3d.js)
 if (typeof window !== 'undefined') {
   Object.assign(window, {
@@ -484,6 +519,7 @@ if (typeof window !== 'undefined') {
     canSwitchTo, getSwitchableIndices, applyBattleSwitch, buildTrainerParty,
     nextTrainerMonIndex, applyTrainerReward, formatRewardText, SAVE_VERSION,
     SAVE_STORAGE_KEY, serializePokemon, deserializePokemon, serializeGameState,
-    deserializeGameState, hasValidSaveData,
+    deserializeGameState, hasValidSaveData, hpPercent, formatHp, hpBarClass,
+    parseDialogueLine, formatSaveTimestamp,
   });
 }

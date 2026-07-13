@@ -64,6 +64,7 @@ export class WeaponSystem {
         this.currentIndex = 0;
         this.grenades = 3;
         this.maxGrenades = 5;
+        this._switchPulse = 0;
     }
 
     getCurrent() {
@@ -73,12 +74,16 @@ export class WeaponSystem {
     switchTo(index) {
         if (index >= 0 && index < this.weapons.length && index !== this.currentIndex) {
             this.currentIndex = index;
+            this._switchPulse = 0.15;
             return true;
         }
         return false;
     }
 
     update(dt) {
+        if (this._switchPulse > 0) {
+            this._switchPulse -= dt;
+        }
         this.getCurrent().update(dt);
     }
 
@@ -106,5 +111,10 @@ export class WeaponSystem {
         }
         this.currentIndex = 0;
         this.grenades = 3;
+        this._switchPulse = 0;
+    }
+
+    isSwitching() {
+        return this._switchPulse > 0;
     }
 }

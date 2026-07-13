@@ -103,6 +103,46 @@ function typeEffectiveness(moveType, defenderTypes) {
   return mult;
 }
 
+/** Human-readable label for a type multiplier (battle log / move menu). */
+function effectivenessLabel(mult) {
+  if (mult === 0) return 'No effect';
+  if (mult >= 4) return '4× super effective!';
+  if (mult > 1) return 'Super effective';
+  if (mult < 1) return 'Not very effective';
+  return 'Normal damage';
+}
+
+/** Short hint for a move vs a defender's types. */
+function effectivenessHint(moveType, defenderTypes) {
+  const mult = typeEffectiveness(moveType, defenderTypes);
+  if (mult === 0) return '×0 — immune';
+  if (mult >= 4) return '×4 — huge!';
+  if (mult > 1) return `×${mult} — strong`;
+  if (mult < 1) return `×${mult} — weak`;
+  return '';
+}
+
+/** Ordered bag entries for UI (potions → balls, high tier first). */
+function getBagDisplayEntries(bag) {
+  const entries = [];
+  if (bag?.potion > 0) {
+    entries.push({ id: 'potion', name: 'Potion', count: bag.potion, heal: 20, icon: 'assets/ui/potion.png', usable: true });
+  }
+  if (bag?.superball > 0) {
+    entries.push({ id: 'superball', name: 'Super Ball', count: bag.superball, icon: 'assets/ui/greatball.png', usable: false });
+  }
+  if (bag?.pokeball > 0) {
+    entries.push({ id: 'pokeball', name: 'Poké Ball', count: bag.pokeball, icon: 'assets/ui/pokeball.png', usable: false });
+  }
+  return entries;
+}
+
+/** Whether a potion use should ask for confirmation (HP already high). */
+function potionNeedsConfirm(mon, threshold = 0.75) {
+  if (!mon || mon.hp <= 0) return false;
+  return mon.hp / mon.maxHp >= threshold;
+}
+
 function calcDamage(attacker, defender, move) {
   if (move.power <= 0) return { damage: 0, effectiveness: 1, critical: false, missed: false };
 

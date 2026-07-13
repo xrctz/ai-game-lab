@@ -28,7 +28,7 @@ export class ParticleSystem {
                 p.mesh.visible = false;
                 p.life = 0;
             },
-            100
+            150
         );
     }
 
@@ -96,28 +96,109 @@ export class ParticleSystem {
     }
 
     emitBlood(position, direction) {
+        const dir = direction ? direction.clone().normalize() : new THREE.Vector3(0, 0, 1);
         this.emit({
             position,
-            velocity: direction ? direction.clone().multiplyScalar(2) : new THREE.Vector3(),
-            count: 6,
+            velocity: dir.clone().multiplyScalar(4),
+            count: 10,
+            spread: 2.5,
+            upForce: 2.5,
+            life: 0.55,
+            size: 0.05,
+            color: 0xcc1111
+        });
+        this.emit({
+            position: position.clone().add(new THREE.Vector3(0, 0.05, 0)),
+            velocity: dir.clone().multiplyScalar(2),
+            count: 5,
+            spread: 4,
+            upForce: 1.5,
+            life: 0.35,
+            size: 0.035,
+            color: 0x660000
+        });
+    }
+
+    emitHitImpact(position, direction) {
+        const dir = direction ? direction.clone().normalize() : new THREE.Vector3();
+        this.emit({
+            position,
+            velocity: dir.clone().multiplyScalar(3),
+            count: 4,
+            spread: 1.5,
+            upForce: 1.2,
+            life: 0.25,
+            size: 0.04,
+            color: 0xff3333
+        });
+        this.emit({
+            position,
+            count: 3,
+            spread: 2,
+            upForce: 0.8,
+            life: 0.2,
+            size: 0.025,
+            color: 0xffaa44,
+            gravity: false
+        });
+    }
+
+    emitDeathBurst(position, type = 'runner') {
+        const isHeavy = type === 'tank' || type === 'exploder';
+        const count = isHeavy ? 28 : 18;
+        this.emit({
+            position,
+            count,
+            spread: isHeavy ? 6 : 4.5,
+            upForce: isHeavy ? 4 : 3,
+            life: 0.7,
+            size: isHeavy ? 0.07 : 0.055,
+            color: 0xbb0000
+        });
+        this.emit({
+            position: position.clone().add(new THREE.Vector3(0, 0.15, 0)),
+            count: isHeavy ? 12 : 8,
             spread: 3,
             upForce: 2,
-            life: 0.5,
+            life: 0.9,
             size: 0.04,
-            color: 0xaa0000
+            color: 0x331111,
+            gravity: true
         });
+        if (type === 'exploder') {
+            this.emit({
+                position,
+                count: 10,
+                spread: 5,
+                upForce: 5,
+                life: 0.5,
+                size: 0.06,
+                color: 0xff6600,
+                gravity: false
+            });
+        }
     }
 
     emitSparks(position) {
         this.emit({
             position,
-            count: 4,
-            spread: 4,
-            upForce: 3,
-            life: 0.4,
-            size: 0.03,
-            color: 0xffaa00,
+            count: 6,
+            spread: 5,
+            upForce: 4,
+            life: 0.35,
+            size: 0.035,
+            color: 0xffcc00,
             gravity: true
+        });
+        this.emit({
+            position,
+            count: 3,
+            spread: 2,
+            upForce: 1,
+            life: 0.2,
+            size: 0.02,
+            color: 0xffffff,
+            gravity: false
         });
     }
 

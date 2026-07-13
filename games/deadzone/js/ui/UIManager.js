@@ -3,8 +3,9 @@ export class UIManager {
         this.gameState = gameState;
         this.elements = {};
         this.killFeedEntries = [];
-        this.maxKillFeed = 5;
+        this.maxKillFeed = 6;
         this.damageNumbers = [];
+        this._weaponSwitchFlash = 0;
         this._cacheElements();
         this._createDamageNumberContainer();
     }
@@ -115,20 +116,27 @@ export class UIManager {
 
         const slots = document.querySelectorAll('.weapon-slot');
         slots.forEach((slot, i) => {
-            slot.classList.toggle('active', i === (weaponIndex || 0));
+            const active = i === (weaponIndex || 0);
+            slot.classList.toggle('active', active);
+            slot.classList.toggle('switching', active && weapon && weapon.reloading === false && this._weaponSwitchFlash > 0);
         });
+        if (this._weaponSwitchFlash > 0) this._weaponSwitchFlash -= 0.016;
 
         this._updateCrosshairSpread(crosshairSpread || 0);
 
         if (allies) {
+            const roleColors = ['#4488ff', '#44cc44', '#ff8844'];
             for (let i = 0; i < allies.length; i++) {
                 const ally = allies[i];
                 const card = this.elements['teammate-cards']?.[i];
 
                 if (!ally.alive) {
                     this.setStyle(`ally-health-${i}`, 'width', '0%');
-                    this.setHTML(`ally-status-${i}`, 'DEAD');
-                    if (card) card.classList.add('downed');
+                    this.setHTML(`ally-status-${i}`, 'KIA');
+                    if (card) {
+                        card.classList.add('downed');
+                        card.classList.remove('reviving');
+                    }
                     continue;
                 }
 
@@ -136,23 +144,32 @@ export class UIManager {
                 this.setStyle(`ally-health-${i}`, 'width', `${healthPct}%`);
 
                 if (ally.downed) {
-                    this.setStyle(`ally-health-${i}`, 'background', '#c62828');
+                    this.setStyle(`ally-health-${i}`, 'background', 'linear-gradient(90deg, #8b0000, #c62828)');
                     this.setHTML(`ally-status-${i}`, `DOWNED ${Math.ceil(ally.downTimer)}s`);
-                    if (card) card.classList.add('downed');
+                    if (card) {
+                        card.classList.add('downed');
+                        card.classList.remove('reviving');
+                    }
                 } else {
-                    this.setStyle(`ally-health-${i}`, 'background', '#4caf50');
-                    this.setHTML(`ally-status-${i}`, ally.getStatusText());
-                    if (card) card.classList.remove('downed');
+                    const status = ally.getStatusText();
+                    const isReviving = status === 'REVIVING';
+                    this.setStyle(`ally-health-${i}`, 'background', `linear-gradient(90deg, ${roleColors[i] || '#4caf50'}, #6abf69)`);
+                    this.setHTML(`ally-status-${i}`, status);
+                    if (card) {
+                        card.classList.remove('downed');
+                        card.classList.toggle('reviving', isReviving);
+                    }
                 }
             }
         }
 
         if (waveManager) {
             this.setHTML('wave-label', `WAVE ${waveManager.currentWave}`);
-            this.setHTML('wave-enemies', `ENEMIES: ${waveManager.enemiesRemaining}`);
+            const remaining = waveManager.enemiesRemaining;
+            this.setHTML('wave-enemies', remaining > 0 ? `HOSTILES: ${remaining}` : 'AREA CLEAR');
 
             if (waveManager.isBetween()) {
-                this.setHTML('objective-text', 'WAVE CLEAR - PREPARE FOR NEXT');
+                this.setHTML('objective-text', 'BRIEF RESUPPLY — NEXT WAVE INCOMING');
             } else if (waveManager.isActive()) {
                 this.setHTML('objective-text', 'ELIMINATE ALL HOSTILES');
             }
@@ -201,7 +218,7 @@ export class UIManager {
     showShop(currency, upgrades) {
         const panel = this.elements['shop-panel'];
         if (!panel) return;
-        this.setHTML('shop-currency', `CURRENCY: ${currency}`);
+        this.setHTML('shop-currency', `${currency} CR`);
         const itemsEl = this.elements['shop-items'];
         if (!itemsEl) return;
         itemsEl.innerHTML = '';
@@ -212,10 +229,11 @@ export class UIManager {
             item.innerHTML = `
                 <div class="shop-item-name">${upg.name}</div>
                 <div class="shop-item-desc">${upg.desc}</div>
-                <div class="shop-item-cost">${upg.maxed ? 'MAXED' : canAfford ? upg.cost + ' CR' : upg.cost + ' CR'}</div>
+                <div class="shop-item-cost">${upg.maxed ? 'MAXED' : upg.cost + ' CR'}</div>
             `;
             item.classList.toggle('can-afford', canAfford);
             item.classList.toggle('maxed', upg.maxed);
+            item.classList.toggle('cannot-afford', !canAfford && !upg.maxed);
             item.dataset.index = upgrades.indexOf(upg);
             item.addEventListener('click', () => {
                 if (canAfford && this.gameState && this.gameState._purchaseUpgrade) {
@@ -233,7 +251,7 @@ export class UIManager {
     }
 
     updateShopCurrency(currency) {
-        this.setHTML('shop-currency', `CURRENCY: ${currency}`);
+        this.setHTML('shop-currency', `${currency} CR`);
     }
 
     showDamageDirection(attackerPos, playerPos, playerRotation) {
@@ -276,9 +294,11 @@ export class UIManager {
         if (!feed) return;
 
         const entry = document.createElement('div');
-        entry.className = 'kill-entry';
+        const isHeadshot = message.includes('HEADSHOT');
+        const isRevive = message.includes('Revived');
+        entry.className = 'kill-entry' + (isHeadshot ? ' headshot' : '') + (isRevive ? ' revive' : '');
         entry.textContent = message;
-        feed.appendChild(entry);
+        feed.insertBefore(entry, feed.firstChild);
 
         this.killFeedEntries.push(entry);
         while (this.killFeedEntries.length > this.maxKillFeed) {
@@ -287,17 +307,31 @@ export class UIManager {
         }
 
         setTimeout(() => {
-            if (entry.parentNode) entry.parentNode.removeChild(entry);
-            const idx = this.killFeedEntries.indexOf(entry);
-            if (idx >= 0) this.killFeedEntries.splice(idx, 1);
-        }, 3000);
+            entry.classList.add('fade-out');
+            setTimeout(() => {
+                if (entry.parentNode) entry.parentNode.removeChild(entry);
+                const idx = this.killFeedEntries.indexOf(entry);
+                if (idx >= 0) this.killFeedEntries.splice(idx, 1);
+            }, 400);
+        }, 2800);
+    }
+
+    flashWeaponSwitch() {
+        this._weaponSwitchFlash = 0.2;
     }
 
     showWaveAnnounce(waveNum, subtitle) {
         this.setHTML('wave-announce-text', `WAVE ${waveNum}`);
-        this.setHTML('wave-announce-sub', subtitle || 'PREPARE YOURSELF');
+        this.setHTML('wave-announce-sub', subtitle || 'HOSTILES INBOUND');
+        const el = this.elements['wave-announce'];
+        if (el) {
+            el.classList.remove('hidden');
+            el.style.animation = 'none';
+            void el.offsetWidth;
+            el.style.animation = '';
+        }
         this.show('wave-announce');
-        setTimeout(() => this.hide('wave-announce'), 3000);
+        setTimeout(() => this.hide('wave-announce'), 3200);
     }
 
     showStreakAnnounce(count) {

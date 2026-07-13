@@ -167,6 +167,8 @@ class AudioSystem {
         this.sounds.melee = this._createMeleeSound();
         this.sounds.pickup = this._createPickupSound();
         this.sounds.allyCallout = this._createCalloutSound();
+        this.sounds.squadConfirm = this._createSquadConfirmSound();
+        this.sounds.weaponSwitch = this._createWeaponSwitchSound();
         this.sounds.waveStart = this._createWaveStartSound();
         this.sounds.waveEnd = this._createWaveEndSound();
     }
@@ -323,10 +325,35 @@ class AudioSystem {
     }
 
     _createCalloutSound() {
-        return this._createBuffer(0.15, (data, sr, len) => {
+        return this._createBuffer(0.18, (data, sr, len) => {
             for (let i = 0; i < len; i++) {
                 const t = i / len;
-                data[i] = Math.sin(2 * Math.PI * 800 * t) * Math.exp(-t * 8) * 0.15;
+                const env = Math.exp(-t * 6);
+                const tone = Math.sin(2 * Math.PI * (720 + t * 120) * t) * 0.12;
+                const crackle = (Math.random() * 2 - 1) * 0.04 * env;
+                data[i] = (tone + crackle) * env;
+            }
+        });
+    }
+
+    _createSquadConfirmSound() {
+        return this._createBuffer(0.12, (data, sr, len) => {
+            for (let i = 0; i < len; i++) {
+                const t = i / len;
+                const env = Math.exp(-t * 10);
+                data[i] = Math.sin(2 * Math.PI * 880 * t) * env * 0.18 +
+                          Math.sin(2 * Math.PI * 1320 * t) * env * 0.08;
+            }
+        });
+    }
+
+    _createWeaponSwitchSound() {
+        return this._createBuffer(0.08, (data, sr, len) => {
+            for (let i = 0; i < len; i++) {
+                const t = i / len;
+                const env = Math.exp(-t * 25);
+                data[i] = (Math.random() * 2 - 1) * env * 0.25 +
+                          Math.sin(2 * Math.PI * 400 * t) * env * 0.15;
             }
         });
     }
@@ -480,6 +507,9 @@ class Input {
     _onLockError() {
         console.warn('[Dead Zone] pointerlockerror fired');
         if (this.embedded) {
+            if (typeof window.__deadZoneShowLockError === 'function') {
+                try { window.__deadZoneShowLockError(); } catch (e) {}
+            }
             var overlay = document.getElementById('embed-overlay');
             var lockError = document.getElementById('embed-lock-error');
             if (overlay) overlay.style.display = 'grid';
@@ -652,24 +682,35 @@ class CameraShake {
         this.offsetX = 0;
         this.offsetY = 0;
         this.offsetZ = 0;
+        this._punch = 0;
+        this._phase = 0;
     }
 
     shake(intensity, duration = 0.2) {
         this.intensity = Math.max(this.intensity, intensity);
         this.decay = 1 / duration;
+        this._punch = Math.max(this._punch, intensity * 1.8);
     }
 
     update(dt) {
         if (this.intensity > 0.001) {
-            this.offsetX = (Math.random() - 0.5) * this.intensity;
-            this.offsetY = (Math.random() - 0.5) * this.intensity;
-            this.offsetZ = (Math.random() - 0.5) * this.intensity * 0.3;
+            this._phase += dt * 45;
+            const punchBoost = 1 + this._punch * 3;
+            const osc = 0.65 + Math.sin(this._phase) * 0.35;
+            const amp = this.intensity * punchBoost * osc;
+
+            this.offsetX = (Math.random() - 0.5) * amp * 2;
+            this.offsetY = (Math.random() - 0.5) * amp * 1.4;
+            this.offsetZ = (Math.random() - 0.5) * amp * 0.35;
+
             this.intensity *= Math.exp(-this.decay * dt);
+            this._punch = Math.max(0, this._punch - dt * this.decay * 4);
         } else {
             this.offsetX = 0;
             this.offsetY = 0;
             this.offsetZ = 0;
             this.intensity = 0;
+            this._punch = 0;
         }
     }
 
@@ -684,6 +725,8 @@ class CameraShake {
         this.offsetX = 0;
         this.offsetY = 0;
         this.offsetZ = 0;
+        this._punch = 0;
+        this._phase = 0;
     }
 }
 
@@ -716,7 +759,7 @@ class ParticleSystem {
                 p.mesh.visible = false;
                 p.life = 0;
             },
-            100
+            150
         );
     }
 
@@ -784,28 +827,109 @@ class ParticleSystem {
     }
 
     emitBlood(position, direction) {
+        const dir = direction ? direction.clone().normalize() : new THREE.Vector3(0, 0, 1);
         this.emit({
             position,
-            velocity: direction ? direction.clone().multiplyScalar(2) : new THREE.Vector3(),
-            count: 6,
+            velocity: dir.clone().multiplyScalar(4),
+            count: 10,
+            spread: 2.5,
+            upForce: 2.5,
+            life: 0.55,
+            size: 0.05,
+            color: 0xcc1111
+        });
+        this.emit({
+            position: position.clone().add(new THREE.Vector3(0, 0.05, 0)),
+            velocity: dir.clone().multiplyScalar(2),
+            count: 5,
+            spread: 4,
+            upForce: 1.5,
+            life: 0.35,
+            size: 0.035,
+            color: 0x660000
+        });
+    }
+
+    emitHitImpact(position, direction) {
+        const dir = direction ? direction.clone().normalize() : new THREE.Vector3();
+        this.emit({
+            position,
+            velocity: dir.clone().multiplyScalar(3),
+            count: 4,
+            spread: 1.5,
+            upForce: 1.2,
+            life: 0.25,
+            size: 0.04,
+            color: 0xff3333
+        });
+        this.emit({
+            position,
+            count: 3,
+            spread: 2,
+            upForce: 0.8,
+            life: 0.2,
+            size: 0.025,
+            color: 0xffaa44,
+            gravity: false
+        });
+    }
+
+    emitDeathBurst(position, type = 'runner') {
+        const isHeavy = type === 'tank' || type === 'exploder';
+        const count = isHeavy ? 28 : 18;
+        this.emit({
+            position,
+            count,
+            spread: isHeavy ? 6 : 4.5,
+            upForce: isHeavy ? 4 : 3,
+            life: 0.7,
+            size: isHeavy ? 0.07 : 0.055,
+            color: 0xbb0000
+        });
+        this.emit({
+            position: position.clone().add(new THREE.Vector3(0, 0.15, 0)),
+            count: isHeavy ? 12 : 8,
             spread: 3,
             upForce: 2,
-            life: 0.5,
+            life: 0.9,
             size: 0.04,
-            color: 0xaa0000
+            color: 0x331111,
+            gravity: true
         });
+        if (type === 'exploder') {
+            this.emit({
+                position,
+                count: 10,
+                spread: 5,
+                upForce: 5,
+                life: 0.5,
+                size: 0.06,
+                color: 0xff6600,
+                gravity: false
+            });
+        }
     }
 
     emitSparks(position) {
         this.emit({
             position,
-            count: 4,
-            spread: 4,
-            upForce: 3,
-            life: 0.4,
-            size: 0.03,
-            color: 0xffaa00,
+            count: 6,
+            spread: 5,
+            upForce: 4,
+            life: 0.35,
+            size: 0.035,
+            color: 0xffcc00,
             gravity: true
+        });
+        this.emit({
+            position,
+            count: 3,
+            spread: 2,
+            upForce: 1,
+            life: 0.2,
+            size: 0.02,
+            color: 0xffffff,
+            gravity: false
         });
     }
 
@@ -849,190 +973,6 @@ class ParticleSystem {
             this._pool.release(p);
         }
         this.particles = [];
-    }
-}
-
-﻿// --- effects/BulletSystem.js ---
-
-class Bullet {
-    constructor(scene) {
-        this.scene = scene;
-        this.alive = false;
-        this.position = new THREE.Vector3();
-        this.velocity = new THREE.Vector3();
-        this.distanceTraveled = 0;
-        this.maxRange = 200;
-        this.mesh = null;
-    }
-    spawn(origin, direction, speed, range, color) {
-        this.alive = true;
-        this.position.copy(origin);
-        this.velocity.copy(direction).multiplyScalar(speed);
-        this.distanceTraveled = 0;
-        this.maxRange = range || 200;
-        if (!this.mesh) {
-            const tracerGeo = new THREE.CylinderGeometry(0.008, 0.003, 0.15, 4);
-            tracerGeo.rotateX(Math.PI / 2);
-            const tracerMat = new THREE.MeshBasicMaterial({color: color || 0xffdd44, transparent: true, opacity: 0.95});
-            this.mesh = new THREE.Mesh(tracerGeo, tracerMat);
-        } else {
-            this.mesh.material.color.set(color || 0xffdd44);
-            this.mesh.material.opacity = 0.95;
-        }
-        this.mesh.position.copy(origin);
-        this.mesh.lookAt(origin.clone().add(direction));
-        this.mesh.visible = true;
-        this.scene.add(this.mesh);
-    }
-    release() {
-        this.alive = false;
-        this.distanceTraveled = 0;
-        if (this.mesh) {
-            this.mesh.visible = false;
-            if (this.mesh.parent) this.scene.remove(this.mesh);
-        }
-    }
-}
-
-class BulletSystem {
-    constructor(scene, particles) {
-        this.scene = scene;
-        this.particles = particles;
-        this.bulletPool = [];
-        this.activeBullets = [];
-        this.maxBullets = 50;
-        this.shellCasings = [];
-        this.maxShellCasings = 30;
-        this.impactMarks = [];
-        this.maxImpactMarks = 50;
-        this._sweepRay = new THREE.Raycaster();
-        this._aabbBox = new THREE.Box3();
-        for (let i = 0; i < this.maxBullets; i++) {
-            this.bulletPool.push(new Bullet(scene));
-        }
-    }
-    _getBullet() {
-        for (const b of this.bulletPool) { if (!b.alive) return b; }
-        const oldest = this.activeBullets.shift();
-        if (oldest) oldest.release();
-        return oldest || new Bullet(this.scene);
-    }
-    fire(origin, direction, speed, range, color, barrelPos) {
-        const b = this._getBullet();
-        b.spawn(origin, direction, speed, range, color);
-        this.activeBullets.push(b);
-        if (barrelPos) this._spawnShellCasing(barrelPos, direction);
-        return b;
-    }
-    update(dt, levelObjects) {
-        for (let i = this.activeBullets.length - 1; i >= 0; i--) {
-            const b = this.activeBullets[i];
-            if (!b.alive) { this.activeBullets.splice(i, 1); continue; }
-            const prevPos = b.position.clone();
-            const moveStep = b.velocity.clone().multiplyScalar(dt);
-            b.position.add(moveStep);
-            b.mesh.position.copy(b.position);
-            b.mesh.lookAt(b.position.clone().add(b.velocity));
-            b.distanceTraveled += moveStep.length();
-            if (b.distanceTraveled > b.maxRange) { b.release(); this.activeBullets.splice(i, 1); continue; }
-            let hitDetected = false;
-            if (levelObjects && levelObjects.length > 0) {
-                const moveLen = moveStep.length();
-                if (moveLen > 0.001) {
-                    const dir = moveStep.clone().normalize();
-                    this._sweepRay.set(prevPos, dir);
-                    this._sweepRay.near = 0;
-                    this._sweepRay.far = moveLen + 0.1;
-                    const hits = this._sweepRay.intersectObjects(levelObjects, true);
-                    if (hits.length > 0) {
-                        this._spawnImpactDecal(hits[0].point, hits[0].face ? hits[0].face.normal : new THREE.Vector3(0, 1, 0));
-                        if (this.particles) this.particles.emitSparks(hits[0].point);
-                        b.release();
-                        this.activeBullets.splice(i, 1);
-                        hitDetected = true;
-                    }
-                }
-            }
-            if (!hitDetected && levelObjects) {
-                for (const obj of levelObjects) {
-                    if (!obj.geometry && !(obj.children && obj.children.length)) continue;
-                    this._aabbBox.setFromObject(obj);
-                    if (this._aabbBox.containsPoint(b.position)) {
-                        this._spawnImpactDecal(b.position.clone(), new THREE.Vector3(0, 1, 0));
-                        b.release();
-                        this.activeBullets.splice(i, 1);
-                        break;
-                    }
-                }
-            }
-        }
-        this._updateShellCasings(dt);
-        this._updateImpactMarks(dt);
-    }
-    _spawnShellCasing(barrelPos, forwardDir) {
-        if (this.shellCasings.length >= this.maxShellCasings) {
-            const oldest = this.shellCasings.shift();
-            if (oldest.mesh.parent) this.scene.remove(oldest.mesh);
-        }
-        const geo = new THREE.CylinderGeometry(0.005, 0.004, 0.018, 4);
-        const mat = new THREE.MeshStandardMaterial({color: 0xcc9933, metalness: 0.7, roughness: 0.3});
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.copy(barrelPos);
-        const right = new THREE.Vector3().crossVectors(forwardDir, new THREE.Vector3(0, 1, 0)).normalize();
-        const ejectSpeed = 2 + Math.random() * 2;
-        const vel = right.multiplyScalar(ejectSpeed);
-        vel.y = 2 + Math.random();
-        this.scene.add(mesh);
-        this.shellCasings.push({mesh, velocity: vel, life: 3.0, rotVel: new THREE.Vector3((Math.random()-0.5)*20, (Math.random()-0.5)*20, (Math.random()-0.5)*20), onGround: false});
-    }
-    _updateShellCasings(dt) {
-        for (let i = this.shellCasings.length - 1; i >= 0; i--) {
-            const sc = this.shellCasings[i];
-            sc.life -= dt;
-            if (sc.life <= 0) { if (sc.mesh.parent) this.scene.remove(sc.mesh); this.shellCasings.splice(i, 1); continue; }
-            if (!sc.onGround) {
-                sc.velocity.y -= 9.8 * dt;
-                sc.mesh.position.x += sc.velocity.x * dt;
-                sc.mesh.position.y += sc.velocity.y * dt;
-                sc.mesh.position.z += sc.velocity.z * dt;
-                sc.mesh.rotation.x += sc.rotVel.x * dt;
-                sc.mesh.rotation.y += sc.rotVel.y * dt;
-                sc.mesh.rotation.z += sc.rotVel.z * dt;
-                if (sc.mesh.position.y <= 0.02) { sc.mesh.position.y = 0.02; sc.onGround = true; sc.velocity.set(0,0,0); sc.rotVel.multiplyScalar(0.1); }
-            }
-            sc.mesh.material.opacity = Math.min(1, sc.life / 0.5);
-            sc.mesh.material.transparent = true;
-        }
-    }
-    _spawnImpactDecal(point, normal) {
-        if (this.impactMarks.length >= this.maxImpactMarks) {
-            const oldest = this.impactMarks.shift();
-            if (oldest.mesh.parent) this.scene.remove(oldest.mesh);
-        }
-        const size = 0.04 + Math.random() * 0.04;
-        const geo = new THREE.PlaneGeometry(size, size);
-        const mat = new THREE.MeshBasicMaterial({color: 0x222222, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false});
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.copy(point).add(normal.clone().multiplyScalar(0.01));
-        mesh.lookAt(point.clone().add(normal));
-        this.scene.add(mesh);
-        this.impactMarks.push({mesh, life: 3.0});
-    }
-    _updateImpactMarks(dt) {
-        for (let i = this.impactMarks.length - 1; i >= 0; i--) {
-            const im = this.impactMarks[i];
-            im.life -= dt;
-            if (im.life <= 0) { if (im.mesh.parent) this.scene.remove(im.mesh); this.impactMarks.splice(i, 1); continue; }
-            im.mesh.material.opacity = 0.7 * (im.life / 3.0);
-        }
-    }
-    clear() {
-        for (const b of this.activeBullets) b.release();
-        this.activeBullets = [];
-        for (const sc of this.shellCasings) { if (sc.mesh.parent) this.scene.remove(sc.mesh); }
-        this.shellCasings = [];
-        for (const im of this.impactMarks) { if (im.mesh.parent) this.scene.remove(im.mesh); }
-        this.impactMarks = [];
     }
 }
 
@@ -1197,6 +1137,7 @@ class WeaponSystem {
         this.currentIndex = 0;
         this.grenades = 3;
         this.maxGrenades = 5;
+        this._switchPulse = 0;
     }
 
     getCurrent() {
@@ -1206,12 +1147,16 @@ class WeaponSystem {
     switchTo(index) {
         if (index >= 0 && index < this.weapons.length && index !== this.currentIndex) {
             this.currentIndex = index;
+            this._switchPulse = 0.15;
             return true;
         }
         return false;
     }
 
     update(dt) {
+        if (this._switchPulse > 0) {
+            this._switchPulse -= dt;
+        }
         this.getCurrent().update(dt);
     }
 
@@ -1239,6 +1184,11 @@ class WeaponSystem {
         }
         this.currentIndex = 0;
         this.grenades = 3;
+        this._switchPulse = 0;
+    }
+
+    isSwitching() {
+        return this._switchPulse > 0;
     }
 }
 
@@ -1274,6 +1224,8 @@ class Player {
         this.sprinting = false;
         this.crouching = false;
         this.aiming = false;
+        this.aimBlend = 0;
+        this.sprintBlend = 0;
 
         this.recoilX = 0;
         this.recoilY = 0;
@@ -1299,7 +1251,7 @@ class Player {
         this.viewmodelBobX = 0;
         this.viewmodelBobY = 0;
         this.viewmodelSwapTimer = 0;
-        this.viewmodelSwapDuration = 0.3;
+        this.viewmodelSwapDuration = 0.22;
 
         // Flashlight
         this.flashlight = null;
@@ -2512,7 +2464,7 @@ class Player {
 
     _createFlashlight() {
         // Main flashlight beam — strong, wide, long range
-        this.flashlight = new THREE.SpotLight(0xffeedd, 4.0, 55, Math.PI / 3.5, 0.35, 1.2);
+        this.flashlight = new THREE.SpotLight(0xfff0d4, 5.2, 62, Math.PI / 3.2, 0.32, 1.15);
         this.flashlight.position.set(0, 0, 0);
         this.flashlight.castShadow = false;
         this.camera.add(this.flashlight);
@@ -2523,10 +2475,24 @@ class Player {
         this.camera.add(target);
         this.flashlight.target = target;
 
-        // Soft ambient glow around the player so the area right around you is never pitch black
-        this.playerLight = new THREE.PointLight(0xccddff, 0.6, 12, 2);
+        // Soft ambient glow so immediate surroundings stay readable in the dark
+        this.playerLight = new THREE.PointLight(0xd4e4ff, 0.85, 14, 1.8);
         this.playerLight.position.set(0, -0.5, 0);
         this.camera.add(this.playerLight);
+
+        // Subtle cone mesh hint for beam visibility (fades with flashlight toggle)
+        const beamGeo = new THREE.ConeGeometry(0.35, 2.5, 8, 1, true);
+        const beamMat = new THREE.MeshBasicMaterial({
+            color: 0xfff4cc,
+            transparent: true,
+            opacity: 0.04,
+            depthWrite: false,
+            side: THREE.DoubleSide
+        });
+        this.flashlightBeam = new THREE.Mesh(beamGeo, beamMat);
+        this.flashlightBeam.rotation.x = -Math.PI / 2;
+        this.flashlightBeam.position.set(0, 0, -1.25);
+        this.camera.add(this.flashlightBeam);
     }
 
     toggleFlashlight() {
@@ -2536,6 +2502,9 @@ class Player {
         }
         if (this.playerLight) {
             this.playerLight.visible = this.flashlightOn;
+        }
+        if (this.flashlightBeam) {
+            this.flashlightBeam.visible = this.flashlightOn;
         }
     }
 
@@ -2555,14 +2524,21 @@ class Player {
         this._moveLeft = input.isKeyDown('KeyA');
         this._moveRight = input.isKeyDown('KeyD');
 
-        this.sprinting = input.isKeyDown('ShiftLeft') && this._moveForward && !this.aiming;
-        this.crouching = input.isKeyDown('ControlLeft');
         this.aiming = input.isMouseDown(2);
+        const wantSprint = input.isKeyDown('ShiftLeft') && this._moveForward && !this.aiming;
+        this.sprinting = wantSprint;
+
+        const aimRate = this.aiming ? 22 : 18;
+        this.aimBlend = MathUtils.lerp(this.aimBlend, this.aiming ? 1 : 0, dt * aimRate);
+        this.sprintBlend = MathUtils.lerp(this.sprintBlend, wantSprint ? 1 : 0, dt * 14);
+
+        this.crouching = input.isKeyDown('ControlLeft');
 
         const targetHeight = this.crouching ? this.crouchHeight : this.height;
-        this.currentHeight = MathUtils.lerp(this.currentHeight, targetHeight, dt * 10);
+        this.currentHeight = MathUtils.lerp(this.currentHeight, targetHeight, dt * 12);
 
-        const moveSpeed = this.speed * (this.sprinting ? this.sprintMultiplier : 1) * (this.crouching ? this.crouchMultiplier : 1);
+        const sprintFactor = 1 + (this.sprintMultiplier - 1) * this.sprintBlend;
+        const moveSpeed = this.speed * sprintFactor * (this.crouching ? this.crouchMultiplier : 1);
         const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.rotation.y);
         const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.rotation.y);
 
@@ -2576,8 +2552,9 @@ class Player {
             moveDir.normalize().multiplyScalar(moveSpeed);
         }
 
-        this.velocity.x = MathUtils.damp(this.velocity.x, moveDir.x, 15, dt);
-        this.velocity.z = MathUtils.damp(this.velocity.z, moveDir.z, 15, dt);
+        const accel = 15 + this.sprintBlend * 6;
+        this.velocity.x = MathUtils.damp(this.velocity.x, moveDir.x, accel, dt);
+        this.velocity.z = MathUtils.damp(this.velocity.z, moveDir.z, accel, dt);
 
         if (!this.onGround) {
             this.velocity.y += this.gravity * dt;
@@ -2642,23 +2619,26 @@ class Player {
                 this.viewmodelSwapTimer -= dt;
             }
             const swapT = this.viewmodelSwapTimer > 0 ? (1 - this.viewmodelSwapTimer / this.viewmodelSwapDuration) : 1;
-            const swapOffset = this.viewmodelSwapTimer > 0 ? MathUtils.easeOutQuad(swapT) * 0.15 : 0;
+            const swapEase = this.viewmodelSwapTimer > 0 ? MathUtils.easeOutQuad(swapT) : 1;
+            const swapDrop = this.viewmodelSwapTimer > 0 ? (1 - swapEase) * 0.22 : 0;
+            const swapTilt = this.viewmodelSwapTimer > 0 ? (1 - swapEase) * 0.35 : 0;
 
             // Aiming offset (move weapon to center, weapon-specific)
-            const aimT = this.aiming ? 1 : 0;
+            const aimT = this.aimBlend;
             const cfg = this._viewmodelConfigs ? (this._viewmodelConfigs[this._currentViewmodelIndex || 0] || this._viewmodelConfigs[0]) : { hipX: 0.25, hipY: -0.22, hipZ: -0.4, adsX: 0.12, adsY: -0.18, adsZ: -0.35 };
             const aimOffsetX = MathUtils.lerp(cfg.hipX, cfg.adsX, aimT);
             const aimOffsetY = MathUtils.lerp(cfg.hipY, cfg.adsY, aimT);
             const aimOffsetZ = MathUtils.lerp(cfg.hipZ, cfg.adsZ, aimT);
+            const sprintLower = this.sprintBlend * 0.04;
 
             this.viewmodel.position.set(
                 aimOffsetX + this.viewmodelBobX * 0.3,
-                aimOffsetY + this.viewmodelBobY * 0.5 - swapOffset + this.viewmodelRecoilOffset * 0.02,
+                aimOffsetY + this.viewmodelBobY * 0.5 - swapDrop - sprintLower + this.viewmodelRecoilOffset * 0.02,
                 aimOffsetZ + this.viewmodelRecoilOffset * 0.04
             );
 
-            this.viewmodel.rotation.x = -this.viewmodelRecoilOffset * 0.15 + this.viewmodelBobY * 0.8;
-            this.viewmodel.rotation.z = this.viewmodelBobX * 0.5;
+            this.viewmodel.rotation.x = -this.viewmodelRecoilOffset * 0.15 + this.viewmodelBobY * 0.8 - swapTilt;
+            this.viewmodel.rotation.z = this.viewmodelBobX * 0.5 + swapTilt * 0.4;
         }
     }
 
@@ -2668,6 +2648,10 @@ class Player {
 
     playViewmodelSwap() {
         this.viewmodelSwapTimer = this.viewmodelSwapDuration;
+        this.viewmodelRecoilOffset = Math.max(this.viewmodelRecoilOffset, 0.8);
+        const game = window.__deadZoneGame;
+        if (game?.audio?.initialized) game.audio.play('weaponSwitch', 0.32);
+        if (game?.ui?.flashWeaponSwitch) game.ui.flashWeaponSwitch();
     }
 
     takeDamage(amount, attackerPos) {
@@ -2726,6 +2710,8 @@ class Player {
         this.sprinting = false;
         this.crouching = false;
         this.aiming = false;
+        this.aimBlend = 0;
+        this.sprintBlend = 0;
         this.currentHeight = this.height;
         this.onGround = true;
         this.bobPhase = 0;
@@ -2789,6 +2775,8 @@ class Zombie {
         this.damage = config.damage || 15;
         this.attackRange = config.attackRange || 1.8;
         this.attackCooldown = config.attackCooldown || 1.0;
+        this.attackWindup = config.attackWindup ?? 0.18;
+        this.attackWindupTimer = 0;
         this.detectionRange = config.detectionRange || 35;
         this.staggerThreshold = config.staggerThreshold || 30;
         this.headshotMultiplier = config.headshotMultiplier || 2.5;
@@ -2937,7 +2925,7 @@ class Zombie {
         const eyeGeo = new THREE.SphereGeometry(0.04 * s, 6, 4);
         const eyeMat = this._createMaterial(this.eyeColor, {
             emissive: this.eyeColor,
-            emissiveIntensity: 3.0,
+            emissiveIntensity: 4.0,
             roughness: 0.2
         });
         const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
@@ -2950,7 +2938,7 @@ class Zombie {
         headGroup.add(rightEye);
 
         // Tiny point light on head so zombies cast a faint glow visible from afar
-        const eyeGlow = new THREE.PointLight(this.eyeColor, 0.25, 8, 2);
+        const eyeGlow = new THREE.PointLight(this.eyeColor, 0.4, 10, 2);
         eyeGlow.position.set(0, 1.78 * s, 0.2 * s);
         group.add(eyeGlow);
 
@@ -3290,6 +3278,32 @@ class Zombie {
     }
 
     _animateAttack(dt, parts, s) {
+        const windingUp = this.attackWindupTimer > 0;
+        const windupT = windingUp
+            ? 1 - this.attackWindupTimer / (this.attackWindup || 0.18)
+            : 0;
+
+        if (windingUp) {
+            if (parts.torsoGroup) {
+                parts.torsoGroup.rotation.x = -0.35 - windupT * 0.2;
+            }
+            if (parts.leftArmGroup) {
+                parts.leftArmGroup.rotation.x = -0.6 - windupT * 0.9;
+                parts.leftArmGroup.rotation.z = 0.4;
+            }
+            if (parts.rightArmGroup) {
+                parts.rightArmGroup.rotation.x = -0.6 - windupT * 0.9;
+                parts.rightArmGroup.rotation.z = -0.4;
+            }
+            if (parts.headGroup) {
+                parts.headGroup.rotation.x = -0.1 - windupT * 0.25;
+            }
+            if (parts.jaw) {
+                parts.jaw.rotation.x = windupT * 0.35;
+            }
+            return;
+        }
+
         this._attackAnim += dt * 8;
         const swing = Math.sin(this._attackAnim);
 
@@ -3517,10 +3531,16 @@ class Zombie {
         }
 
         if (this.state === ZOMBIE_STATES.ATTACKING) {
+            if (this.attackWindupTimer > 0) {
+                this.attackWindupTimer -= dt;
+                return;
+            }
+
             this.attackTimer -= dt;
             if (this.attackTimer <= 0) {
                 this.attackTimer = this.attackCooldown;
                 this._performAttack();
+                this._attackAnim = 0;
             }
         }
     }
@@ -3546,6 +3566,13 @@ class Zombie {
         this.health -= finalDamage;
         this.hitFlashTimer = this.hitFlashDuration;
 
+        if (this.scene.__gameRef?.particles && sourcePos) {
+            const hitPos = this.position.clone();
+            hitPos.y += 1.2 * this.scale;
+            const hitDir = hitPos.clone().sub(sourcePos).normalize();
+            this.scene.__gameRef.particles.emitHitImpact(hitPos, hitDir);
+        }
+
         if (this.health <= 0) {
             this.health = 0;
             this._die();
@@ -3566,6 +3593,19 @@ class Zombie {
         this._deathFallDir = this.rotation;
         this._changeState(ZOMBIE_STATES.DYING);
 
+        if (this.scene.__gameRef) {
+            const game = this.scene.__gameRef;
+            const burstPos = this.position.clone();
+            burstPos.y += 1.1 * this.scale;
+            if (game.particles) {
+                game.particles.emitDeathBurst(burstPos, this.type);
+            }
+            if (game.cameraShake) {
+                const shakeByType = { tank: 0.07, exploder: 0.055, spitter: 0.03, crawler: 0.022, runner: 0.02 };
+                game.cameraShake.shake(shakeByType[this.type] || 0.02, 0.18);
+            }
+        }
+
         setTimeout(() => {
             if (this.mesh.parent) this.scene.remove(this.mesh);
             if (this.healthBar.parent) this.scene.remove(this.healthBar);
@@ -3577,6 +3617,12 @@ class Zombie {
         this.prevState = this.state;
         this.state = newState;
         this.stateTimer = 0;
+
+        if (newState === ZOMBIE_STATES.ATTACKING) {
+            const windup = this.attackWindup || 0.18;
+            this.attackWindupTimer = windup * (0.75 + Math.random() * 0.5);
+            this._attackAnim = 0;
+        }
     }
 
     _updateHealthBarTexture() {
@@ -3596,6 +3642,7 @@ class Zombie {
         this.alive = true;
         this.position.set(x, this.baseY, z);
         this.target = null;
+        this.attackWindupTimer = 0;
         this._changeState(ZOMBIE_STATES.IDLE);
         this.mesh.visible = true;
         this.mesh.rotation.set(0, 0, 0);
@@ -3636,6 +3683,9 @@ class RunnerZombie extends Zombie {
             scale: 0.95,
             x, z
         }, scene);
+
+        this.attackWindup = 0.12 + Math.random() * 0.28;
+        this.attackCooldown = 0.65 + Math.random() * 0.4;
     }
 
     _createMesh() {
@@ -3969,6 +4019,8 @@ class CrawlerZombie extends Zombie {
             x, z
         }, scene);
 
+        this.attackWindup = 0.06 + Math.random() * 0.16;
+        this.attackCooldown = 0.35 + Math.random() * 0.3;
         this.dodgeTimer = 0;
         this.dodgeDir = 1;
         this.position.y = 0.3;
@@ -4007,7 +4059,7 @@ class CrawlerZombie extends Zombie {
         const eyeMat = new THREE.MeshStandardMaterial({
             color: this.eyeColor,
             emissive: this.eyeColor,
-            emissiveIntensity: 3.5,
+            emissiveIntensity: 4.5,
             roughness: 0.2,
         });
         const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
@@ -4019,7 +4071,7 @@ class CrawlerZombie extends Zombie {
         group.add(rightEye);
 
         // Glow light so crawlers are visible from a distance
-        const eyeGlow = new THREE.PointLight(this.eyeColor, 0.3, 8, 2);
+        const eyeGlow = new THREE.PointLight(this.eyeColor, 0.45, 10, 2);
         eyeGlow.position.set(0, 0.42 * s, 0.5 * s);
         group.add(eyeGlow);
 
@@ -4184,14 +4236,26 @@ class CrawlerZombie extends Zombie {
     }
 
     _animateCrawlerAttack(dt, parts, s) {
-        this._attackAnim += dt * 10;
+        if (this.attackWindupTimer > 0) {
+            const windupT = 1 - this.attackWindupTimer / (this.attackWindup || 0.12);
+            if (parts.headGroup) {
+                parts.headGroup.rotation.x = 0.15 - windupT * 0.45;
+            }
+            if (parts.jaw) {
+                parts.jaw.rotation.x = windupT * 0.3;
+            }
+            this.position.y = this.baseY - windupT * 0.03 * s;
+            return;
+        }
+
+        this._attackAnim += dt * 12;
         if (parts.headGroup) {
-            parts.headGroup.rotation.x = -0.3 + Math.sin(this._attackAnim) * 0.4;
+            parts.headGroup.rotation.x = -0.3 + Math.sin(this._attackAnim) * 0.5;
         }
         if (parts.jaw) {
-            parts.jaw.rotation.x = Math.abs(Math.sin(this._attackAnim * 2)) * 0.5;
+            parts.jaw.rotation.x = Math.abs(Math.sin(this._attackAnim * 2)) * 0.6;
         }
-        this.position.y = this.baseY + Math.sin(this._attackAnim) * 0.04 * s;
+        this.position.y = this.baseY + Math.sin(this._attackAnim) * 0.05 * s;
     }
 
     _animateCrawlerIdle(dt, parts, s) {
@@ -4476,6 +4540,49 @@ class ZombieManager {
         this.scene = scene;
         this.zombies = [];
         this.maxZombies = 80;
+        this._recentSpawns = [];
+        this._maxRecentSpawns = 6;
+    }
+
+    pickSpawnPosition(spawnPoints) {
+        if (!spawnPoints || spawnPoints.length === 0) {
+            const offset = MathUtils.randomPointInCircle(8);
+            return { x: offset.x, z: offset.z };
+        }
+
+        const alive = this.zombies.filter(z => z.alive);
+        let bestPoint = spawnPoints[0];
+        let bestScore = -Infinity;
+
+        const shuffled = spawnPoints.slice().sort(() => Math.random() - 0.5);
+        for (const point of shuffled) {
+            let score = MathUtils.randomRange(0, 2);
+
+            for (const recent of this._recentSpawns) {
+                const dist = MathUtils.distance2D(point.x, point.z, recent.x, recent.z);
+                if (dist < 4) score -= (4 - dist) * 3;
+            }
+
+            for (const zombie of alive) {
+                const dist = MathUtils.distance2D(point.x, point.z, zombie.position.x, zombie.position.z);
+                if (dist < 3) score -= (3 - dist) * 2;
+            }
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestPoint = point;
+            }
+        }
+
+        const offset = MathUtils.randomPointInCircle(5 + Math.random() * 3);
+        const pos = { x: bestPoint.x + offset.x, z: bestPoint.z + offset.z };
+
+        this._recentSpawns.push({ x: pos.x, z: pos.z });
+        if (this._recentSpawns.length > this._maxRecentSpawns) {
+            this._recentSpawns.shift();
+        }
+
+        return pos;
     }
 
     spawn(type, x, z) {
@@ -4512,13 +4619,8 @@ class ZombieManager {
 
         for (const entry of types) {
             for (let i = 0; i < entry.count; i++) {
-                const point = spawnPoints[MathUtils.randomInt(0, spawnPoints.length - 1)];
-                const offset = MathUtils.randomPointInCircle(5);
-                const zombie = this.spawn(
-                    entry.type,
-                    point.x + offset.x,
-                    point.z + offset.z
-                );
+                const pos = this.pickSpawnPosition(spawnPoints);
+                const zombie = this.spawn(entry.type, pos.x, pos.z);
                 if (zombie) spawned.push(zombie);
             }
         }
@@ -4556,6 +4658,7 @@ class ZombieManager {
 
     reset() {
         this.clear();
+        this._recentSpawns = [];
     }
 }
 
@@ -4593,21 +4696,27 @@ class Ally {
         this.prevState = null;
 
         this.speed = 5.0;
-        this.followDistance = 4 + Math.random() * 2;
+        this.followDistance = 3 + Math.random() * 1.5;
         this.formationAngle = config.formationAngle || 0;
         this.formationOffset = new THREE.Vector3();
 
         this.target = null;
+        this.squadFocusTarget = null;
         this.targetPosition = null;
         this.holdPosition = null;
         this.reviveTarget = null;
 
-        this.fireRate = 0.22 + Math.random() * 0.13;
+        this.fireRate = 0.2 + Math.random() * 0.1;
         this.fireTimer = 0;
-        this.accuracy = 0.50 + Math.random() * 0.15;
+        this.accuracy = 0.55 + Math.random() * 0.12;
+        if (this.role === 'assault') this.accuracy += 0.05;
         this.damage = 12;
-        this.range = 28;
-        this.detectionRange = 32;
+        this.range = 30;
+        this.detectionRange = 34;
+
+        this.reviveRange = 2.5;
+        this.reviveTimer = 0;
+        this.reviveDuration = 1.2;
 
         this.stateTimer = 0;
         this.thinkTimer = 0;
@@ -5198,8 +5307,10 @@ class Ally {
         return sprite;
     }
 
-    update(dt, playerPos, enemies, allies, command, gameState) {
+    update(dt, playerPos, enemies, allies, command, gameState, squadFocusTarget) {
         if (!this.alive) return;
+
+        this.squadFocusTarget = squadFocusTarget || null;
 
         this.indicator.position.copy(this.mesh.position);
         this.indicator.position.y += 2.5;
@@ -5255,12 +5366,18 @@ class Ally {
                 break;
 
             case ALLY_STATES.ENGAGING:
+                if (this.squadFocusTarget && this.squadFocusTarget.alive) {
+                    this.target = this.squadFocusTarget;
+                } else if (!this.target || !this.target.alive || this.target.health <= 0) {
+                    const nearest = this._findNearestEnemy(enemies, playerPos);
+                    if (nearest) this.target = nearest.enemy;
+                }
                 if (!this.target || !this.target.alive || this.target.health <= 0) {
                     this.target = null;
                     this._changeState(ALLY_STATES.FOLLOWING);
                 } else {
                     const distToTarget = this.position.distanceTo(this.target.position);
-                    if (distToTarget > this.detectionRange * 1.3) {
+                    if (distToTarget > this.detectionRange * 1.4) {
                         this.target = null;
                         this._changeState(ALLY_STATES.FOLLOWING);
                     }
@@ -5276,7 +5393,9 @@ class Ally {
         }
 
         if (this.state !== ALLY_STATES.REVIVING && downedAlly && this.role === 'medic') {
-            this.reviveTarget = downedAlly.ally;
+            if (!this.reviveTarget || downedAlly.dist < this.position.distanceTo(this.reviveTarget.position)) {
+                this.reviveTarget = downedAlly.ally;
+            }
             this._changeState(ALLY_STATES.REVIVING);
         }
     }
@@ -5292,6 +5411,9 @@ class Ally {
                 this._changeState(ALLY_STATES.HOLDING);
                 break;
             case 'focus':
+                if (this.squadFocusTarget && this.squadFocusTarget.alive) {
+                    this.target = this.squadFocusTarget;
+                }
                 this._changeState(ALLY_STATES.ENGAGING);
                 break;
             case 'regroup':
@@ -5302,17 +5424,23 @@ class Ally {
 
     _move(dt, playerPos) {
         let targetPos;
+        let moveSpeed = this.speed;
 
         switch (this.state) {
             case ALLY_STATES.FOLLOWING:
             case ALLY_STATES.REGROUPING:
+                const distToPlayer = this.position.distanceTo(playerPos);
+                const dynamicFollow = this.followDistance + Math.min(distToPlayer * 0.15, 2);
                 const angle = this.formationAngle;
                 this.formationOffset.set(
-                    Math.sin(angle) * this.followDistance,
+                    Math.sin(angle) * dynamicFollow,
                     0,
-                    Math.cos(angle) * this.followDistance
+                    Math.cos(angle) * dynamicFollow
                 );
                 targetPos = playerPos.clone().add(this.formationOffset);
+                if (this.state === ALLY_STATES.REGROUPING) {
+                    moveSpeed *= 1.25;
+                }
                 break;
 
             case ALLY_STATES.HOLDING:
@@ -5338,6 +5466,7 @@ class Ally {
             case ALLY_STATES.REVIVING:
                 if (this.reviveTarget) {
                     targetPos = this.reviveTarget.position.clone();
+                    moveSpeed *= 1.45;
                 }
                 break;
 
@@ -5352,9 +5481,9 @@ class Ally {
 
             if (dist > 0.5) {
                 dir.normalize();
-                const moveSpeed = this.speed * dt;
-                this.position.x += dir.x * Math.min(moveSpeed, dist);
-                this.position.z += dir.z * Math.min(moveSpeed, dist);
+                const step = moveSpeed * dt;
+                this.position.x += dir.x * Math.min(step, dist);
+                this.position.z += dir.z * Math.min(step, dist);
                 this.rotation = Math.atan2(dir.x, dir.z);
             }
         }
@@ -5362,69 +5491,41 @@ class Ally {
         this.position.y = 0;
     }
 
-﻿    _combat(dt, enemies, playerPos, gameState) {
+    _combat(dt, enemies, playerPos, gameState) {
         if (this.state === ALLY_STATES.REVIVING && this.reviveTarget) {
             const dist = this.position.distanceTo(this.reviveTarget.position);
-            if (dist < 2) {
-                this.reviveTarget.revive();
-                this.reviveTarget = null;
-                this._changeState(ALLY_STATES.FOLLOWING);
-                if (gameState) gameState.stats.revives++;
+            if (dist < this.reviveRange) {
+                this.reviveTimer += dt;
+                if (this.reviveTimer >= this.reviveDuration) {
+                    this.reviveTarget.revive();
+                    this.reviveTarget = null;
+                    this.reviveTimer = 0;
+                    this._changeState(ALLY_STATES.FOLLOWING);
+                    if (gameState) gameState.stats.revives++;
+                }
+            } else {
+                this.reviveTimer = 0;
             }
             return;
         }
+
+        this.reviveTimer = 0;
 
         if (this.state !== ALLY_STATES.ENGAGING || !this.target || !this.target.alive) return;
 
         this.fireTimer -= dt;
 
-        const toTarget = this.target.position.clone().sub(this.position);
-        toTarget.y = 0;
-        this.rotation = Math.atan2(toTarget.x, toTarget.z);
+        const dir = this.target.position.clone().sub(this.position);
+        dir.y = 0;
+        this.rotation = Math.atan2(dir.x, dir.z);
 
         if (this.fireTimer <= 0 && this.position.distanceTo(this.target.position) < this.range) {
             this.fireTimer = this.fireRate;
 
-            const gunPos = this.position.clone();
-            gunPos.y = 1.3;
-            const aimDir = this.target.position.clone();
-            aimDir.y = this.target.position.y + 1.0 * (this.target.scale || 1);
-            aimDir.sub(gunPos).normalize();
-            aimDir.x += (Math.random() - 0.5) * 0.06;
-            aimDir.y += (Math.random() - 0.5) * 0.04;
-            aimDir.normalize();
-
-            const game = this.scene.__gameRef;
-            if (game && game.bulletSystem) {
-                const tracerColor = this.role === 'assault' ? 0x4488ff : this.role === 'support' ? 0xff8844 : 0x44ff44;
-                game.bulletSystem.fire(gunPos.clone(), aimDir, 180, this.range * 2, tracerColor);
-            }
-
             if (Math.random() < this.accuracy) {
-                const s = this.target.scale || 1;
-                const bodyCenter = this.target.position.clone();
-                bodyCenter.y = 1.0 * s;
-                const bodyRadius = 0.5 * s;
-                const headCenter = this.target.position.clone();
-                headCenter.y = 1.8 * s;
-                const headRadius = 0.28 * s;
-
-                const bodyHit = this._allyRaySphere(gunPos, aimDir, bodyCenter, bodyRadius);
-                const headHit = this._allyRaySphere(gunPos, aimDir, headCenter, headRadius);
-                let hitIsHead = false;
-                if (headHit !== null && (bodyHit === null || headHit < bodyHit)) hitIsHead = true;
-
-                const isHeadshot = hitIsHead;
+                const isHeadshot = Math.random() < 0.15;
                 const dmg = isHeadshot ? this.damage * 2 : this.damage;
                 this.target.takeDamage(dmg, this.position, isHeadshot);
-
-                if (game && game.particles) {
-                    const hitDist = Math.min(headHit || 999, bodyHit || 999);
-                    if (hitDist < 999) {
-                        const hitPoint = gunPos.clone().add(aimDir.clone().multiplyScalar(hitDist));
-                        game.particles.emitBlood(hitPoint, aimDir.clone().negate());
-                    }
-                }
 
                 if (!this.target.alive) {
                     if (gameState) gameState.addKill(isHeadshot);
@@ -5433,26 +5534,22 @@ class Ally {
         }
     }
 
-    _allyRaySphere(origin, dir, center, radius) {
-        const oc = origin.clone().sub(center);
-        const a = dir.dot(dir);
-        const b = 2 * oc.dot(dir);
-        const c = oc.dot(oc) - radius * radius;
-        const disc = b * b - 4 * a * c;
-        if (disc < 0) return null;
-        const t = (-b - Math.sqrt(disc)) / (2 * a);
-        return t > 0.01 ? t : null;
-    }
-
     _findNearestEnemy(enemies, playerPos) {
         let nearest = null;
         let nearestDist = Infinity;
+
+        if (this.squadFocusTarget && this.squadFocusTarget.alive && this.squadFocusTarget.health > 0) {
+            const dist = this.position.distanceTo(this.squadFocusTarget.position);
+            if (dist < this.detectionRange * 1.5) {
+                return { enemy: this.squadFocusTarget, dist };
+            }
+        }
 
         for (const enemy of enemies) {
             if (!enemy.alive || enemy.health <= 0) continue;
             const dist = this.position.distanceTo(enemy.position);
             const playerDist = playerPos.distanceTo(enemy.position);
-            const score = dist + playerDist * 0.5;
+            const score = dist * 0.7 + playerDist * 0.6;
 
             if (score < nearestDist) {
                 nearestDist = score;
@@ -5464,11 +5561,15 @@ class Ally {
     }
 
     _findDownedAlly(allies) {
+        let closest = null;
         for (const ally of allies) {
             if (ally === this || !ally.downed || !ally.alive) continue;
-            return { ally, dist: this.position.distanceTo(ally.position) };
+            const dist = this.position.distanceTo(ally.position);
+            if (!closest || dist < closest.dist) {
+                closest = { ally, dist };
+            }
         }
-        return null;
+        return closest;
     }
 
     _changeState(newState) {
@@ -5530,6 +5631,7 @@ class Ally {
         this.position.set(x, 0, z);
         this.target = null;
         this.reviveTarget = null;
+        this.reviveTimer = 0;
         this.holdPosition = null;
         this._changeState(ALLY_STATES.FOLLOWING);
         this.mesh.visible = true;
@@ -5546,6 +5648,7 @@ class AllySquad {
         this.allies = [];
         this.lastCommand = null;
         this.commandCooldown = 0;
+        this.focusTarget = null;
     }
 
     init() {
@@ -5566,17 +5669,53 @@ class AllySquad {
             this.commandCooldown -= dt;
             if (this.commandCooldown <= 0) {
                 this.lastCommand = null;
+                this.focusTarget = null;
             }
         }
 
-        for (const ally of this.allies) {
-            ally.update(dt, playerPos, enemies, this.allies, this.lastCommand, gameState);
+        if (this.lastCommand === 'focus') {
+            this.focusTarget = this._pickFocusTarget(playerPos, enemies);
         }
+
+        for (const ally of this.allies) {
+            ally.update(dt, playerPos, enemies, this.allies, this.lastCommand, gameState, this.focusTarget);
+        }
+    }
+
+    _pickFocusTarget(playerPos, enemies) {
+        let best = null;
+        let bestScore = Infinity;
+
+        for (const enemy of enemies) {
+            if (!enemy.alive || enemy.health <= 0) continue;
+            const playerDist = playerPos.distanceTo(enemy.position);
+            if (playerDist > 40) continue;
+
+            let squadDist = 0;
+            let squadCount = 0;
+            for (const ally of this.allies) {
+                if (!ally.alive || ally.downed) continue;
+                squadDist += ally.position.distanceTo(enemy.position);
+                squadCount++;
+            }
+            const avgSquadDist = squadCount > 0 ? squadDist / squadCount : playerDist;
+            const score = playerDist * 0.55 + avgSquadDist * 0.45;
+
+            if (score < bestScore) {
+                bestScore = score;
+                best = enemy;
+            }
+        }
+
+        return best;
     }
 
     issueCommand(command) {
         this.lastCommand = command;
         this.commandCooldown = 0.5;
+        if (command === 'focus') {
+            this.focusTarget = null;
+        }
     }
 
     getAliveAllies() {
@@ -5602,6 +5741,7 @@ class AllySquad {
         }
         this.lastCommand = null;
         this.commandCooldown = 0;
+        this.focusTarget = null;
     }
 }
 
@@ -7066,12 +7206,16 @@ class WaveManager {
     }
 
     getWaveConfig(waveNum) {
-        const base = Math.floor(10 + waveNum * 5);
-        const runnerCount = Math.max(6, Math.floor(base * 0.5));
-        const crawlerCount = waveNum >= 2 ? Math.floor(base * 0.2) : 0;
-        const spitterCount = waveNum >= 3 ? Math.floor(base * 0.12) : 0;
-        const tankCount = waveNum >= 4 ? Math.floor(waveNum / 2) : 0;
-        const exploderCount = waveNum >= 5 ? Math.floor(waveNum / 3) : 0;
+        const base = 8 + waveNum * 6;
+        const t = MathUtils.clamp(waveNum / this.maxWaves, 0, 1);
+
+        const runnerCount = Math.max(4, Math.floor(base * (0.48 - t * 0.12)));
+        const crawlerCount = waveNum >= 1
+            ? Math.max(waveNum === 1 ? 2 : 0, Math.floor(base * (waveNum >= 4 ? 0.22 : 0.14)))
+            : 0;
+        const spitterCount = waveNum >= 2 ? Math.floor(base * (0.07 + waveNum * 0.012)) : 0;
+        const tankCount = waveNum >= 3 ? Math.max(1, Math.floor((waveNum - 2) * 0.55 + t * 2)) : 0;
+        const exploderCount = waveNum >= 4 ? Math.max(0, Math.floor((waveNum - 3) * 0.55)) : 0;
 
         return {
             wave: waveNum,
@@ -7082,7 +7226,7 @@ class WaveManager {
                 { type: 'tank', count: tankCount },
                 { type: 'exploder', count: exploderCount }
             ].filter(t => t.count > 0),
-            spawnDelay: Math.max(0.15, 0.8 - waveNum * 0.04),
+            spawnDelay: Math.max(0.12, 0.75 - waveNum * 0.035),
             healthMultiplier: 1 + (waveNum - 1) * 0.18,
             speedMultiplier: 1 + (waveNum - 1) * 0.04,
         };
@@ -7133,9 +7277,8 @@ class WaveManager {
                 this.spawnTimer = this.spawnDelay;
 
                 const type = this.spawnQueue.shift();
-                const point = spawnPoints[MathUtils.randomInt(0, spawnPoints.length - 1)];
-                const offset = MathUtils.randomPointInCircle(6);
-                zombieManager.spawn(type, point.x + offset.x, point.z + offset.z);
+                const spawnPos = zombieManager.pickSpawnPosition(spawnPoints);
+                zombieManager.spawn(type, spawnPos.x, spawnPos.z);
             }
         }
 
@@ -7203,8 +7346,9 @@ class UIManager {
         this.gameState = gameState;
         this.elements = {};
         this.killFeedEntries = [];
-        this.maxKillFeed = 5;
+        this.maxKillFeed = 6;
         this.damageNumbers = [];
+        this._weaponSwitchFlash = 0;
         this._cacheElements();
         this._createDamageNumberContainer();
     }
@@ -7315,20 +7459,27 @@ class UIManager {
 
         const slots = document.querySelectorAll('.weapon-slot');
         slots.forEach((slot, i) => {
-            slot.classList.toggle('active', i === (weaponIndex || 0));
+            const active = i === (weaponIndex || 0);
+            slot.classList.toggle('active', active);
+            slot.classList.toggle('switching', active && weapon && weapon.reloading === false && this._weaponSwitchFlash > 0);
         });
+        if (this._weaponSwitchFlash > 0) this._weaponSwitchFlash -= 0.016;
 
         this._updateCrosshairSpread(crosshairSpread || 0);
 
         if (allies) {
+            const roleColors = ['#4488ff', '#44cc44', '#ff8844'];
             for (let i = 0; i < allies.length; i++) {
                 const ally = allies[i];
                 const card = this.elements['teammate-cards']?.[i];
 
                 if (!ally.alive) {
                     this.setStyle(`ally-health-${i}`, 'width', '0%');
-                    this.setHTML(`ally-status-${i}`, 'DEAD');
-                    if (card) card.classList.add('downed');
+                    this.setHTML(`ally-status-${i}`, 'KIA');
+                    if (card) {
+                        card.classList.add('downed');
+                        card.classList.remove('reviving');
+                    }
                     continue;
                 }
 
@@ -7336,23 +7487,32 @@ class UIManager {
                 this.setStyle(`ally-health-${i}`, 'width', `${healthPct}%`);
 
                 if (ally.downed) {
-                    this.setStyle(`ally-health-${i}`, 'background', '#c62828');
+                    this.setStyle(`ally-health-${i}`, 'background', 'linear-gradient(90deg, #8b0000, #c62828)');
                     this.setHTML(`ally-status-${i}`, `DOWNED ${Math.ceil(ally.downTimer)}s`);
-                    if (card) card.classList.add('downed');
+                    if (card) {
+                        card.classList.add('downed');
+                        card.classList.remove('reviving');
+                    }
                 } else {
-                    this.setStyle(`ally-health-${i}`, 'background', '#4caf50');
-                    this.setHTML(`ally-status-${i}`, ally.getStatusText());
-                    if (card) card.classList.remove('downed');
+                    const status = ally.getStatusText();
+                    const isReviving = status === 'REVIVING';
+                    this.setStyle(`ally-health-${i}`, 'background', `linear-gradient(90deg, ${roleColors[i] || '#4caf50'}, #6abf69)`);
+                    this.setHTML(`ally-status-${i}`, status);
+                    if (card) {
+                        card.classList.remove('downed');
+                        card.classList.toggle('reviving', isReviving);
+                    }
                 }
             }
         }
 
         if (waveManager) {
             this.setHTML('wave-label', `WAVE ${waveManager.currentWave}`);
-            this.setHTML('wave-enemies', `ENEMIES: ${waveManager.enemiesRemaining}`);
+            const remaining = waveManager.enemiesRemaining;
+            this.setHTML('wave-enemies', remaining > 0 ? `HOSTILES: ${remaining}` : 'AREA CLEAR');
 
             if (waveManager.isBetween()) {
-                this.setHTML('objective-text', 'WAVE CLEAR - PREPARE FOR NEXT');
+                this.setHTML('objective-text', 'BRIEF RESUPPLY — NEXT WAVE INCOMING');
             } else if (waveManager.isActive()) {
                 this.setHTML('objective-text', 'ELIMINATE ALL HOSTILES');
             }
@@ -7401,7 +7561,7 @@ class UIManager {
     showShop(currency, upgrades) {
         const panel = this.elements['shop-panel'];
         if (!panel) return;
-        this.setHTML('shop-currency', `CURRENCY: ${currency}`);
+        this.setHTML('shop-currency', `${currency} CR`);
         const itemsEl = this.elements['shop-items'];
         if (!itemsEl) return;
         itemsEl.innerHTML = '';
@@ -7412,10 +7572,11 @@ class UIManager {
             item.innerHTML = `
                 <div class="shop-item-name">${upg.name}</div>
                 <div class="shop-item-desc">${upg.desc}</div>
-                <div class="shop-item-cost">${upg.maxed ? 'MAXED' : canAfford ? upg.cost + ' CR' : upg.cost + ' CR'}</div>
+                <div class="shop-item-cost">${upg.maxed ? 'MAXED' : upg.cost + ' CR'}</div>
             `;
             item.classList.toggle('can-afford', canAfford);
             item.classList.toggle('maxed', upg.maxed);
+            item.classList.toggle('cannot-afford', !canAfford && !upg.maxed);
             item.dataset.index = upgrades.indexOf(upg);
             item.addEventListener('click', () => {
                 if (canAfford && this.gameState && this.gameState._purchaseUpgrade) {
@@ -7433,7 +7594,7 @@ class UIManager {
     }
 
     updateShopCurrency(currency) {
-        this.setHTML('shop-currency', `CURRENCY: ${currency}`);
+        this.setHTML('shop-currency', `${currency} CR`);
     }
 
     showDamageDirection(attackerPos, playerPos, playerRotation) {
@@ -7476,9 +7637,11 @@ class UIManager {
         if (!feed) return;
 
         const entry = document.createElement('div');
-        entry.className = 'kill-entry';
+        const isHeadshot = message.includes('HEADSHOT');
+        const isRevive = message.includes('Revived');
+        entry.className = 'kill-entry' + (isHeadshot ? ' headshot' : '') + (isRevive ? ' revive' : '');
         entry.textContent = message;
-        feed.appendChild(entry);
+        feed.insertBefore(entry, feed.firstChild);
 
         this.killFeedEntries.push(entry);
         while (this.killFeedEntries.length > this.maxKillFeed) {
@@ -7487,17 +7650,31 @@ class UIManager {
         }
 
         setTimeout(() => {
-            if (entry.parentNode) entry.parentNode.removeChild(entry);
-            const idx = this.killFeedEntries.indexOf(entry);
-            if (idx >= 0) this.killFeedEntries.splice(idx, 1);
-        }, 3000);
+            entry.classList.add('fade-out');
+            setTimeout(() => {
+                if (entry.parentNode) entry.parentNode.removeChild(entry);
+                const idx = this.killFeedEntries.indexOf(entry);
+                if (idx >= 0) this.killFeedEntries.splice(idx, 1);
+            }, 400);
+        }, 2800);
+    }
+
+    flashWeaponSwitch() {
+        this._weaponSwitchFlash = 0.2;
     }
 
     showWaveAnnounce(waveNum, subtitle) {
         this.setHTML('wave-announce-text', `WAVE ${waveNum}`);
-        this.setHTML('wave-announce-sub', subtitle || 'PREPARE YOURSELF');
+        this.setHTML('wave-announce-sub', subtitle || 'HOSTILES INBOUND');
+        const el = this.elements['wave-announce'];
+        if (el) {
+            el.classList.remove('hidden');
+            el.style.animation = 'none';
+            void el.offsetWidth;
+            el.style.animation = '';
+        }
         this.show('wave-announce');
-        setTimeout(() => this.hide('wave-announce'), 3000);
+        setTimeout(() => this.hide('wave-announce'), 3200);
     }
 
     showStreakAnnounce(count) {
@@ -7743,7 +7920,6 @@ class Game {
         this.selectedMap = 'outpost';
         this.waveManager = new WaveManager();
         this.particles = new ParticleSystem(this.renderer.scene);
-        this.bulletSystem = new BulletSystem(this.renderer.scene, this.particles);
         this.cameraShake = new CameraShake();
 
         this.renderer.scene.__gameRef = this;
@@ -7958,7 +8134,6 @@ class Game {
         if (pickup) this._handlePickup(pickup);
 
         this.particles.update(dt);
-        this.bulletSystem.update(dt, this.level.getObjects());
         this.cameraShake.update(dt);
         this.cameraShake.applyTo(this.renderer.camera);
 
@@ -7989,7 +8164,7 @@ class Game {
             this.audio.ambientGain.gain.value = this.tensionBase + this.combatIntensity * 0.3;
         }
 
-        if ((!this.player.alive || this.player.downed) && this.gameState.state === 'playing') {
+        if (!this.player.alive && this.gameState.state === 'playing') {
             this._gameOver();
         }
 
@@ -8071,95 +8246,102 @@ class Game {
         }
     }
 
-            _fireWeapon() {
+    _fireWeapon() {
         const weapon = this.weaponSystem.getCurrent();
         if (!weapon || weapon.reloading) return;
+
         const result = this.weaponSystem.fire(this.player.aiming);
         if (!result) {
-            if (weapon.currentAmmo <= 0) { this.audio.play('empty'); this.weaponSystem.reload(); this.audio.play('reload'); }
+            if (weapon.currentAmmo <= 0) {
+                this.audio.play('empty');
+                this.weaponSystem.reload();
+                this.audio.play('reload');
+            }
             return;
         }
+
         this.gameState.addShot();
         this.audio.play(weapon.name.includes('870') ? 'shotgunShot' : weapon.name.includes('1911') ? 'pistolShot' : 'rifleShot');
+
         this.muzzleFlashTimer = 0.05;
         this.player.applyRecoil(result.recoilX, result.recoilY);
         this.cameraShake.shake(0.03 + result.recoilY * 0.5);
+
+        // Viewmodel recoil kick
         const recoilAmount = weapon.name.includes('870') ? 3.0 : weapon.name.includes('1911') ? 1.5 : 1.2;
         this.player.applyViewmodelRecoil(recoilAmount);
+
         const lookDir = this.player.getLookDirection();
-        const cameraPos = this.renderer.camera.position;
-        const origin = cameraPos.clone().add(lookDir.clone().multiplyScalar(1.0));
-        const right = new THREE.Vector3().crossVectors(lookDir, new THREE.Vector3(0, 1, 0)).normalize();
-        const barrelPos = cameraPos.clone().add(right.clone().multiplyScalar(0.3)).add(lookDir.clone().multiplyScalar(0.1));
-        const tracerColor = weapon.name.includes('870') ? 0xff8844 : weapon.name.includes('1911') ? 0xffcc44 : 0xffdd66;
-        const bulletSpeed = weapon.name.includes('870') ? 180 : weapon.name.includes('1911') ? 160 : 200;
+        const origin = this.renderer.camera.position.clone();
+
         for (const pellet of result.pellets) {
             const dir = lookDir.clone();
             dir.x += pellet.spreadX;
             dir.y += pellet.spreadY;
             dir.normalize();
-            this.bulletSystem.fire(origin.clone(), dir, bulletSpeed, result.range, tracerColor, barrelPos);
-            let hitDist = result.range;
-            let hitZombie = null;
-            let hitPoint = null;
-            let hitIsHead = false;
-            for (const zombie of this.zombieManager.getAliveZombies()) {
-                const s = zombie.scale || 1;
-                const bodyCenter = zombie.position.clone();
-                bodyCenter.y = 1.0 * s;
-                const bodyRadius = 0.5 * s;
-                const headCenter = zombie.position.clone();
-                headCenter.y = 1.8 * s;
-                const headRadius = 0.28 * s;
-                const bodyHit = this._raySphereIntersect(origin, dir, bodyCenter, bodyRadius);
-                const headHit = this._raySphereIntersect(origin, dir, headCenter, headRadius);
-                let closestT = Infinity;
-                let isHead = false;
-                if (bodyHit !== null && bodyHit < closestT) { closestT = bodyHit; isHead = false; }
-                if (headHit !== null && headHit < closestT) { closestT = headHit; isHead = true; }
-                if (closestT < hitDist && closestT > 0) { hitDist = closestT; hitZombie = zombie; hitPoint = origin.clone().add(dir.clone().multiplyScalar(closestT)); hitIsHead = isHead; }
-            }
+
             this.raycaster.set(origin, dir);
             this.raycaster.far = result.range;
-            this.raycaster.near = 0;
-            const wallHits = this.raycaster.intersectObjects(this.level.getObjects(), true);
-            let wallHitDist = result.range;
-            if (wallHits.length > 0) wallHitDist = wallHits[0].distance;
-            if (hitZombie && hitDist < wallHitDist) {
-                const isHeadshot = hitIsHead;
-                hitZombie.takeDamage(result.damage, this.player.position, isHeadshot);
-                this.gameState.addShot(true);
-                this.ui.showHitMarker(isHeadshot);
-                this.audio.play(isHeadshot ? 'headshot' : 'hit');
-                this.particles.emitBlood(hitPoint, dir.clone().negate());
-                const dmgAmount = isHeadshot ? result.damage * hitZombie.headshotMultiplier * (1 - hitZombie.armor) : result.damage * (1 - hitZombie.armor);
-                this.ui.showDamageNumber(hitPoint.clone(), dmgAmount, isHeadshot, this.renderer.camera, this.renderer.renderer.domElement);
-                if (!hitZombie.alive) {
-                    this.gameState.addKill(isHeadshot);
-                    this.audio.play('zombieDeath');
-                    this.killStreak++;
-                    this.killStreakTimer = this.killStreakDecay;
-                    if (isHeadshot) { this.slowMotionTimer = 0.15; this.cameraShake.shake(0.08); }
-                    if (this.killStreak >= 5 && this.killStreak % 5 === 0) { this.ui.showStreakAnnounce(this.killStreak); this.slowMotionTimer = 0.25; }
-                    this.ui.addKillFeed(this.weaponSystem.getCurrent().name + ' > ' + hitZombie.type.toUpperCase() + (isHeadshot ? ' (HEADSHOT)' : ''));
-                } else if (isHeadshot) { this.cameraShake.shake(0.05); }
-            } else if (wallHits.length > 0) { this.particles.emitSparks(wallHits[0].point); }
+
+            const zombieMeshes = [];
+            for (const zombie of this.zombieManager.getAliveZombies()) {
+                zombieMeshes.push(zombie.mesh);
+            }
+
+            const intersects = this.raycaster.intersectObjects(zombieMeshes, true);
+
+            if (intersects.length > 0) {
+                const hit = intersects[0];
+                let hitZombie = null;
+
+                for (const zombie of this.zombieManager.getAliveZombies()) {
+                    if (zombie.mesh === hit.object || zombie.mesh.children.includes(hit.object)) {
+                        hitZombie = zombie;
+                        break;
+                    }
+                }
+
+                if (hitZombie) {
+                    const isHeadshot = hit.point.y > hitZombie.position.y + 1.4 * hitZombie.scale;
+                    hitZombie.takeDamage(result.damage, this.player.position, isHeadshot);
+
+                    this.gameState.addShot(true);
+                    this.ui.showHitMarker(isHeadshot);
+                    this.audio.play(isHeadshot ? 'headshot' : 'hit');
+
+                    this.particles.emitBlood(hit.point, dir.clone().negate());
+
+                    // Floating damage number
+                    const dmgAmount = isHeadshot ? result.damage * hitZombie.headshotMultiplier * (1 - hitZombie.armor) : result.damage * (1 - hitZombie.armor);
+                    this.ui.showDamageNumber(hit.point.clone(), dmgAmount, isHeadshot, this.renderer.camera, this.renderer.renderer.domElement);
+
+                    if (!hitZombie.alive) {
+                        this.gameState.addKill(isHeadshot);
+                        this.audio.play('zombieDeath');
+
+                        this.killStreak++;
+                        this.killStreakTimer = this.killStreakDecay;
+
+                        if (isHeadshot) {
+                            this.slowMotionTimer = 0.15;
+                            this.cameraShake.shake(0.08);
+                        }
+
+                        if (this.killStreak >= 5 && this.killStreak % 5 === 0) {
+                            this.ui.showStreakAnnounce(this.killStreak);
+                            this.slowMotionTimer = 0.25;
+                        }
+
+                        this.ui.addKillFeed(`${this.weaponSystem.getCurrent().name} > ${hitZombie.type.toUpperCase()} ${isHeadshot ? '(HEADSHOT)' : ''}`);
+                    } else if (isHeadshot) {
+                        this.cameraShake.shake(0.05);
+                    }
+                } else {
+                    this.particles.emitSparks(hit.point);
+                }
+            }
         }
     }
-    _raySphereIntersect(origin, dir, center, radius) {
-        const oc = origin.clone().sub(center);
-        const a = dir.dot(dir);
-        const b = 2 * oc.dot(dir);
-        const c = oc.dot(oc) - radius * radius;
-        const disc = b * b - 4 * a * c;
-        if (disc < 0) return null;
-        const t = (-b - Math.sqrt(disc)) / (2 * a);
-        return t > 0.01 ? t : null;
-    }
-
-    
-
-    
 
     _throwGrenade() {
         if (!this.weaponSystem.throwGrenade()) return;
@@ -8300,7 +8482,6 @@ class Game {
         // Clean up existing entities before rebuilding scene
         this.zombieManager.clear();
         this.particles.clear();
-        this.bulletSystem.clear();
 
         // Rebuild the selected map (clears scene and builds new geometry)
         this._buildSelectedMap();
@@ -8363,11 +8544,9 @@ class Game {
         this.input.exitPointerLock();
         this.zombieManager.clear();
         this.particles.clear();
-        this.bulletSystem.clear();
     }
 
     _gameOver() {
-        if (this.player.downed) this.player.die();
         this.gameState.changeState('gameover');
         this.input.exitPointerLock();
         this.ui.hide('hud');

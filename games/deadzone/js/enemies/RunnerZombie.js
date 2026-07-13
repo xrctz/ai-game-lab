@@ -22,6 +22,9 @@ export class RunnerZombie extends Zombie {
             scale: 0.95,
             x, z
         }, scene);
+
+        this.attackWindup = 0.12 + Math.random() * 0.28;
+        this.attackCooldown = 0.65 + Math.random() * 0.4;
     }
 
     _createMesh() {

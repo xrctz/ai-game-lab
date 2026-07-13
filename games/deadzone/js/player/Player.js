@@ -31,6 +31,8 @@ export class Player {
         this.sprinting = false;
         this.crouching = false;
         this.aiming = false;
+        this.aimBlend = 0;
+        this.sprintBlend = 0;
 
         this.recoilX = 0;
         this.recoilY = 0;
@@ -56,7 +58,7 @@ export class Player {
         this.viewmodelBobX = 0;
         this.viewmodelBobY = 0;
         this.viewmodelSwapTimer = 0;
-        this.viewmodelSwapDuration = 0.3;
+        this.viewmodelSwapDuration = 0.22;
 
         // Flashlight
         this.flashlight = null;
@@ -1269,7 +1271,7 @@ export class Player {
 
     _createFlashlight() {
         // Main flashlight beam — strong, wide, long range
-        this.flashlight = new THREE.SpotLight(0xffeedd, 4.0, 55, Math.PI / 3.5, 0.35, 1.2);
+        this.flashlight = new THREE.SpotLight(0xfff0d4, 5.2, 62, Math.PI / 3.2, 0.32, 1.15);
         this.flashlight.position.set(0, 0, 0);
         this.flashlight.castShadow = false;
         this.camera.add(this.flashlight);
@@ -1280,10 +1282,24 @@ export class Player {
         this.camera.add(target);
         this.flashlight.target = target;
 
-        // Soft ambient glow around the player so the area right around you is never pitch black
-        this.playerLight = new THREE.PointLight(0xccddff, 0.6, 12, 2);
+        // Soft ambient glow so immediate surroundings stay readable in the dark
+        this.playerLight = new THREE.PointLight(0xd4e4ff, 0.85, 14, 1.8);
         this.playerLight.position.set(0, -0.5, 0);
         this.camera.add(this.playerLight);
+
+        // Subtle cone mesh hint for beam visibility (fades with flashlight toggle)
+        const beamGeo = new THREE.ConeGeometry(0.35, 2.5, 8, 1, true);
+        const beamMat = new THREE.MeshBasicMaterial({
+            color: 0xfff4cc,
+            transparent: true,
+            opacity: 0.04,
+            depthWrite: false,
+            side: THREE.DoubleSide
+        });
+        this.flashlightBeam = new THREE.Mesh(beamGeo, beamMat);
+        this.flashlightBeam.rotation.x = -Math.PI / 2;
+        this.flashlightBeam.position.set(0, 0, -1.25);
+        this.camera.add(this.flashlightBeam);
     }
 
     toggleFlashlight() {
@@ -1293,6 +1309,9 @@ export class Player {
         }
         if (this.playerLight) {
             this.playerLight.visible = this.flashlightOn;
+        }
+        if (this.flashlightBeam) {
+            this.flashlightBeam.visible = this.flashlightOn;
         }
     }
 
@@ -1312,14 +1331,21 @@ export class Player {
         this._moveLeft = input.isKeyDown('KeyA');
         this._moveRight = input.isKeyDown('KeyD');
 
-        this.sprinting = input.isKeyDown('ShiftLeft') && this._moveForward && !this.aiming;
-        this.crouching = input.isKeyDown('ControlLeft');
         this.aiming = input.isMouseDown(2);
+        const wantSprint = input.isKeyDown('ShiftLeft') && this._moveForward && !this.aiming;
+        this.sprinting = wantSprint;
+
+        const aimRate = this.aiming ? 22 : 18;
+        this.aimBlend = MathUtils.lerp(this.aimBlend, this.aiming ? 1 : 0, dt * aimRate);
+        this.sprintBlend = MathUtils.lerp(this.sprintBlend, wantSprint ? 1 : 0, dt * 14);
+
+        this.crouching = input.isKeyDown('ControlLeft');
 
         const targetHeight = this.crouching ? this.crouchHeight : this.height;
-        this.currentHeight = MathUtils.lerp(this.currentHeight, targetHeight, dt * 10);
+        this.currentHeight = MathUtils.lerp(this.currentHeight, targetHeight, dt * 12);
 
-        const moveSpeed = this.speed * (this.sprinting ? this.sprintMultiplier : 1) * (this.crouching ? this.crouchMultiplier : 1);
+        const sprintFactor = 1 + (this.sprintMultiplier - 1) * this.sprintBlend;
+        const moveSpeed = this.speed * sprintFactor * (this.crouching ? this.crouchMultiplier : 1);
         const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.rotation.y);
         const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.rotation.y);
 
@@ -1333,8 +1359,9 @@ export class Player {
             moveDir.normalize().multiplyScalar(moveSpeed);
         }
 
-        this.velocity.x = MathUtils.damp(this.velocity.x, moveDir.x, 15, dt);
-        this.velocity.z = MathUtils.damp(this.velocity.z, moveDir.z, 15, dt);
+        const accel = 15 + this.sprintBlend * 6;
+        this.velocity.x = MathUtils.damp(this.velocity.x, moveDir.x, accel, dt);
+        this.velocity.z = MathUtils.damp(this.velocity.z, moveDir.z, accel, dt);
 
         if (!this.onGround) {
             this.velocity.y += this.gravity * dt;
@@ -1399,23 +1426,26 @@ export class Player {
                 this.viewmodelSwapTimer -= dt;
             }
             const swapT = this.viewmodelSwapTimer > 0 ? (1 - this.viewmodelSwapTimer / this.viewmodelSwapDuration) : 1;
-            const swapOffset = this.viewmodelSwapTimer > 0 ? MathUtils.easeOutQuad(swapT) * 0.15 : 0;
+            const swapEase = this.viewmodelSwapTimer > 0 ? MathUtils.easeOutQuad(swapT) : 1;
+            const swapDrop = this.viewmodelSwapTimer > 0 ? (1 - swapEase) * 0.22 : 0;
+            const swapTilt = this.viewmodelSwapTimer > 0 ? (1 - swapEase) * 0.35 : 0;
 
             // Aiming offset (move weapon to center, weapon-specific)
-            const aimT = this.aiming ? 1 : 0;
+            const aimT = this.aimBlend;
             const cfg = this._viewmodelConfigs ? (this._viewmodelConfigs[this._currentViewmodelIndex || 0] || this._viewmodelConfigs[0]) : { hipX: 0.25, hipY: -0.22, hipZ: -0.4, adsX: 0.12, adsY: -0.18, adsZ: -0.35 };
             const aimOffsetX = MathUtils.lerp(cfg.hipX, cfg.adsX, aimT);
             const aimOffsetY = MathUtils.lerp(cfg.hipY, cfg.adsY, aimT);
             const aimOffsetZ = MathUtils.lerp(cfg.hipZ, cfg.adsZ, aimT);
+            const sprintLower = this.sprintBlend * 0.04;
 
             this.viewmodel.position.set(
                 aimOffsetX + this.viewmodelBobX * 0.3,
-                aimOffsetY + this.viewmodelBobY * 0.5 - swapOffset + this.viewmodelRecoilOffset * 0.02,
+                aimOffsetY + this.viewmodelBobY * 0.5 - swapDrop - sprintLower + this.viewmodelRecoilOffset * 0.02,
                 aimOffsetZ + this.viewmodelRecoilOffset * 0.04
             );
 
-            this.viewmodel.rotation.x = -this.viewmodelRecoilOffset * 0.15 + this.viewmodelBobY * 0.8;
-            this.viewmodel.rotation.z = this.viewmodelBobX * 0.5;
+            this.viewmodel.rotation.x = -this.viewmodelRecoilOffset * 0.15 + this.viewmodelBobY * 0.8 - swapTilt;
+            this.viewmodel.rotation.z = this.viewmodelBobX * 0.5 + swapTilt * 0.4;
         }
     }
 
@@ -1425,6 +1455,10 @@ export class Player {
 
     playViewmodelSwap() {
         this.viewmodelSwapTimer = this.viewmodelSwapDuration;
+        this.viewmodelRecoilOffset = Math.max(this.viewmodelRecoilOffset, 0.8);
+        const game = window.__deadZoneGame;
+        if (game?.audio?.initialized) game.audio.play('weaponSwitch', 0.32);
+        if (game?.ui?.flashWeaponSwitch) game.ui.flashWeaponSwitch();
     }
 
     takeDamage(amount, attackerPos) {
@@ -1483,6 +1517,8 @@ export class Player {
         this.sprinting = false;
         this.crouching = false;
         this.aiming = false;
+        this.aimBlend = 0;
+        this.sprintBlend = 0;
         this.currentHeight = this.height;
         this.onGround = true;
         this.bobPhase = 0;

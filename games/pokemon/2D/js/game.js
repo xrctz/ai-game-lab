@@ -385,6 +385,12 @@ const Game = {
   },
   // smooth camera (world px of top-left of view)
   cam: { x: 12 * TS - (VW * TS) / 2 + TS / 2, y: 12 * TS - (VH * TS) / 2 + TS / 2 },
+  // screen fade overlay (0 = clear, 1 = black)
+  fade: { alpha: 0, target: 0, speed: 4 },
+  // HP bar display values (animated drain)
+  hpDisplay: { player: null, enemy: null },
+  // potion confirm when HP is high
+  potionConfirmPending: false,
 };
 
 // ---------- Bootstrap ----------
@@ -460,12 +466,51 @@ function showScreen(id) {
   if (el) el.classList.add('active');
 }
 
-function showToast(msg, ms = 2500) {
+function showToast(msg, ms = 2500, kind = '') {
   const t = document.getElementById('toast');
   t.textContent = msg;
-  t.classList.add('visible');
+  t.className = 'toast visible' + (kind ? ` toast-${kind}` : '');
   clearTimeout(Game.toastTimer);
-  Game.toastTimer = setTimeout(() => t.classList.remove('visible'), ms);
+  Game.toastTimer = setTimeout(() => {
+    t.classList.remove('visible');
+    t.className = 'toast';
+  }, ms);
+}
+
+function setScreenFade(alpha, durationMs = 0) {
+  const el = document.getElementById('screen-fade');
+  if (!el) return Promise.resolve();
+  if (durationMs <= 0) {
+    Game.fade.alpha = alpha;
+    Game.fade.target = alpha;
+    el.style.opacity = String(alpha);
+    el.classList.toggle('active', alpha > 0.01);
+    return Promise.resolve();
+  }
+  Game.fade.target = alpha;
+  return new Promise((resolve) => {
+    const start = Game.fade.alpha;
+    const t0 = performance.now();
+    el.classList.add('active');
+    function step(now) {
+      const t = Math.min(1, (now - t0) / durationMs);
+      const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      Game.fade.alpha = start + (alpha - start) * eased;
+      el.style.opacity = String(Game.fade.alpha);
+      if (t < 1) requestAnimationFrame(step);
+      else {
+        if (Game.fade.alpha < 0.01) el.classList.remove('active');
+        resolve();
+      }
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+async function transitionTo(fn, fadeMs = 280) {
+  await setScreenFade(1, fadeMs);
+  if (typeof fn === 'function') fn();
+  await setScreenFade(0, fadeMs);
 }
 
 // ---------- Input ----------
@@ -654,7 +699,10 @@ function saveGame() {
   try {
     localStorage.setItem(SAVE_STORAGE_KEY, JSON.stringify(data));
     sfx('save');
-    showToast('Game saved!');
+    const when = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const loc = `(${Game.player.x},${Game.player.y})`;
+    showToast(`✓ Saved at ${when} · ${loc}`, 3200, 'save');
+    flashSaveConfirm();
     refreshContinueButton();
     return true;
   } catch (e) {
@@ -711,6 +759,14 @@ function loadGame() {
   Game.state = 'overworld';
   updateHUD();
   return true;
+}
+
+function flashSaveConfirm() {
+  const hud = document.querySelector('.hud');
+  if (hud) {
+    hud.classList.add('save-flash');
+    setTimeout(() => hud.classList.remove('save-flash'), 600);
+  }
 }
 
 function refreshContinueButton() {
@@ -856,10 +912,24 @@ function onStepComplete() {
     if (partyNeedsHealing(Game.party)) {
       healParty(Game.party);
       updateHUD();
-      showToast('Your Pokémon were fully healed!');
+      sfx('heal');
+      showToast('Your Pokémon were fully healed!', 2200, 'heal');
       spawnHealSparkles();
       Game.healPadCooldown = 1.5;
     }
+    return;
+  }
+
+  // Door warp — brief fade + flavor text
+  if (tile === TILE.DOOR) {
+    const isCenter = Game.player.x >= 5 && Game.player.x <= 8;
+    const isMart = Game.player.x >= 20 && Game.player.x <= 23;
+    const isCave = Game.player.y <= 4;
+    let msg = 'You step through the doorway...';
+    if (isCenter) msg = 'Welcome inside the Pokémon Center!';
+    else if (isMart) msg = 'Welcome to the Poké Mart!';
+    else if (isCave) msg = 'The cave air feels cold and heavy...';
+    transitionDoorMessage(msg);
     return;
   }
 
@@ -874,8 +944,17 @@ function onStepComplete() {
   }
 }
 
-function interact() {
-  if (Game._interactLockUntil && performance.now() < Game._interactLockUntil) return;
+async function transitionDoorMessage(msg) {
+  if (Game._doorCooldown && performance.now() < Game._doorCooldown) return;
+  Game._doorCooldown = performance.now() + 1200;
+  await setScreenFade(0.65, 180);
+  showToast(msg, 1800);
+  await sleep(200);
+  await setScreenFade(0, 220);
+}
+
+/** Tile the player is facing for interaction */
+function getFacingTile() {
   const p = Game.player;
   let tx = p.x;
   let ty = p.y;
@@ -883,6 +962,36 @@ function interact() {
   if (p.dir === 'down') ty++;
   if (p.dir === 'left') tx--;
   if (p.dir === 'right') tx++;
+  return { tx, ty };
+}
+
+/** What can the player interact with right now? */
+function getInteractPrompt() {
+  if (Game.state !== 'overworld') return null;
+  const { tx, ty } = getFacingTile();
+  const npc = NPCS.find((n) => n.x === tx && n.y === ty);
+  if (npc) {
+    if (npc.healsParty || npc.role === 'nurse') return { label: 'Talk · Heal', icon: '♥', tx, ty };
+    if (npc.trainer && npc.trainerId) {
+      const beaten = Game.flags.trainersDefeated?.has(npc.trainerId);
+      return { label: beaten ? 'Talk' : 'Battle!', icon: beaten ? '…' : '⚔', tx, ty };
+    }
+    if (npc.giveItems && !Game.flags.shopGift) return { label: 'Get items', icon: '🎁', tx, ty };
+    return { label: 'Talk', icon: '…', tx, ty };
+  }
+  if (tx >= 0 && ty >= 0 && ty < MAP_H && tx < MAP_W) {
+    const tile = WORLD_MAP[ty][tx];
+    if (tile === TILE.HEAL) return { label: 'Heal pad', icon: '+', tx, ty };
+    if (tile === TILE.WATER) return { label: 'Look', icon: '~', tx, ty };
+    if (tile === TILE.TREE) return { label: 'Inspect', icon: '?', tx, ty };
+  }
+  return null;
+}
+
+function interact() {
+  if (Game._interactLockUntil && performance.now() < Game._interactLockUntil) return;
+  const p = Game.player;
+  const { tx, ty } = getFacingTile();
 
   const npc = NPCS.find((n) => n.x === tx && n.y === ty);
   if (npc) {
@@ -1013,6 +1122,41 @@ function drawOverworld() {
   const standTile = WORLD_MAP[p.y] && WORLD_MAP[p.y][p.x];
   if (standTile === TILE.GRASS || standTile === TILE.FOREST || standTile === TILE.FLOWER) {
     drawGrassOverlay(ctx, psx, psy, p.x, p.y, standTile);
+  }
+
+  // Interact prompt (floating above target tile)
+  const prompt = getInteractPrompt();
+  const promptEl = document.getElementById('interact-prompt');
+  if (prompt) {
+    const psx = Math.floor(prompt.tx * TS - camX + TS / 2);
+    const psy = Math.floor(prompt.ty * TS - camY - 14);
+    if (promptEl) {
+      promptEl.classList.add('visible');
+      promptEl.style.left = `${psx}px`;
+      promptEl.style.top = `${psy}px`;
+      promptEl.innerHTML = `<span class="prompt-key">E</span> ${prompt.label}`;
+    } else {
+      // Canvas fallback badge
+      const bob = Math.sin(Game.animTick * 4) * 2;
+      ctx.save();
+      ctx.font = 'bold 8px "Press Start 2P", monospace';
+      ctx.textAlign = 'center';
+      const tw = ctx.measureText(prompt.label).width + 28;
+      ctx.fillStyle = 'rgba(15, 27, 45, 0.92)';
+      ctx.strokeStyle = '#ffcb05';
+      ctx.lineWidth = 2;
+      const bx = psx - tw / 2;
+      const by = psy + bob - 10;
+      ctx.fillRect(bx, by, tw, 18);
+      ctx.strokeRect(bx + 0.5, by + 0.5, tw - 1, 17);
+      ctx.fillStyle = '#ffcb05';
+      ctx.fillText('E', bx + 10, by + 13);
+      ctx.fillStyle = '#f0f4f8';
+      ctx.fillText(prompt.label, psx + 6, by + 13);
+      ctx.restore();
+    }
+  } else if (promptEl) {
+    promptEl.classList.remove('visible');
   }
 
   // Tiny facing pip at the feet (not over the face)
@@ -1920,22 +2064,30 @@ function setPartyLead(index) {
 
 function openBagMenu() {
   if (Game.state !== 'overworld') return;
+  Game.potionConfirmPending = false;
   const list = document.getElementById('bag-list');
-  list.innerHTML = `
+  const entries = getBagDisplayEntries(Game.bag);
+  let html = '';
+  for (const item of entries) {
+    if (item.usable) {
+      html += `
+    <button type="button" class="bag-item bag-action" id="bag-use-potion" ${item.count <= 0 ? 'disabled' : ''}>
+      <span class="bag-icon-row"><img src="${item.icon}" alt="" width="24" height="24" /> ${item.name} (+${item.heal} HP)</span>
+      <span class="count">×${item.count}</span>
+    </button>`;
+    } else {
+      html += `
     <div class="bag-item">
-      <span class="bag-icon-row"><img src="assets/ui/pokeball.png" alt="" width="24" height="24" /> Poké Ball</span>
-      <span class="count">×${Game.bag.pokeball}</span>
-    </div>
-    <button type="button" class="bag-item bag-action" id="bag-use-potion" ${Game.bag.potion <= 0 ? 'disabled' : ''}>
-      <span class="bag-icon-row"><img src="assets/ui/potion.png" alt="" width="24" height="24" /> Potion (+20 HP)</span>
-      <span class="count">×${Game.bag.potion}</span>
-    </button>
-    <div class="bag-item">
-      <span class="bag-icon-row"><img src="assets/ui/greatball.png" alt="" width="24" height="24" /> Super Ball</span>
-      <span class="count">×${Game.bag.superball}</span>
-    </div>
-    <p class="bag-hint">Click Potion to heal your lead. Super Balls auto-use in battle when available. Press P to save.</p>
-  `;
+      <span class="bag-icon-row"><img src="${item.icon}" alt="" width="24" height="24" /> ${item.name}</span>
+      <span class="count">×${item.count}</span>
+    </div>`;
+    }
+  }
+  if (!entries.length) {
+    html = '<p class="bag-hint">Your bag is empty!</p>';
+  }
+  html += '<p class="bag-hint">Potions heal your lead. Super Balls auto-use in battle. Press P to save.</p>';
+  list.innerHTML = html;
   document.getElementById('bag-use-potion')?.addEventListener('click', () => {
     usePotionOnLead();
     openBagMenu();
@@ -1959,11 +2111,20 @@ function usePotionOnLead() {
     showToast(`${lead.name}'s HP is already full!`);
     return;
   }
+  if (potionNeedsConfirm(lead) && !Game.potionConfirmPending) {
+    Game.potionConfirmPending = true;
+    const pct = Math.round((lead.hp / lead.maxHp) * 100);
+    showToast(`${lead.name} is at ${pct}% HP — tap Potion again to confirm`, 2800);
+    return;
+  }
+  Game.potionConfirmPending = false;
   Game.bag.potion--;
   const before = lead.hp;
   lead.hp = Math.min(lead.maxHp, lead.hp + 20);
   updateHUD();
-  showToast(`${lead.name} recovered ${lead.hp - before} HP!`);
+  sfx('heal');
+  showToast(`${lead.name} recovered ${lead.hp - before} HP!`, 2200, 'heal');
+  spawnHealSparkles();
 }
 
 function closeMenus() {
@@ -1979,13 +2140,13 @@ function checkWinCondition() {
 }
 
 // ---------- Battle System ----------
-function startBattle(wild, opts = {}) {
+async function startBattle(wild, opts = {}) {
   Game.state = 'battle';
   Game.encounterCooldown = 1.5;
+  Game.hpDisplay = { player: null, enemy: null };
 
   const playerIdx = firstAlive(Game.party);
   if (playerIdx < 0) {
-    // Shouldn't happen — black out
     blackOut();
     return;
   }
@@ -2013,31 +2174,40 @@ function startBattle(wild, opts = {}) {
     reward: opts.reward || null,
   };
 
-  // Encounter flash
+  // Encounter flash + fade into battle
   const flash = document.getElementById('encounter-flash');
   if (flash) {
     flash.classList.add('active');
-    setTimeout(() => flash.classList.remove('active'), 500);
+    setTimeout(() => flash.classList.remove('active'), 550);
   }
+  sfx('select');
+  await setScreenFade(0.85, 200);
 
   showScreen('battle-screen');
   vfxClear();
   vfxInit();
-  renderBattle();
+  renderBattle(true);
   vfxEntrance('enemy');
   vfxEntrance('player');
+  await setScreenFade(0, 280);
+
   if (isTrainer) {
     setBattleLog(`${opts.trainerName} wants to battle!`);
-    setTimeout(() => setBattleLog(`${opts.trainerName} sent out ${wild.name}!`), 700);
+    setBattleTurnHint('enemy');
+    setTimeout(() => {
+      setBattleLog(`${opts.trainerName} sent out ${wild.name}!`);
+      setBattleTurnHint('player');
+    }, 700);
   } else {
     setBattleLog(`A wild ${wild.name} appeared!`);
+    setBattleTurnHint('player');
   }
   showMainBattleMenu();
 
-  // Legendary fanfare
   if (SPECIES[wild.speciesId]?.legendary) {
     setBattleLog(`A legendary ${wild.name} appeared!`);
     vfxBanner('LEGENDARY!', 'crit');
+    vfxScreenFlash('super', 450);
   }
 }
 
@@ -2073,17 +2243,50 @@ function setBattleSprite(imgId, mon, facing) {
   img.classList.remove('faint', 'hit', 'hit-super', 'hit-crit', 'attack', 'attack-enemy');
 }
 
-function setHpBar(who, hp, maxHp) {
+function setHpBar(who, hp, maxHp, instant = false) {
   const pct = clamp(Math.round((hp / maxHp) * 100), 0, 100);
   const bar = document.getElementById(`${who}-hp-bar`);
   const text = document.getElementById(`${who}-hp-text`);
+  if (!bar) return;
+
+  const prevKey = who;
+  const prev = Game.hpDisplay[prevKey];
+  if (!instant && prev != null && prev !== pct) {
+    bar.classList.add('hp-draining');
+    setTimeout(() => bar.classList.remove('hp-draining'), 500);
+  }
+  Game.hpDisplay[prevKey] = pct;
+
+  if (instant) bar.style.transition = 'none';
   bar.style.width = pct + '%';
   bar.className = 'hp-bar' + (pct <= 20 ? ' low' : pct <= 50 ? ' mid' : '');
+  if (instant) {
+    void bar.offsetWidth;
+    bar.style.transition = '';
+  }
   if (text) text.textContent = `${Math.max(0, hp)}/${maxHp}`;
 }
 
 function setBattleLog(msg) {
-  document.getElementById('battle-log').textContent = msg;
+  const el = document.getElementById('battle-log');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('log-pulse');
+  void el.offsetWidth;
+  el.classList.add('log-pulse');
+}
+
+function setBattleTurnHint(side) {
+  const menu = document.getElementById('battle-menu-main');
+  const b = Game.battle;
+  if (!menu || !b) return;
+  menu.classList.remove('your-turn', 'enemy-turn', 'busy');
+  if (b.busy) {
+    menu.classList.add('busy');
+    return;
+  }
+  if (side === 'player') menu.classList.add('your-turn');
+  else if (side === 'enemy') menu.classList.add('enemy-turn');
 }
 
 function showMainBattleMenu() {
@@ -2091,15 +2294,19 @@ function showMainBattleMenu() {
   document.getElementById('battle-menu-moves').classList.add('hidden');
   document.getElementById('battle-menu-switch')?.classList.add('hidden');
   updateBattleActionButtons();
+  if (Game.battle && !Game.battle.busy) setBattleTurnHint('player');
 }
 
 function showMovesMenu() {
   if (Game.battle?.busy) return;
   const player = Game.party[Game.battle.playerIdx];
+  const enemy = Game.battle.wild;
   const menu = document.getElementById('moves-list');
   menu.innerHTML = '';
 
   player.moves.forEach((move, i) => {
+    const hint = move.power > 0 ? effectivenessHint(move.type, enemy.types) : '';
+    const hintClass = hint.includes('×0') ? 'eff-none' : hint.includes('strong') || hint.includes('×4') ? 'eff-super' : hint.includes('weak') ? 'eff-weak' : '';
     const btn = document.createElement('button');
     btn.className = 'move-btn';
     btn.innerHTML = `
@@ -2107,6 +2314,7 @@ function showMovesMenu() {
       <span class="move-meta">
         <span class="type-badge type-${move.type}">${move.type}</span>
         PWR ${move.power || '—'} · PP ${move.pp}/${move.maxPp}
+        ${hint ? `<span class="move-eff ${hintClass}">${hint}</span>` : ''}
       </span>
     `;
     btn.disabled = move.pp <= 0;
@@ -2184,6 +2392,7 @@ async function playerSwitchTo(targetIdx) {
   b.busy = false;
   renderBattle();
   setBattleLog('What will you do?');
+  setBattleTurnHint('player');
 }
 
 function updateBattleActionButtons() {
@@ -2222,6 +2431,7 @@ async function playerUseMove(moveIndex) {
   const b = Game.battle;
   if (!b || b.busy) return;
   b.busy = true;
+  setBattleTurnHint('busy');
   showMainBattleMenu();
 
   const player = Game.party[b.playerIdx];
@@ -2269,6 +2479,7 @@ async function playerUseMove(moveIndex) {
   b.busy = false;
   renderBattle();
   setBattleLog('What will you do?');
+  setBattleTurnHint('player');
 }
 
 function pickEnemyMove(wild) {
@@ -2332,8 +2543,9 @@ async function executeMove(user, target, move, side) {
 
     let msg = `It dealt ${result.damage} damage!`;
     if (result.critical) msg = 'A critical hit! ' + msg;
-    if (result.effectiveness > 1) msg += " It's super effective!";
-    if (result.effectiveness < 1 && result.effectiveness > 0) msg += " It's not very effective...";
+    if (result.effectiveness !== 1) {
+      msg += ` (${effectivenessLabel(result.effectiveness)})`;
+    }
     setBattleLog(msg);
     await sleep(550);
 
@@ -2433,6 +2645,7 @@ async function onWildFainted() {
       await sleep(900);
       b.busy = false;
       setBattleLog('What will you do?');
+      setBattleTurnHint('player');
       return;
     }
 
@@ -2505,6 +2718,7 @@ async function onPlayerFainted() {
     await sleep(800);
     b.busy = false;
     setBattleLog('What will you do?');
+    setBattleTurnHint('player');
   } else {
     setBattleLog('You blacked out...');
     await sleep(1200);
@@ -2567,7 +2781,8 @@ async function battleCatch() {
   if (SPECIES[wild.speciesId]?.legendary) bonus *= 0.3;
 
   const success = tryCatch(wild, bonus);
-  await vfxCatchBall(success);
+  const shakes = vfxCatchShakeCount(wild, bonus);
+  await vfxCatchBall(success, shakes);
 
   if (success) {
     sfx('catch');
@@ -2603,6 +2818,7 @@ async function battleCatch() {
     b.busy = false;
     renderBattle();
     setBattleLog('What will you do?');
+    setBattleTurnHint('player');
   }
 }
 
@@ -2643,6 +2859,7 @@ async function battleUsePotion() {
   b.busy = false;
   renderBattle();
   setBattleLog('What will you do?');
+  setBattleTurnHint('player');
 }
 
 async function battleRun() {
@@ -2680,10 +2897,11 @@ async function battleRun() {
     b.busy = false;
     renderBattle();
     setBattleLog('What will you do?');
+    setBattleTurnHint('player');
   }
 }
 
-function renderBattle() {
+function renderBattle(instant = false) {
   const b = Game.battle;
   if (!b) return;
   const player = Game.party[b.playerIdx];
@@ -2693,12 +2911,12 @@ function renderBattle() {
   const enemyLabel = b.isTrainer ? wild.name : wild.name;
   document.getElementById('enemy-name').textContent = enemyLabel;
   document.getElementById('enemy-level').textContent = `Lv${wild.level}`;
-  setHpBar('enemy', wild.hp, wild.maxHp);
+  setHpBar('enemy', wild.hp, wild.maxHp, instant);
 
   setBattleSprite('player-sprite', player, 'back');
   document.getElementById('player-name').textContent = player.name;
   document.getElementById('player-level').textContent = `Lv${player.level}`;
-  setHpBar('player', player.hp, player.maxHp);
+  setHpBar('player', player.hp, player.maxHp, instant);
 
   // Catch button: enabled if any ball remains (wild only)
   const hasBall = !b.isTrainer && (Game.bag.pokeball > 0 || Game.bag.superball > 0);
@@ -2717,34 +2935,43 @@ function renderBattle() {
 }
 
 function endBattle(caught) {
-  Game.battle = null;
-  vfxClear();
-  const overlay = document.getElementById('catch-overlay');
-  if (overlay) overlay.classList.remove('visible');
-  const ball = document.getElementById('catch-ball-img');
-  if (ball) ball.classList.remove('throw', 'wiggle', 'catch-success', 'catch-fail');
-  const enemy = document.getElementById('enemy-sprite');
-  if (enemy) enemy.style.opacity = '1';
-  const player = document.getElementById('player-sprite');
-  if (player) {
-    player.style.opacity = '1';
-    player.classList.remove('faint', 'hit', 'hit-super', 'hit-crit', 'attack', 'attack-enemy');
-  }
-  showScreen('game-screen');
-  Game.state = 'overworld';
-  Game.encounterCooldown = Math.max(Game.encounterCooldown, 1.2);
-  updateCamera(0.05, false);
-  updateHUD();
+  (async () => {
+    await setScreenFade(0.75, 180);
+    Game.battle = null;
+    Game.hpDisplay = { player: null, enemy: null };
+    vfxClear();
+    const overlay = document.getElementById('catch-overlay');
+    if (overlay) overlay.classList.remove('visible');
+    const ball = document.getElementById('catch-ball-img');
+    if (ball) ball.classList.remove('throw', 'wiggle', 'catch-success', 'catch-fail');
+    const shakeLabel = document.getElementById('catch-shake-text');
+    if (shakeLabel) shakeLabel.textContent = '';
+    const enemy = document.getElementById('enemy-sprite');
+    if (enemy) enemy.style.opacity = '1';
+    const player = document.getElementById('player-sprite');
+    if (player) {
+      player.style.opacity = '1';
+      player.classList.remove('faint', 'hit', 'hit-super', 'hit-crit', 'attack', 'attack-enemy');
+    }
+    const menu = document.getElementById('battle-menu-main');
+    if (menu) menu.classList.remove('your-turn', 'enemy-turn', 'busy');
+    showScreen('game-screen');
+    Game.state = 'overworld';
+    Game.encounterCooldown = Math.max(Game.encounterCooldown, 1.2);
+    updateCamera(0.05, false);
+    updateHUD();
+    await setScreenFade(0, 240);
 
-  if (Game.flags.mewtwoDefeated && Game.flags.caughtSpecies.size >= 6) {
-    showEndScreen();
-  } else if (Game.flags.mewtwoDefeated) {
-    showToast(`Mewtwo defeated! Catch ${6 - Game.flags.caughtSpecies.size} more species to win!`);
-  } else if (Game.flags.caughtSpecies.size >= 6 && !Game.flags.mewtwoDefeated) {
-    showToast('6 species caught! Now find Mewtwo in the northern cave!');
-  } else if (caught) {
-    showToast('Pokémon caught!');
-  }
+    if (Game.flags.mewtwoDefeated && Game.flags.caughtSpecies.size >= 6) {
+      showEndScreen();
+    } else if (Game.flags.mewtwoDefeated) {
+      showToast(`Mewtwo defeated! Catch ${6 - Game.flags.caughtSpecies.size} more species to win!`);
+    } else if (Game.flags.caughtSpecies.size >= 6 && !Game.flags.mewtwoDefeated) {
+      showToast('6 species caught! Now find Mewtwo in the northern cave!');
+    } else if (caught) {
+      showToast('Pokémon caught!', 2500, 'catch');
+    }
+  })();
 }
 
 function showEndScreen() {
