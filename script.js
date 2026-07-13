@@ -2,11 +2,11 @@
    AI Game Lab — Library OS (live hub) + FX polish
    ================================================================ */
 var AIGL = window.AIGL_Config || {
-  BUILD: '25-motion',
+  BUILD: '26-cinematic',
   ROOT: '/ai-game-lab',
   HUB: '/ai-game-lab'
 };
-var AIGL_ASSET_BUILD = AIGL.BUILD || '25-motion';
+var AIGL_ASSET_BUILD = AIGL.BUILD || '26-cinematic';
 var AIGL_HUB = AIGL.HUB || '/ai-game-lab';
 var AIGL_ROOT = AIGL.ROOT || '/ai-game-lab';
 var AIGL_REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -675,12 +675,12 @@ function showToast(msg, duration){
 })();
 
 (function initBuildBadge(){
-  document.documentElement.dataset.build = 'v25-motion';
+  document.documentElement.dataset.build = 'v26-cinematic';
   window.__aiGameLabBuild = {
-    version: 'v25-motion',
+    version: 'v26-cinematic',
     assets: AIGL_ASSET_BUILD,
     hub: AIGL_HUB,
-    note: 'Library OS + motion polish — live hub'
+    note: 'Library OS cinematic constellation — live hub'
   };
 })();
 
@@ -694,7 +694,7 @@ function showToast(msg, duration){
   document.body.prepend(stage);
 })();
 
-/* ---- Lime spark canvas ---- */
+/* ---- Constellation ambient canvas ---- */
 (function initAmbientCanvas(){
   if (AIGL_REDUCED) return;
   if (document.documentElement.getAttribute('data-theme') === 'light') return;
@@ -704,21 +704,23 @@ function showToast(msg, duration){
   document.body.appendChild(canvas);
   var ctx = canvas.getContext('2d');
   if (!ctx) return;
-  var w = 0, h = 0, parts = [], raf = null, paused = false, last = 0;
+  var w = 0, h = 0, parts = [], raf = null, paused = false, last = 0, linkDist = 110;
   function resize(){
     w = canvas.width = innerWidth;
     h = canvas.height = innerHeight;
+    linkDist = Math.min(140, Math.max(90, innerWidth / 12));
   }
   function create(){
-    var n = Math.min(22, Math.max(10, Math.round(innerWidth / 70)));
+    var n = Math.min(36, Math.max(14, Math.round(innerWidth / 48)));
     parts = Array.from({ length: n }, function(){
       return {
         x: Math.random() * w,
         y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.18,
-        vy: (Math.random() - 0.5) * 0.18,
-        r: Math.random() * 1.5 + 0.4,
-        o: Math.random() * 0.22 + 0.08
+        vx: (Math.random() - 0.5) * 0.22,
+        vy: (Math.random() - 0.5) * 0.22,
+        r: Math.random() * 1.8 + 0.5,
+        o: Math.random() * 0.28 + 0.1,
+        pulse: Math.random() * Math.PI * 2
       };
     });
   }
@@ -727,17 +729,41 @@ function showToast(msg, duration){
     var dt = Math.min((ts - last) / 16 || 1, 2);
     last = ts;
     ctx.clearRect(0, 0, w, h);
-    for (var i = 0; i < parts.length; i++) {
-      var p = parts[i];
+    var i, j, p, q, dx, dy, dist, alpha;
+    for (i = 0; i < parts.length; i++) {
+      p = parts[i];
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      if (p.x < -6) p.x = w + 6;
-      if (p.x > w + 6) p.x = -6;
-      if (p.y < -6) p.y = h + 6;
-      if (p.y > h + 6) p.y = -6;
+      p.pulse += 0.02 * dt;
+      if (p.x < -8) p.x = w + 8;
+      if (p.x > w + 8) p.x = -8;
+      if (p.y < -8) p.y = h + 8;
+      if (p.y > h + 8) p.y = -8;
+    }
+    for (i = 0; i < parts.length; i++) {
+      p = parts[i];
+      for (j = i + 1; j < parts.length; j++) {
+        q = parts[j];
+        dx = p.x - q.x;
+        dy = p.y - q.y;
+        dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < linkDist) {
+          alpha = (1 - dist / linkDist) * 0.14;
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(q.x, q.y);
+          ctx.strokeStyle = 'rgba(200,245,66,' + alpha.toFixed(3) + ')';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      }
+    }
+    for (i = 0; i < parts.length; i++) {
+      p = parts[i];
+      var glow = p.o * (0.75 + 0.25 * Math.sin(p.pulse));
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(200,245,66,' + p.o + ')';
+      ctx.fillStyle = 'rgba(200,245,66,' + glow.toFixed(3) + ')';
       ctx.fill();
     }
     raf = requestAnimationFrame(draw);
@@ -867,6 +893,25 @@ function showToast(msg, duration){
     });
   }
 
+  // Arrow + keyboard controls
+  if (!document.getElementById('bannerPrev')) {
+    var nav = document.createElement('div');
+    nav.className = 'banner-nav';
+    nav.setAttribute('aria-label', 'Featured controls');
+    nav.innerHTML = '<button type="button" class="banner-nav-btn" id="bannerPrev" aria-label="Previous featured">‹</button>' +
+      '<button type="button" class="banner-nav-btn" id="bannerNext" aria-label="Next featured">›</button>';
+    root.appendChild(nav);
+  }
+  var prevBtn = document.getElementById('bannerPrev');
+  var nextBtn = document.getElementById('bannerNext');
+  if (prevBtn) prevBtn.addEventListener('click', function(){ go(idx - 1); });
+  if (nextBtn) nextBtn.addEventListener('click', function(){ go(idx + 1); });
+  root.setAttribute('tabindex', '0');
+  root.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowLeft') { e.preventDefault(); go(idx - 1); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); go(idx + 1); }
+  });
+
   // Pointer parallax on banner bg
   if (!AIGL_REDUCED && bg && window.matchMedia('(hover: hover)').matches) {
     root.addEventListener('pointermove', function(e){
@@ -953,7 +998,7 @@ function showToast(msg, duration){
   });
 })();
 
-/* ---- v25-motion: scroll progress, ticker, spotlight, page enter ---- */
+/* ---- v26-cinematic: scroll progress, ticker, spotlight, page enter ---- */
 (function initScrollProgress(){
   if (AIGL_REDUCED) return;
   var bar = document.createElement('div');
@@ -985,7 +1030,7 @@ function showToast(msg, duration){
     '<span><em>0</em> installers — play in the theater</span>',
     '<span><em>WebGL2</em> verified at runtime</span>',
     '<span><em>DeadTakeover</em> · VEIL RUSH · Midnight Watch featured</span>',
-    '<span><em>Library OS v25</em> motion polish live</span>'
+    '<span><em>Library OS v26</em> cinematic constellation live</span>'
   ];
   var ticker = document.createElement('div');
   ticker.className = 'live-ticker';
@@ -1035,6 +1080,18 @@ function showToast(msg, duration){
     btn.addEventListener('pointerleave', function(){
       btn.style.transform = '';
     });
+  });
+})();
+
+(function initPanelGlow(){
+  if (AIGL_REDUCED || !window.matchMedia('(hover: hover)').matches) return;
+  document.querySelectorAll('.panel, .status-card, .story-card').forEach(function(el){
+    el.classList.add('fx-glow');
+    el.addEventListener('pointermove', function(e){
+      var r = el.getBoundingClientRect();
+      el.style.setProperty('--mx', (((e.clientX - r.left) / r.width) * 100).toFixed(1) + '%');
+      el.style.setProperty('--my', (((e.clientY - r.top) / r.height) * 100).toFixed(1) + '%');
+    }, { passive: true });
   });
 })();
 

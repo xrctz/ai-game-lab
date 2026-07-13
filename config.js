@@ -1,5 +1,5 @@
 /**
- * AI Game Lab — Library OS (live hub)
+ * AI Game Lab — Library OS cinematic (live hub)
  */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
@@ -12,7 +12,7 @@
 
   var ROOT = '/ai-game-lab';
   var HUB = ROOT;
-  var BUILD = '25-motion';
+  var BUILD = '26-cinematic';
 
   return {
     BUILD: BUILD,

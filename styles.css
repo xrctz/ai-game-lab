@@ -2268,7 +2268,7 @@ body.player-active .launch-orb { opacity: 0.25; pointer-events: none; }
 }
 
 /* ================================================================
-   v25-motion — scroll progress, ticker, spotlight, page enter
+   v26-cinematic — scroll progress, ticker, spotlight, page enter
    ================================================================ */
 
 .scroll-progress {
@@ -2506,6 +2506,73 @@ body.page-enter .app-shell {
   background: color-mix(in srgb, var(--bg-2) 85%, transparent);
 }
 
+/* ================================================================
+   v26-cinematic — constellation + banner controls + panel glow
+   ================================================================ */
+
+.banner-nav {
+  position: absolute;
+  right: 28px;
+  bottom: 48px;
+  z-index: 4;
+  display: flex;
+  gap: 8px;
+}
+.banner-nav-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(10, 10, 11, 0.55);
+  color: var(--text);
+  font-size: 1.25rem;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s, border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.banner-nav-btn:hover {
+  border-color: var(--accent);
+  background: rgba(200, 245, 66, 0.12);
+  box-shadow: 0 0 18px rgba(200, 245, 66, 0.2);
+  transform: translateY(-1px);
+}
+.banner-dots {
+  left: 28px;
+  right: auto;
+}
+
+.fx-glow {
+  position: relative;
+  overflow: hidden;
+}
+.fx-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(280px circle at var(--mx, 50%) var(--my, 50%), rgba(200, 245, 66, 0.1), transparent 55%);
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+}
+.fx-glow:hover::after { opacity: 1; }
+
+.status-card,
+.story-card {
+  transition: transform 0.22s var(--ease), border-color 0.22s, box-shadow 0.22s;
+}
+.status-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+}
+.story-card:hover {
+  transform: translateX(4px);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  box-shadow: -3px 0 0 var(--accent);
+}
+
 /* Reduced motion kill-switch for FX */
 @media (prefers-reduced-motion: reduce) {
   .ambient-mesh,
@@ -2559,7 +2626,8 @@ body.page-enter .app-shell {
 }
 
 @media (max-width: 980px) {
-  .banner-dots { right: 16px; bottom: 16px; }
+  .banner-dots { left: 16px; right: auto; bottom: 16px; }
+  .banner-nav { right: 16px; bottom: 40px; }
   .game-tile:hover {
     transform: translateY(-3px);
   }
