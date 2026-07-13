@@ -84,6 +84,60 @@ const Game = {
 let renderer, scene, camera, world, playerMesh;
 let clock = new THREE.Clock();
 let battle3d = null;
+let hemiLight, sunLight, fillLight;
+
+// ---- Day/night cycle ----
+const DAY_LENGTH = 150; // seconds per full day
+// timeOfDay: 0 = midnight, 0.25 = sunrise, 0.5 = noon, 0.75 = sunset
+Game.timeOfDay = 0.35; // start mid-morning
+
+const DAY_PHASES = [
+  // t, sky, fog matches sky, sun color, sun intensity, hemi intensity
+  { t: 0.0,  sky: 0x0a1230, sun: 0x8090c0, sunI: 0.12, hemiI: 0.25 }, // midnight
+  { t: 0.22, sky: 0x2a3050, sun: 0xc0a080, sunI: 0.3,  hemiI: 0.4 },  // pre-dawn
+  { t: 0.3,  sky: 0xf5b06b, sun: 0xffc080, sunI: 0.85, hemiI: 0.6 },  // sunrise
+  { t: 0.42, sky: 0x87b8e0, sun: 0xfff2cc, sunI: 1.15, hemiI: 0.85 }, // day
+  { t: 0.62, sky: 0x87b8e0, sun: 0xfff2cc, sunI: 1.15, hemiI: 0.85 }, // day
+  { t: 0.75, sky: 0xf08a5a, sun: 0xffa060, sunI: 0.7,  hemiI: 0.55 }, // sunset
+  { t: 0.85, sky: 0x1a2245, sun: 0x9098c8, sunI: 0.2,  hemiI: 0.3 },  // dusk
+  { t: 1.0,  sky: 0x0a1230, sun: 0x8090c0, sunI: 0.12, hemiI: 0.25 }, // midnight
+];
+
+const _skyA = new THREE.Color();
+const _skyB = new THREE.Color();
+const _sunA = new THREE.Color();
+const _sunB = new THREE.Color();
+
+function updateDayNight(dt) {
+  if (!scene || !sunLight) return;
+  Game.timeOfDay = (Game.timeOfDay + dt / DAY_LENGTH) % 1;
+  const tod = Game.timeOfDay;
+  let a = DAY_PHASES[0];
+  let b = DAY_PHASES[DAY_PHASES.length - 1];
+  for (let i = 0; i < DAY_PHASES.length - 1; i++) {
+    if (tod >= DAY_PHASES[i].t && tod <= DAY_PHASES[i + 1].t) {
+      a = DAY_PHASES[i];
+      b = DAY_PHASES[i + 1];
+      break;
+    }
+  }
+  const span = Math.max(0.0001, b.t - a.t);
+  const k = (tod - a.t) / span;
+  _skyA.setHex(a.sky);
+  _skyB.setHex(b.sky);
+  _skyA.lerp(_skyB, k);
+  scene.background.copy(_skyA);
+  scene.fog.color.copy(_skyA);
+  _sunA.setHex(a.sun);
+  _sunB.setHex(b.sun);
+  _sunA.lerp(_sunB, k);
+  sunLight.color.copy(_sunA);
+  sunLight.intensity = a.sunI + (b.sunI - a.sunI) * k;
+  hemiLight.intensity = a.hemiI + (b.hemiI - a.hemiI) * k;
+  const night = 1 - Math.min(1, sunLight.intensity / 0.85);
+  if (fillLight) fillLight.intensity = 0.25 + night * 0.15; // moonlight fill
+  world?.setNight(night);
+}
 
 function setLoad(p) {
   const el = document.getElementById('load-fill');
@@ -105,25 +159,25 @@ async function init3D() {
 
   camera = new THREE.PerspectiveCamera(50, 16 / 10, 0.1, 200);
 
-  // Lights
-  const hemi = new THREE.HemisphereLight(0xfff4e0, 0x3a5a28, 0.85);
-  scene.add(hemi);
-  const sun = new THREE.DirectionalLight(0xfff2cc, 1.15);
-  sun.position.set(30, 50, 20);
-  sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
-  sun.shadow.camera.near = 1;
-  sun.shadow.camera.far = 120;
-  sun.shadow.camera.left = -40;
-  sun.shadow.camera.right = 40;
-  sun.shadow.camera.top = 40;
-  sun.shadow.camera.bottom = -40;
-  scene.add(sun);
+  // Lights (kept in module scope so the day/night cycle can drive them)
+  hemiLight = new THREE.HemisphereLight(0xfff4e0, 0x3a5a28, 0.85);
+  scene.add(hemiLight);
+  sunLight = new THREE.DirectionalLight(0xfff2cc, 1.15);
+  sunLight.position.set(30, 50, 20);
+  sunLight.castShadow = true;
+  sunLight.shadow.mapSize.set(2048, 2048);
+  sunLight.shadow.camera.near = 1;
+  sunLight.shadow.camera.far = 120;
+  sunLight.shadow.camera.left = -40;
+  sunLight.shadow.camera.right = 40;
+  sunLight.shadow.camera.top = 40;
+  sunLight.shadow.camera.bottom = -40;
+  scene.add(sunLight);
 
   // Soft fill
-  const fill = new THREE.DirectionalLight(0x88aaff, 0.25);
-  fill.position.set(-20, 10, -10);
-  scene.add(fill);
+  fillLight = new THREE.DirectionalLight(0x88aaff, 0.25);
+  fillLight.position.set(-20, 10, -10);
+  scene.add(fillLight);
 
   world = new World3D(scene);
   setLoad(0.1);
@@ -161,6 +215,44 @@ function onResize() {
 
 function playerGroundY(tx = Game.player.x, ty = Game.player.y) {
   return tileSurfaceY(tx, ty);
+}
+
+// ---- Footstep dust ----
+const dustPuffs = [];
+let dustGeo = null;
+let dustMat = null;
+
+function spawnDust(x, y, z) {
+  if (!scene) return;
+  if (!dustGeo) {
+    dustGeo = new THREE.SphereGeometry(0.07, 6, 6);
+    dustMat = new THREE.MeshBasicMaterial({ color: 0xd8cbaa, transparent: true, opacity: 0.55 });
+  }
+  for (let i = 0; i < 3; i++) {
+    const puff = new THREE.Mesh(dustGeo, dustMat.clone());
+    puff.position.set(x + (Math.random() - 0.5) * 0.35, y + 0.06, z + (Math.random() - 0.5) * 0.35);
+    puff.userData.vel = new THREE.Vector3((Math.random() - 0.5) * 0.5, 0.6 + Math.random() * 0.4, (Math.random() - 0.5) * 0.5);
+    puff.userData.life = 0.45;
+    scene.add(puff);
+    dustPuffs.push(puff);
+  }
+}
+
+function updateDust(dt) {
+  for (let i = dustPuffs.length - 1; i >= 0; i--) {
+    const puff = dustPuffs[i];
+    puff.userData.life -= dt;
+    puff.position.addScaledVector(puff.userData.vel, dt);
+    puff.userData.vel.y *= 0.92;
+    const k = Math.max(0, puff.userData.life / 0.45);
+    puff.material.opacity = 0.55 * k;
+    puff.scale.setScalar(1 + (1 - k) * 1.6);
+    if (puff.userData.life <= 0) {
+      scene.remove(puff);
+      puff.material.dispose();
+      dustPuffs.splice(i, 1);
+    }
+  }
 }
 
 function snapPlayerToTile(tx, ty) {
@@ -317,6 +409,7 @@ function updateMove(dt) {
     playerMesh.position.y = y1;
     playerMesh.scale.set(1, 1, 1);
     playerMesh.rotation.z = 0;
+    spawnDust(playerMesh.position.x, y1, playerMesh.position.z);
     onStepComplete();
   }
 }
@@ -480,6 +573,8 @@ function startBattle(wild, opts = {}) {
   showScreen('battle-screen');
   const player = Game.party[playerIdx];
   battle3d?.setFighters(player, wild).then(() => battle3d?.start());
+  resetHpBar('enemy', wild.hp, wild.maxHp);
+  resetHpBar('player', player.hp, player.maxHp);
   renderBattle();
   if (opts.isTrainer) {
     setBattleLog(`${opts.trainerName} wants to battle!`);
@@ -507,15 +602,49 @@ function setBattleLog(msg) {
   document.getElementById('battle-log').textContent = msg;
 }
 
+// Smoothly drain/refill battle HP bars instead of snapping
+const hpTweens = {};
+
 function setHpBar(who, hp, maxHp) {
-  const pct = clamp(Math.round((hp / maxHp) * 100), 0, 100);
   const bar = document.getElementById(`${who}-hp-bar`);
   const text = document.getElementById(`${who}-hp-text`);
-  if (bar) {
-    bar.style.width = pct + '%';
-    bar.className = 'hp-bar' + (pct <= 20 ? ' low' : pct <= 50 ? ' mid' : '');
+  const target = clamp(hp, 0, maxHp);
+  const tween = hpTweens[who] || (hpTweens[who] = { shown: target, raf: null });
+  if (tween.raf) cancelAnimationFrame(tween.raf);
+
+  const paint = (value) => {
+    const pct = clamp(Math.round((value / maxHp) * 100), 0, 100);
+    if (bar) {
+      bar.style.width = pct + '%';
+      bar.className = 'hp-bar' + (pct <= 20 ? ' low' : pct <= 50 ? ' mid' : '');
+    }
+    if (text) text.textContent = `${Math.max(0, Math.round(value))}/${maxHp}`;
+  };
+
+  const from = clamp(tween.shown, 0, maxHp);
+  if (from === target) {
+    paint(target);
+    return;
   }
-  if (text) text.textContent = `${Math.max(0, hp)}/${maxHp}`;
+  const start = performance.now();
+  const dur = 550;
+  const step = (now) => {
+    const k = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - k, 2);
+    tween.shown = from + (target - from) * eased;
+    paint(tween.shown);
+    if (k < 1) tween.raf = requestAnimationFrame(step);
+    else tween.raf = null;
+  };
+  tween.raf = requestAnimationFrame(step);
+}
+
+/** Snap HP bars instantly (battle start / fighter swap). */
+function resetHpBar(who, hp, maxHp) {
+  const tween = hpTweens[who];
+  if (tween?.raf) cancelAnimationFrame(tween.raf);
+  hpTweens[who] = { shown: clamp(hp, 0, maxHp), raf: null };
+  setHpBar(who, hp, maxHp);
 }
 
 function renderBattle() {
@@ -610,6 +739,7 @@ async function executeMove(user, target, move, side) {
   }
   if (move.pp != null && move.pp > 0) move.pp--;
   setBattleLog(`${user.name} used ${move.name}!`);
+  if (move.power > 0) battle3d?.attackLunge(side);
   await sleep(400);
   const result = calcDamage(user, target, move);
   if (result.missed) {
@@ -624,7 +754,14 @@ async function executeMove(user, target, move, side) {
       return;
     }
     target.hp = Math.max(0, target.hp - result.damage);
-    battle3d?.flashHit(side === 'player' ? 'enemy' : 'player');
+    const targetSide = side === 'player' ? 'enemy' : 'player';
+    battle3d?.flashHit(targetSide);
+    battle3d?.shakeCamera(result.critical ? 1 : result.effectiveness > 1 ? 0.7 : 0.45);
+    battle3d?.showDamage(
+      targetSide,
+      `-${result.damage}`,
+      result.critical ? 'crit' : result.effectiveness < 1 ? 'weak' : 'normal'
+    );
     renderBattle();
     let msg = `It dealt ${result.damage} damage!`;
     if (result.critical) msg = 'A critical hit! ' + msg;
@@ -635,6 +772,7 @@ async function executeMove(user, target, move, side) {
     if (move.effect === 'drain') {
       const heal = Math.max(1, Math.floor(result.damage / 2));
       user.hp = Math.min(user.maxHp, user.hp + heal);
+      battle3d?.showDamage(side, `+${heal}`, 'heal');
       setBattleLog(`${user.name} restored ${heal} HP!`);
       renderBattle();
       await sleep(500);
@@ -690,6 +828,7 @@ async function playerSwitchTo(targetIdx) {
   b.playerIdx = result.playerIdx;
   setBattleLog(`Go! ${result.mon.name}!`);
   await battle3d?.setFighters(result.mon, b.wild);
+  resetHpBar('player', result.mon.hp, result.mon.maxHp);
   renderBattle();
   await sleep(700);
   if (b.wild.hp > 0) {
@@ -727,6 +866,7 @@ async function onEnemyFainted() {
       b.wild = nextMon;
       setBattleLog(`${b.trainerName} sent out ${nextMon.name}!`);
       await battle3d?.setFighters(player, nextMon);
+      resetHpBar('enemy', nextMon.hp, nextMon.maxHp);
       renderBattle();
       await sleep(800);
       b.busy = false;
@@ -771,6 +911,7 @@ async function onPlayerFainted() {
     mon.stages = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
     setBattleLog(`Go! ${mon.name}!`);
     await battle3d?.setFighters(mon, b.wild);
+    resetHpBar('player', mon.hp, mon.maxHp);
     renderBattle();
     await sleep(800);
     b.busy = false;
@@ -862,6 +1003,7 @@ async function battleUsePotion() {
   Game.bag.potion--;
   const before = player.hp;
   player.hp = Math.min(player.maxHp, player.hp + 20);
+  battle3d?.showDamage('player', `+${player.hp - before}`, 'heal');
   setBattleLog(`Potion! ${player.name} recovered ${player.hp - before} HP!`);
   renderBattle();
   updateHUD();
@@ -1186,7 +1328,9 @@ function loop() {
       playerMesh.scale.set(breath, 1 + Math.sin(t * 2.4 + 0.4) * 0.03, breath);
       playerMesh.position.y = playerGroundY() + Math.sin(t * 2.4) * 0.015;
     }
-    world?.animate(t);
+    world?.animate(t, dt);
+    updateDust(dt);
+    updateDayNight(dt);
     updateCamera(false);
     if (renderer && scene && camera) {
       renderer.render(scene, camera);

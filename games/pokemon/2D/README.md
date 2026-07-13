@@ -28,6 +28,7 @@ npx --yes serve -l 3000
 | **E** / **Space** | Interact / advance dialogue |
 | **M** | Open party |
 | **B** | Open bag |
+| **X** | Open Pokédex |
 | **P** | Save game |
 | **Title → Continue** | Load last save |
 
@@ -39,11 +40,23 @@ npx --yes serve -l 3000
 4. Challenge **Youngster Joey** north of town (real multi-Pokémon battle)
 5. Find and defeat **Mewtwo** in the northern cave
 
+### Features
+
+- **Pokédex** (press **X**, or via the party menu): tracks every species you've
+  seen (silhouette) and caught (full color + ball icon) across all 17 species
+- **Shiny Pokémon**: ~1 in 48 wild encounters is shiny — golden sparkles, a
+  recolored sprite, and a ★ by its name. Shininess is kept when caught and saved
+- **Poison status**: Poison Sting has a 30% chance to poison (PSN tag in
+  battle, 1/8 max HP chip damage per turn). Poison-types are immune
+- **Day/night cycle**: the overworld cycles day → dusk → night → dawn as you
+  walk, with a moonlight glow around you at night
+
 ### Tips
 
 - In battle: **SWITCH** to change active Pokémon (costs a turn)
 - Type matchups matter (Water beats Fire, etc.)
 - If your whole party faints, you respawn healed at the Center
+- Status conditions heal at the Pokémon Center or with Rest
 
 ## Tests
 

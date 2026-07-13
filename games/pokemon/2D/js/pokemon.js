@@ -17,6 +17,13 @@ function calcStat(base, level, isHP = false) {
   return Math.floor(((2 * base) * level) / 100) + 5;
 }
 
+// ~1 in 48 wild encounters is shiny (recolored + sparkles)
+const SHINY_CHANCE = 1 / 48;
+
+function rollShiny(rand = Math.random()) {
+  return rand < SHINY_CHANCE;
+}
+
 function createPokemon(speciesId, level, opts = {}) {
   const sp = SPECIES[speciesId];
   if (!sp) {
@@ -37,6 +44,7 @@ function createPokemon(speciesId, level, opts = {}) {
       maxPp: MOVES[m].pp,
       cat: MOVES[m].cat,
       effect: MOVES[m].effect || null,
+      effectChance: MOVES[m].effectChance || 0,
       priority: MOVES[m].priority || 0,
     }));
 
@@ -70,6 +78,7 @@ function createPokemon(speciesId, level, opts = {}) {
     catchRate: sp.catchRate,
     expYield: sp.expYield,
     wild: !!opts.wild,
+    shiny: !!opts.shiny,
   };
   return mon;
 }
@@ -178,6 +187,12 @@ function applyStatusEffect(move, user, target, log) {
         log(`${target.name} is paralyzed! It may be unable to move!`);
       }
       break;
+    case 'poison':
+      if (target.status == null) {
+        target.status = 'poison';
+        log(`${target.name} was poisoned!`);
+      }
+      break;
     case 'drain': {
       // handled via damage
       break;
@@ -185,6 +200,36 @@ function applyStatusEffect(move, user, target, log) {
     default:
       break;
   }
+}
+
+/**
+ * Chance-based secondary effect on a damaging move (e.g. Poison Sting 30%).
+ * Returns true if the effect was applied. rand injectable for tests.
+ */
+function applySecondaryEffect(move, target, log, rand = Math.random()) {
+  if (!move.effect || move.power <= 0) return false;
+  if (target.hp <= 0) return false;
+  const chance = move.effectChance != null ? move.effectChance : 0;
+  if (chance <= 0 || rand * 100 >= chance) return false;
+  if (move.effect === 'poison' && target.status == null && !target.types.includes('poison')) {
+    target.status = 'poison';
+    log(`${target.name} was poisoned!`);
+    return true;
+  }
+  if (move.effect === 'paralyze' && target.status == null) {
+    target.status = 'paralyze';
+    log(`${target.name} is paralyzed! It may be unable to move!`);
+    return true;
+  }
+  return false;
+}
+
+/** End-of-turn residual damage from status (poison = 1/8 max HP). */
+function statusResidualDamage(mon) {
+  if (mon.status === 'poison' && mon.hp > 0) {
+    return Math.max(1, Math.floor(mon.maxHp / 8));
+  }
+  return 0;
 }
 
 function gainExp(mon, amount) {
@@ -236,15 +281,16 @@ function pickWildEncounter(zone) {
   const table = ENCOUNTERS[zone] || ENCOUNTERS.route1;
   const total = table.reduce((s, e) => s + e.weight, 0);
   let roll = Math.random() * total;
+  const shiny = rollShiny();
   for (const e of table) {
     roll -= e.weight;
     if (roll <= 0) {
       const lv = randInt(e.minLv, e.maxLv);
-      return createPokemon(e.species, lv, { wild: true });
+      return createPokemon(e.species, lv, { wild: true, shiny });
     }
   }
   const e = table[0];
-  return createPokemon(e.species, e.minLv, { wild: true });
+  return createPokemon(e.species, e.minLv, { wild: true, shiny });
 }
 
 function catchChance(wild, ballBonus = 1) {
@@ -370,6 +416,7 @@ function serializePokemon(mon) {
     hp: mon.hp,
     maxHp: mon.maxHp,
     status: mon.status || null,
+    shiny: !!mon.shiny,
     moves: (mon.moves || []).map((m) => ({
       id: m.id,
       pp: m.pp,
@@ -383,6 +430,7 @@ function deserializePokemon(data) {
   const mon = createPokemon(data.speciesId, data.level || 5, {
     nickname: data.name,
     hp: data.hp,
+    shiny: !!data.shiny, // older saves lack this field — defaults to false
   });
   if (data.exp != null) mon.exp = data.exp;
   if (data.expToNext != null) mon.expToNext = data.expToNext;
@@ -407,6 +455,7 @@ function serializeGameState(state) {
   if (!state || !Array.isArray(state.party)) return null;
   const caught = state.flags?.caughtSpecies;
   const trainers = state.flags?.trainersDefeated;
+  const seen = state.flags?.seenSpecies;
   return {
     version: SAVE_VERSION,
     party: state.party.map(serializePokemon),
@@ -433,6 +482,11 @@ function serializeGameState(state) {
         : Array.isArray(trainers)
           ? [...trainers]
           : [],
+      seenSpecies: seen instanceof Set
+        ? [...seen]
+        : Array.isArray(seen)
+          ? [...seen]
+          : [],
     },
     steps: state.steps || 0,
     battlesWon: state.battlesWon || 0,
@@ -448,6 +502,11 @@ function deserializeGameState(data) {
   if (!Array.isArray(data.party) || data.party.length === 0) return null;
   const party = data.party.map(deserializePokemon).filter(Boolean);
   if (!party.length) return null;
+  const caughtList = data.flags?.caughtSpecies || [];
+  // Older saves lack seenSpecies — treat every caught species as seen
+  const seenList = data.flags?.seenSpecies?.length
+    ? data.flags.seenSpecies
+    : caughtList;
   return {
     party,
     bag: {
@@ -463,8 +522,9 @@ function deserializeGameState(data) {
     flags: {
       shopGift: !!data.flags?.shopGift,
       mewtwoDefeated: !!data.flags?.mewtwoDefeated,
-      caughtSpecies: new Set(data.flags?.caughtSpecies || []),
+      caughtSpecies: new Set(caughtList),
       trainersDefeated: new Set(data.flags?.trainersDefeated || []),
+      seenSpecies: new Set([...seenList, ...caughtList]),
     },
     steps: data.steps || 0,
     battlesWon: data.battlesWon || 0,

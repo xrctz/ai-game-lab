@@ -26,7 +26,11 @@ export class UIManager {
             'setting-volume', 'setting-sensitivity', 'setting-fov', 'setting-fps',
             'ally-health-0', 'ally-health-1', 'ally-health-2',
             'ally-status-0', 'ally-status-1', 'ally-status-2',
-            'shop-panel', 'shop-currency', 'shop-items'
+            'shop-panel', 'shop-currency', 'shop-items',
+            'combo-display', 'combo-count', 'combo-mult', 'combo-timer',
+            'reload-prompt',
+            'wave-summary', 'wave-summary-title',
+            'ws-kills', 'ws-headshots', 'ws-accuracy', 'ws-combo'
         ];
 
         for (const id of ids) {
@@ -111,6 +115,8 @@ export class UIManager {
             if (weapon.reloading) {
                 this.setHTML('weapon-name', `${weapon.name} - RELOADING`);
             }
+
+            this._updateReloadPrompt(weapon);
         }
 
         const slots = document.querySelectorAll('.weapon-slot');
@@ -164,6 +170,64 @@ export class UIManager {
         } else {
             this.hide('fps-counter');
         }
+    }
+
+    _updateReloadPrompt(weapon) {
+        const el = this.elements['reload-prompt'];
+        if (!el) return;
+
+        if (weapon.reloading || weapon.reserveAmmo <= 0) {
+            el.classList.add('hidden');
+            return;
+        }
+
+        if (weapon.currentAmmo <= 0) {
+            el.textContent = 'PRESS R TO RELOAD';
+            el.classList.add('empty');
+            el.classList.remove('hidden');
+        } else if (weapon.currentAmmo <= weapon.magazineSize * 0.3) {
+            el.textContent = 'LOW AMMO - PRESS R';
+            el.classList.remove('empty');
+            el.classList.remove('hidden');
+        } else {
+            el.classList.add('hidden');
+        }
+    }
+
+    updateCombo(streak, timerFrac, multiplier) {
+        if (streak >= 2) {
+            this.show('combo-display');
+            const countEl = this.elements['combo-count'];
+            if (countEl && this._lastComboCount !== streak) {
+                this._lastComboCount = streak;
+                countEl.textContent = `x${streak}`;
+                countEl.classList.remove('combo-pop');
+                void countEl.offsetWidth;
+                countEl.classList.add('combo-pop');
+            }
+            this.setHTML('combo-mult', `SCORE x${multiplier.toFixed(1)}`);
+            this.setStyle('combo-timer', 'width', `${Math.max(0, Math.min(1, timerFrac)) * 100}%`);
+        } else {
+            this._lastComboCount = 0;
+            this.hide('combo-display');
+        }
+    }
+
+    showWaveSummary(waveNum, stats) {
+        this.setHTML('wave-summary-title', `WAVE ${waveNum} CLEAR`);
+        this.setHTML('ws-kills', stats.kills);
+        this.setHTML('ws-headshots', stats.headshots);
+        this.setHTML('ws-accuracy', `${stats.accuracy}%`);
+        this.setHTML('ws-combo', `x${stats.bestCombo}`);
+
+        const el = this.elements['wave-summary'];
+        if (!el) return;
+        el.classList.remove('hidden');
+        el.style.animation = 'none';
+        void el.offsetWidth;
+        el.style.animation = '';
+        clearTimeout(this._waveSummaryTimeout);
+        this._waveSummaryTimeout = setTimeout(() => this.hide('wave-summary'), 5000);
     }
 
     showHitMarker(headshot = false) {
@@ -438,5 +502,8 @@ export class UIManager {
         this.hide('squad-wheel');
         this.hide('interaction-prompt');
         this.hide('shop-panel');
+        this.hide('combo-display');
+        this.hide('reload-prompt');
+        this.hide('wave-summary');
     }
 }

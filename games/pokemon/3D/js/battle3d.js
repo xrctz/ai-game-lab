@@ -82,6 +82,9 @@ export class Battle3D {
     this._animId = null;
     this.entranceT = 0;
     this.hitFx = { enemy: 0, player: 0 };
+    this.attackFx = { enemy: 0, player: 0 };
+    this.shake = 0;
+    this.damageNumbers = [];
   }
 
   resize() {
@@ -138,6 +141,9 @@ export class Battle3D {
 
     this.entranceT = 0;
     this.hitFx = { enemy: 0, player: 0 };
+    this.attackFx = { enemy: 0, player: 0 };
+    this.shake = 0;
+    this._clearDamageNumbers();
   }
 
   start() {
@@ -157,27 +163,48 @@ export class Battle3D {
         const base = this.enemyBase;
         const hit = this.hitFx.enemy;
         const knock = hit > 0 ? Math.sin(hit * Math.PI) * 0.35 : 0;
-        this.enemySprite.position.x = base.x + (1 - ease) * 2.5 + knock;
-        this.enemySprite.position.y = base.y + Math.sin(t * 2.2) * 0.08;
-        this.enemySprite.position.z = base.z;
+        // Attack lunge toward the player's platform
+        const atk = this.attackFx.enemy;
+        const lunge = atk > 0 ? Math.sin(atk * Math.PI) : 0;
+        this.enemySprite.position.x = base.x + (1 - ease) * 2.5 + knock - lunge * 1.5;
+        this.enemySprite.position.y = base.y + Math.sin(t * 2.2) * 0.08 + lunge * 0.35;
+        this.enemySprite.position.z = base.z + lunge * 1.1;
         this.enemySprite.material.opacity = ease * (hit > 0.5 ? 0.35 : 1);
         const bs = this.enemySprite.userData.baseScale || { x: 2.4, y: 2.4 };
         const pulse = 1 + Math.sin(t * 3) * 0.04 + (hit > 0 ? Math.sin(hit * Math.PI) * 0.15 : 0);
         this.enemySprite.scale.set(bs.x * pulse * ease, bs.y * pulse * ease, 1);
         if (hit > 0) this.hitFx.enemy = Math.max(0, hit - dt * 3);
+        if (atk > 0) this.attackFx.enemy = Math.max(0, atk - dt * 1.8);
       }
       if (this.playerSprite) {
         const base = this.playerBase;
         const hit = this.hitFx.player;
         const knock = hit > 0 ? -Math.sin(hit * Math.PI) * 0.35 : 0;
-        this.playerSprite.position.x = base.x - (1 - ease) * 2.5 + knock;
-        this.playerSprite.position.y = base.y + Math.sin(t * 2.2 + 1) * 0.06;
-        this.playerSprite.position.z = base.z;
+        const atk = this.attackFx.player;
+        const lunge = atk > 0 ? Math.sin(atk * Math.PI) : 0;
+        this.playerSprite.position.x = base.x - (1 - ease) * 2.5 + knock + lunge * 1.5;
+        this.playerSprite.position.y = base.y + Math.sin(t * 2.2 + 1) * 0.06 + lunge * 0.35;
+        this.playerSprite.position.z = base.z - lunge * 1.1;
         this.playerSprite.material.opacity = ease * (hit > 0.5 ? 0.35 : 1);
         const bs = this.playerSprite.userData.baseScale || { x: 2.6, y: 2.6 };
         const pulse = 1 + Math.sin(t * 3 + 1) * 0.04 + (hit > 0 ? Math.sin(hit * Math.PI) * 0.15 : 0);
         this.playerSprite.scale.set(bs.x * pulse * ease, bs.y * pulse * ease, 1);
         if (hit > 0) this.hitFx.player = Math.max(0, hit - dt * 3);
+        if (atk > 0) this.attackFx.player = Math.max(0, atk - dt * 1.8);
+      }
+
+      // Floating damage numbers drift up + fade out
+      for (let i = this.damageNumbers.length - 1; i >= 0; i--) {
+        const dn = this.damageNumbers[i];
+        dn.life -= dt;
+        dn.sprite.position.y += dt * 1.1;
+        dn.sprite.material.opacity = Math.min(1, dn.life / 0.5);
+        if (dn.life <= 0) {
+          this.scene.remove(dn.sprite);
+          dn.sprite.material.map?.dispose();
+          dn.sprite.material.dispose();
+          this.damageNumbers.splice(i, 1);
+        }
       }
 
       // Platform subtle spin shimmer
@@ -192,9 +219,11 @@ export class Battle3D {
         mote.material.opacity = 0.15 + Math.sin(t * 2 + ph) * 0.15;
       }
 
-      // Subtle camera sway
-      this.camera.position.x = Math.sin(t * 0.3) * 0.25;
-      this.camera.position.y = 3.2 + Math.sin(t * 0.5) * 0.08;
+      // Subtle camera sway + impact shake
+      if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 3.5);
+      const sh = this.shake * this.shake; // ease-out
+      this.camera.position.x = Math.sin(t * 0.3) * 0.25 + (Math.random() - 0.5) * sh * 0.5;
+      this.camera.position.y = 3.2 + Math.sin(t * 0.5) * 0.08 + (Math.random() - 0.5) * sh * 0.35;
       this.camera.lookAt(0, 1.2, 0);
       this.renderer.render(this.scene, this.camera);
     };
@@ -218,6 +247,60 @@ export class Battle3D {
       mat.color.setHex(0xffffff);
       setTimeout(() => mat.color.setHex(orig), 90);
     }
+  }
+
+  /** Lunge the attacker's sprite toward its opponent. */
+  attackLunge(side) {
+    if (side === 'enemy') this.attackFx.enemy = 1;
+    else this.attackFx.player = 1;
+  }
+
+  /** Kick the camera; strength 0..1 (critical hits use ~1). */
+  shakeCamera(strength = 0.6) {
+    this.shake = Math.max(this.shake, Math.min(1, strength));
+  }
+
+  /**
+   * Spawn a floating 3D damage number above a fighter.
+   * kind: 'normal' | 'crit' | 'heal' | 'weak'
+   */
+  showDamage(side, text, kind = 'normal') {
+    const base = side === 'enemy' ? this.enemyBase : this.playerBase;
+    const colors = { normal: '#ffffff', crit: '#ffcb05', heal: '#6fdc72', weak: '#9bb4c8' };
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    const fontSize = kind === 'crit' ? 64 : 52;
+    ctx.font = `bold ${fontSize}px "Press Start 2P", monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = 10;
+    ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+    ctx.strokeText(text, 128, 64);
+    ctx.fillStyle = colors[kind] || colors.normal;
+    ctx.fillText(text, 128, 64);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+    const s = kind === 'crit' ? 1.5 : 1.2;
+    spr.scale.set(s * 2, s, 1);
+    spr.position.set(
+      base.x + (Math.random() - 0.5) * 0.4,
+      base.y + 1.3,
+      base.z + 0.5
+    );
+    this.scene.add(spr);
+    this.damageNumbers.push({ sprite: spr, life: 1.1 });
+  }
+
+  _clearDamageNumbers() {
+    for (const dn of this.damageNumbers || []) {
+      this.scene.remove(dn.sprite);
+      dn.sprite.material.map?.dispose();
+      dn.sprite.material.dispose();
+    }
+    this.damageNumbers = [];
   }
 
   faint(side) {

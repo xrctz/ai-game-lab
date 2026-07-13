@@ -2,8 +2,10 @@ import * as THREE from 'three';
 import { createTrackPath, buildTrack, buildWorld } from './track.js';
 import { Racer, RIVAL_NAMES, setSkimmerTextures } from './skimmer.js';
 import { loadTexturePack } from './textures.js';
+import { veilAudio } from './audio.js';
 
 const TOTAL_LAPS = 3;
+const BEST_LAP_KEY = 'veilrush.bestLap';
 const ASSETS = {
   titleVideo: 'assets/videos/title_cinematic.mp4',
   introVideo: 'assets/videos/intro_skimmer.mp4',
@@ -49,6 +51,13 @@ let minimapCtx = null;
 let orbsCollectedAtStart = 0;
 let texturePack = null;
 let texturesReady = false;
+let bestLapEver = loadBestLap();
+let seenLapCount = 0;
+let prevPlace = null;
+let pendingPlace = null;
+let placeHold = 0;
+let placeFlashTO = null;
+let slipstreamAmt = 0;
 
 // ---------- Screens ----------
 function showScreen(name) {
@@ -67,6 +76,23 @@ function formatTime(t) {
 function placeStr(n) {
   const s = ['', '1st', '2nd', '3rd', '4th'];
   return s[n] || `${n}th`;
+}
+
+function loadBestLap() {
+  try {
+    const v = parseFloat(localStorage.getItem(BEST_LAP_KEY));
+    return Number.isFinite(v) && v > 0 ? v : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveBestLap(t) {
+  try {
+    localStorage.setItem(BEST_LAP_KEY, String(t));
+  } catch (e) {
+    /* storage unavailable — session-only best */
+  }
 }
 
 // ---------- Cinematics ----------
@@ -296,12 +322,21 @@ async function startRaceFlow() {
   raceTime = 0;
   countdownVal = 3;
   countdownTimer = 0;
+  seenLapCount = 0;
+  prevPlace = null;
+  pendingPlace = null;
+  placeHold = 0;
+  slipstreamAmt = 0;
   state = 'countdown';
   showScreen(null);
   hud.classList.add('active');
   $('countdown').textContent = '3';
   $('countdown').classList.add('show');
   $('race-msg').classList.remove('show');
+  $('hud-best').textContent = formatTime(bestLapEver);
+  $('slipstream-tag').classList.remove('on');
+  $('draft-vignette').classList.remove('on');
+  veilAudio.count(false);
   racers.forEach((r) => {
     r.lapStart = 0;
     r.lapTimes = [];
@@ -327,6 +362,7 @@ function beginRacing() {
     r.lapStart = now;
   });
   flashMsg('GO!', 1.1);
+  veilAudio.startEngine();
 }
 
 function flashMsg(text, sec = 1.2) {
@@ -338,6 +374,7 @@ function flashMsg(text, sec = 1.2) {
 
 function endRace() {
   state = 'result';
+  veilAudio.stopEngine();
   const ordered = [...racers].sort((a, b) => {
     if (a.finished && b.finished) return a.finishTime - b.finishTime;
     if (a.finished) return -1;
@@ -363,6 +400,20 @@ function endRace() {
   $('result-orbs').textContent = String(player.orbs);
   const best = player.lapTimes.length ? Math.min(...player.lapTimes) : null;
   $('result-best').textContent = formatTime(best);
+
+  // Per-lap splits table with best lap + all-time record
+  const lapsEl = $('result-laps');
+  let rows = player.lapTimes
+    .map((t, i) => {
+      const isBest = t === best;
+      const tag = isBest ? ' <span class="lap-tag">BEST</span>' : '';
+      return `<div class="lap-row${isBest ? ' best' : ''}"><span>Lap ${i + 1}</span><span>${formatTime(t)}${tag}</span></div>`;
+    })
+    .join('');
+  if (bestLapEver != null) {
+    rows += `<div class="lap-row record"><span>All-time best</span><span>${formatTime(bestLapEver)}</span></div>`;
+  }
+  lapsEl.innerHTML = rows;
 
   if (won) {
     // Victory cinematic after a short beat
@@ -390,22 +441,29 @@ function updateCountdown(dt) {
       el.classList.remove('show');
       void el.offsetWidth;
       el.classList.add('show');
+      veilAudio.count(false);
     } else if (countdownVal === 0) {
       el.textContent = 'RUSH';
       el.classList.remove('show');
       void el.offsetWidth;
       el.classList.add('show');
+      veilAudio.count(true);
       beginRacing();
       setTimeout(() => el.classList.remove('show'), 700);
     }
   }
 }
 
-function updateHUD() {
+function updateHUD(dt = 0) {
   $('hud-speed').textContent = String(Math.round(player.speed * 4.2));
   $('hud-lap').textContent = String(Math.min(player.lap, TOTAL_LAPS));
   $('hud-laps').textContent = String(TOTAL_LAPS);
   $('hud-time').textContent = formatTime(raceTime);
+  const lapNow =
+    state === 'racing' && player.lapStart > 0 && !player.finished
+      ? performance.now() / 1000 - player.lapStart
+      : 0;
+  $('hud-laptime').textContent = formatTime(lapNow);
   $('spectrum-fill').style.width = `${player.spectrum}%`;
   const lab = $('spectrum-label');
   if (player.spectrum >= 30) {
@@ -420,6 +478,7 @@ function updateHUD() {
   const ordered = [...racers].sort((a, b) => b.raceMetric - a.raceMetric);
   const place = ordered.indexOf(player) + 1;
   $('hud-place').textContent = String(place);
+  trackPlaceChange(place, dt);
 
   const stand = $('standings');
   stand.innerHTML = ordered
@@ -430,6 +489,85 @@ function updateHUD() {
     .join('');
 
   drawMinimap(ordered);
+}
+
+// Announce overtakes / lost positions once the new place holds briefly,
+// so side-by-side jostling doesn't spam the flash.
+function trackPlaceChange(place, dt) {
+  if (state !== 'racing' || player.finished) return;
+  if (prevPlace === null) {
+    prevPlace = place;
+    pendingPlace = place;
+    placeHold = 0;
+    return;
+  }
+  if (place !== pendingPlace) {
+    pendingPlace = place;
+    placeHold = 0;
+    return;
+  }
+  if (place !== prevPlace) {
+    placeHold += dt;
+    if (placeHold >= 0.4) {
+      flashPlace(place, place < prevPlace);
+      prevPlace = place;
+      placeHold = 0;
+    }
+  }
+}
+
+function flashPlace(place, up) {
+  const el = $('place-flash');
+  el.textContent = `P${place} ${up ? '▲' : '▼'}`;
+  el.classList.remove('up', 'down', 'show');
+  void el.offsetWidth;
+  el.classList.add(up ? 'up' : 'down', 'show');
+  clearTimeout(placeFlashTO);
+  placeFlashTO = setTimeout(() => el.classList.remove('show'), 1400);
+  veilAudio.place(up);
+}
+
+// Flash lap split when the player crosses the line; persist all-time best.
+function checkLapEvents() {
+  if (player.lapTimes.length <= seenLapCount) return;
+  const lapN = player.lapTimes.length;
+  const lapT = player.lapTimes[lapN - 1];
+  seenLapCount = lapN;
+  const isRecord = bestLapEver == null || lapT < bestLapEver;
+  if (isRecord) {
+    bestLapEver = lapT;
+    saveBestLap(lapT);
+    $('hud-best').textContent = formatTime(bestLapEver);
+  }
+  // Skip flash + chime on the final crossing — FINISH! takes the stage
+  if (player.lap <= TOTAL_LAPS) {
+    flashMsg(`LAP ${lapN}  ·  ${formatTime(lapT)}${isRecord ? '  ·  NEW RECORD!' : ''}`, 1.8);
+    veilAudio.lap(isRecord);
+  }
+}
+
+// Slipstream: tuck in close behind a rival to build a draft speed bonus.
+function updateSlipstream(dt) {
+  let target = 0;
+  if (!player.finished && player.speed > 18) {
+    const trackLen = track.curve.getLength();
+    for (const r of racers) {
+      if (r === player) continue;
+      let gap = r.progress - player.progress;
+      if (gap < -0.5) gap += 1;
+      else if (gap > 0.5) gap -= 1;
+      const dist = gap * trackLen;
+      if (dist < 3 || dist > 24) continue;
+      if (Math.abs(r.lateral - player.lateral) > 0.24) continue;
+      target = Math.max(target, 1 - (dist - 3) / 21);
+    }
+  }
+  slipstreamAmt += (target - slipstreamAmt) * Math.min(1, dt * 4);
+  if (slipstreamAmt < 0.02) slipstreamAmt = 0;
+  player.draft = slipstreamAmt;
+  const active = slipstreamAmt > 0.3;
+  $('slipstream-tag').classList.toggle('on', active);
+  $('draft-vignette').classList.toggle('on', active);
 }
 
 function drawMinimap(ordered) {
@@ -551,6 +689,8 @@ function checkFinish() {
       if (r.isPlayer) {
         const alreadyDone = racers.filter((x) => x.finished && x !== r).length;
         flashMsg(alreadyDone === 0 ? 'FINISH!' : 'FINISHED', 1.5);
+        veilAudio.finish();
+        veilAudio.stopEngine();
       }
     }
   }
@@ -586,6 +726,7 @@ function loop() {
 
   if (state === 'racing') {
     raceTime += dt;
+    updateSlipstream(dt);
     racers.forEach((r) => {
       if (!r.isPlayer) r.updateAI(dt, track, racers);
       r.updatePhysics(dt, track, r.isPlayer ? input : null);
@@ -595,10 +736,24 @@ function loop() {
     if (input.boostConsumed) {
       input.boost = false;
       input.boostConsumed = false;
+      veilAudio.boost();
     }
+    if (player._orbPickup) {
+      player._orbPickup = false;
+      veilAudio.orb();
+    }
+    if (player._gatePickup) {
+      player._gatePickup = false;
+      veilAudio.gate();
+    }
+    veilAudio.setEngine(
+      Math.min(1, player.speed / (player.maxSpeed * 1.4)),
+      player.boostTimer > 0
+    );
     updateCamera(dt);
     updatePickups(dt);
-    updateHUD();
+    updateHUD(dt);
+    checkLapEvents();
     checkFinish();
     renderer.render(scene, camera);
     return;
@@ -666,6 +821,14 @@ function bindInput() {
         if (down) togglePause();
         e.preventDefault();
         break;
+      case 'KeyM':
+        if (down) {
+          veilAudio.ensure();
+          veilAudio.toggleMuted();
+          if (state === 'paused') veilAudio.suspend();
+          updateMuteButton();
+        }
+        break;
       default:
         break;
     }
@@ -703,24 +866,44 @@ function togglePause() {
     state = 'paused';
     showScreen('pause');
     hud.classList.add('active');
+    veilAudio.suspend();
   } else if (state === 'paused') {
     state = 'racing';
     showScreen(null);
     hud.classList.add('active');
     clock.getDelta();
+    veilAudio.resume();
   }
 }
 
 async function returnToMenu() {
   state = 'menu';
+  veilAudio.resume();
+  veilAudio.stopEngine();
   showScreen('menu');
   hud.classList.remove('active');
   await buildMenuBackdrop();
 }
 
 // ---------- Buttons ----------
+function updateMuteButton() {
+  const btn = $('btn-mute');
+  btn.textContent = veilAudio.muted ? 'Sound Off' : 'Sound On';
+  btn.classList.toggle('muted', veilAudio.muted);
+}
+
 function bindUI() {
-  $('btn-start').onclick = () => startRaceFlow();
+  $('btn-start').onclick = () => {
+    veilAudio.ensure();
+    startRaceFlow();
+  };
+  $('btn-mute').onclick = () => {
+    veilAudio.ensure();
+    veilAudio.toggleMuted();
+    if (state === 'paused') veilAudio.suspend();
+    updateMuteButton();
+  };
+  updateMuteButton();
   $('btn-watch-intro').onclick = async () => {
     await playCinematic({
       src: ASSETS.racingVideo,
@@ -737,7 +920,10 @@ function bindUI() {
   };
   $('btn-resume').onclick = () => togglePause();
   $('btn-quit').onclick = () => returnToMenu();
-  $('btn-replay').onclick = () => startRaceFlow();
+  $('btn-replay').onclick = () => {
+    veilAudio.ensure();
+    startRaceFlow();
+  };
   $('btn-menu').onclick = () => returnToMenu();
 }
 

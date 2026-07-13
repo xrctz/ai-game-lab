@@ -42,6 +42,13 @@
       .loader-sys-dot{width:6px;height:6px;border-radius:50%;background:var(--dt-lime);box-shadow:0 0 8px var(--dt-lime);
         animation:pulse-dot 1.6s ease-in-out infinite}
       @keyframes pulse-dot{0%,100%{opacity:.5;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+      .dtx-loader-tip{max-width:420px;margin-top:26px;padding:10px 16px;text-align:center;
+        border-left:2px solid var(--dt-cyan);border-radius:0 10px 10px 0;
+        background:rgba(53,231,255,.05);font-size:.76rem;line-height:1.55;color:var(--dt-muted);
+        opacity:1;transition:opacity .35s ease}
+      .dtx-loader-tip.dtx-tip-fade{opacity:0}
+      .dtx-loader-tip .dtx-tip-label{display:block;font-family:var(--dt-font-mono);font-size:.62rem;
+        text-transform:uppercase;letter-spacing:.14em;color:var(--dt-cyan);margin-bottom:3px}
     </style>
     <script src="../shared/aigl-mobile.js"></script>
     <script src="./mobile-touch.js"></script>
@@ -54,6 +61,7 @@
     <script src="./visual-effects.js"></script>
     <script src="./hub-embed-bridge.js"></script>
     <script src="./ui-declutter.js"></script>
+    <script src="./session-tools.js"></script>
     <script>
       (function(){
         var loader=document.createElement('div');
@@ -67,7 +75,8 @@
           +'<span class="loader-sys"><span class="loader-sys-dot"></span>Streaming</span>'
           +'<span class="loader-sys"><span class="loader-sys-dot"></span>Weapons</span>'
           +'<span class="loader-sys"><span class="loader-sys-dot"></span>World</span>'
-          +'</div>';
+          +'</div>'
+          +'<div class="dtx-loader-tip" id="dtxLoaderTip"></div>';
         document.body.insertBefore(loader,document.body.firstChild);
         var sysTexts=['Initializing renderer…','Loading world systems…','Preparing weapons…','Syncing streaming…','Building terrain…','Almost ready…'];
         var si=0;
@@ -76,8 +85,34 @@
           if(t&&si<sysTexts.length){t.textContent=sysTexts[si];si++;}
           else clearInterval(sysInterval);
         },1800);
+        var loadTips=[
+          'Headshots prevent corpse revives — always aim for the head.',
+          'Build barricades (B) at choke points; cycle types with N.',
+          'Spitters leave acid pools. Keep moving after the kill.',
+          'Press / in-game for the full hotkey cheatsheet.',
+          'Press X in-game for a live session report with FPS stats.',
+          'F2 saves a clean PNG screenshot of the 3D view.',
+          'Chase ★ supply drops once you have spare stamina and ammo.',
+          'Hunters pounce from range — dodge sideways on the audio cue.',
+          'Upgrade magazine capacity first for fewer reloads.'
+        ];
+        var ti=Math.floor(Math.random()*loadTips.length);
+        function showTip(){
+          var el=document.getElementById('dtxLoaderTip');
+          if(!el)return;
+          el.innerHTML='<span class="dtx-tip-label">Survival Tip</span>'+loadTips[ti%loadTips.length];
+          ti++;
+        }
+        showTip();
+        var tipInterval=setInterval(function(){
+          var el=document.getElementById('dtxLoaderTip');
+          if(!el){clearInterval(tipInterval);return;}
+          el.classList.add('dtx-tip-fade');
+          setTimeout(function(){showTip();el.classList.remove('dtx-tip-fade');},350);
+        },3600);
         window.__hideLoader=function(){
           clearInterval(sysInterval);
+          clearInterval(tipInterval);
           var bar=document.getElementById('loaderBar');
           var text=document.getElementById('loaderText');
           if(bar){bar.style.animation='none';bar.style.width='100%';}
@@ -187,6 +222,10 @@
                 <span><kbd>O</kbd> Director</span>
                 <span><kbd>P</kbd> Pause</span>
                 <span><kbd>M</kbd> Audio</span>
+                <span><kbd>X</kbd> Session Report</span>
+                <span><kbd>/</kbd> Hotkey Sheet</span>
+                <span><kbd>F2</kbd> Screenshot</span>
+                <span><kbd>`</kbd> Debug Overlay</span>
               </div>
             </div>
           </div>

@@ -186,6 +186,9 @@ export class Racer {
     this.finishedPlace = null;
     this.totalDistance = 0;
     this.gateHits = new Map();
+    this.draft = 0; // slipstream strength 0..1, set by main loop
+    this._orbPickup = false; // event flags consumed by main for audio cues
+    this._gatePickup = false;
   }
 
   get raceMetric() {
@@ -271,7 +274,8 @@ export class Racer {
     if (this.boostCooldown > 0 && this.isPlayer) this.boostCooldown -= dt;
 
     const driftMul = this.drift ? 0.88 : 1;
-    const target = Math.max(0, this.throttle) * this.maxSpeed * this.boostMul * driftMul;
+    const draftMul = 1 + this.draft * 0.14;
+    const target = Math.max(0, this.throttle) * this.maxSpeed * this.boostMul * driftMul * draftMul;
     if (this.throttle >= 0) {
       const accelScale = this.isPlayer ? 1.15 : 1;
       this.speed += (target - this.speed) * Math.min(1, (this.accel * accelScale * dt) / this.maxSpeed);
@@ -367,6 +371,7 @@ export class Racer {
         if (orb.glow) orb.glow.visible = false;
         this.orbs += 1;
         this.spectrum = Math.min(100, this.spectrum + orbGain);
+        this._orbPickup = true;
       }
     }
 
@@ -386,6 +391,7 @@ export class Racer {
         this.gateHits.set(i, now);
         gate.mesh.material.emissiveIntensity = 2.5;
         gate._flash = 0.4;
+        this._gatePickup = true;
       }
     }
   }

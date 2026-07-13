@@ -47,7 +47,7 @@ const MOVES = {
   bite:       { name: 'Bite', type: 'normal', power: 60, accuracy: 100, pp: 25, cat: 'physical' },
   confusion:  { name: 'Confusion', type: 'psychic', power: 50, accuracy: 100, pp: 25, cat: 'special' },
   psybeam:    { name: 'Psybeam', type: 'psychic', power: 65, accuracy: 100, pp: 20, cat: 'special' },
-  poisonsting: { name: 'Poison Sting', type: 'poison', power: 15, accuracy: 100, pp: 35, cat: 'physical' },
+  poisonsting: { name: 'Poison Sting', type: 'poison', power: 15, accuracy: 100, pp: 35, cat: 'physical', effect: 'poison', effectChance: 30 },
   stringshot: { name: 'String Shot', type: 'bug', power: 0, accuracy: 95, pp: 40, cat: 'status', effect: 'spd_down' },
   gust:       { name: 'Gust', type: 'flying', power: 40, accuracy: 100, pp: 35, cat: 'special' },
   wingattack: { name: 'Wing Attack', type: 'flying', power: 60, accuracy: 100, pp: 35, cat: 'physical' },
@@ -490,6 +490,52 @@ const TILE_DECOR = {
   [TILE.DOOR]: null,
   [TILE.FOREST]: '🌿',
 };
+
+// ---------- Day / night cycle ----------
+// One full cycle every DAY_CYCLE_STEPS overworld steps.
+const DAY_CYCLE_STEPS = 160;
+
+// Overlay tint keyframes across one cycle (t = fraction of cycle)
+const DAY_TINT_KEYFRAMES = [
+  { t: 0.00, r: 0,   g: 0,   b: 0,  a: 0 },    // day
+  { t: 0.50, r: 0,   g: 0,   b: 0,  a: 0 },    // late day
+  { t: 0.58, r: 255, g: 120, b: 40, a: 0.16 }, // dusk
+  { t: 0.66, r: 10,  g: 20,  b: 60, a: 0.34 }, // nightfall
+  { t: 0.86, r: 10,  g: 20,  b: 60, a: 0.34 }, // deep night
+  { t: 0.94, r: 255, g: 150, b: 90, a: 0.14 }, // dawn
+  { t: 1.00, r: 0,   g: 0,   b: 0,  a: 0 },    // day again
+];
+
+/**
+ * Time of day derived from step count (pure — testable).
+ * Returns { phase: 'day'|'dusk'|'night'|'dawn', tint: {r,g,b,a} }
+ */
+function getDayNight(steps) {
+  const s = ((steps % DAY_CYCLE_STEPS) + DAY_CYCLE_STEPS) % DAY_CYCLE_STEPS;
+  const t = s / DAY_CYCLE_STEPS;
+  let from = DAY_TINT_KEYFRAMES[0];
+  let to = DAY_TINT_KEYFRAMES[DAY_TINT_KEYFRAMES.length - 1];
+  for (let i = 0; i < DAY_TINT_KEYFRAMES.length - 1; i++) {
+    if (t >= DAY_TINT_KEYFRAMES[i].t && t <= DAY_TINT_KEYFRAMES[i + 1].t) {
+      from = DAY_TINT_KEYFRAMES[i];
+      to = DAY_TINT_KEYFRAMES[i + 1];
+      break;
+    }
+  }
+  const span = to.t - from.t || 1;
+  const k = (t - from.t) / span;
+  const lerp = (x, y) => x + (y - x) * k;
+  const phase = t < 0.54 ? 'day' : t < 0.62 ? 'dusk' : t < 0.90 ? 'night' : 'dawn';
+  return {
+    phase,
+    tint: {
+      r: Math.round(lerp(from.r, to.r)),
+      g: Math.round(lerp(from.g, to.g)),
+      b: Math.round(lerp(from.b, to.b)),
+      a: lerp(from.a, to.a),
+    },
+  };
+}
 
 function isWalkable(tile) {
   return [

@@ -171,6 +171,10 @@ js/
 - Pickup system (ammo, health, grenades)
 - Supply Depot shop between waves
 - Full HUD with teammate status, wave info, and kill feed
+- Kill combo counter with score multiplier (up to x2 at a 10+ streak, shown under the crosshair with a decay bar)
+- Wave-clear summary panel (kills, headshots, accuracy, best combo for the wave)
+- Zombies you kill have a chance to drop glowing ammo/medkit pickups (despawn after 20s)
+- Low-ammo / reload prompt when your magazine runs low or empty
 - Floating damage numbers and hit markers
 - Camera shake and particle effects
 - Flashlight with ambient player glow

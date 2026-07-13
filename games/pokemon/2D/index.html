@@ -28,7 +28,7 @@
       <button id="btn-continue" class="menu-btn" hidden><span class="btn-glyph">&#9654;</span> CONTINUE</button>
       <div class="controls-hint">
         Move: WASD / Arrows<br>
-        Interact: E / Space · Party: M · Bag: B · Save: P<br>
+        Interact: E / Space · Party: M · Bag: B · Pokédex: X · Save: P<br>
         Goal: Catch 6 species &amp; defeat Mewtwo!
       </div>
     </section>
@@ -132,6 +132,7 @@
           <div class="hp-box">
             <div class="name-row">
               <span id="enemy-name">Wild</span>
+              <span id="enemy-status" class="status-tag"></span>
               <span class="level" id="enemy-level">Lv5</span>
             </div>
             <div class="hp-bar-bg"><div id="enemy-hp-bar" class="hp-bar"></div></div>
@@ -151,6 +152,7 @@
           <div class="hp-box">
             <div class="name-row">
               <span id="player-name">You</span>
+              <span id="player-status" class="status-tag"></span>
               <span class="level" id="player-level">Lv5</span>
             </div>
             <div class="hp-bar-bg"><div id="player-hp-bar" class="hp-bar"></div></div>
@@ -204,7 +206,18 @@
     <div class="panel-box">
       <h2>Pokémon Party</h2>
       <div id="party-list" class="party-list"></div>
+      <button id="btn-open-dex" class="panel-close alt">Pokédex (X)</button>
       <button id="btn-close-party" class="panel-close">Close (Esc)</button>
+    </div>
+  </div>
+
+  <!-- Pokédex panel -->
+  <div id="dex-panel" class="side-panel">
+    <div class="panel-box dex-box">
+      <h2>Pokédex</h2>
+      <p id="dex-summary" class="dex-summary"></p>
+      <div id="dex-list" class="dex-list"></div>
+      <button id="btn-close-dex" class="panel-close">Close (Esc)</button>
     </div>
   </div>
 

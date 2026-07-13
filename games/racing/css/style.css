@@ -448,6 +448,90 @@ html, body {
   opacity: 1;
 }
 
+/* Slipstream draft cue */
+.draft-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 52%, rgba(61, 232, 255, 0.2) 100%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.draft-vignette.on {
+  opacity: 1;
+}
+
+.slipstream-tag {
+  align-self: flex-start;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--cyan);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  text-shadow: 0 0 12px rgba(61, 232, 255, 0.8);
+}
+
+.slipstream-tag.on {
+  opacity: 1;
+  animation: blink 0.5s ease infinite;
+}
+
+/* Mute toggle (only interactive HUD element) */
+.hud-mute {
+  align-self: flex-start;
+  pointer-events: auto;
+  appearance: none;
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  padding: 0.32rem 0.8rem;
+  transition: color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.hud-mute:hover {
+  color: var(--cyan);
+  box-shadow: 0 0 16px rgba(61, 232, 255, 0.35);
+}
+
+.hud-mute.muted {
+  color: var(--danger);
+}
+
+/* Position change flash */
+.place-flash {
+  position: absolute;
+  top: 16%;
+  left: 50%;
+  transform: translateX(-50%) scale(0.8);
+  font-size: clamp(1.2rem, 3.4vw, 2rem);
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  text-shadow: 0 0 22px currentColor;
+}
+
+.place-flash.show {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+.place-flash.up { color: var(--aurora-g); }
+.place-flash.down { color: var(--danger); }
+
 /* ===== RESULT ===== */
 #result-screen {
   background:
@@ -493,6 +577,49 @@ html, body {
 
 .result-stats .hud-card {
   min-width: 0;
+}
+
+.result-laps {
+  margin: -0.5rem auto 1.5rem;
+  max-width: 340px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 0.6rem 0.9rem;
+  backdrop-filter: blur(10px);
+}
+
+.result-laps:empty {
+  display: none;
+}
+
+.lap-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+  padding: 0.2rem 0;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.lap-row.best {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.lap-row.best .lap-tag {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  align-self: center;
+}
+
+.lap-row.record {
+  border-top: 1px solid rgba(61, 232, 255, 0.2);
+  margin-top: 0.3rem;
+  padding-top: 0.4rem;
+  color: var(--cyan);
+  font-size: 0.8rem;
 }
 
 /* ===== PAUSE ===== */
@@ -562,4 +689,5 @@ html, body {
   #minimap { width: 110px; height: 110px; }
   .place-list { top: 140px; min-width: 120px; }
   .spectrum-wrap { width: 140px; }
+  .hud-top .best-card { display: none; }
 }

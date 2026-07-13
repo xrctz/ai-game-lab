@@ -1,5 +1,5 @@
 /* ============================================================
-   CraftVerse Lab — inject layer  (v3 — hub overhaul)
+   CraftVerse Lab — inject layer  (v4 — stats, screenshot, cheatsheet)
    Scope: games/voxel/ only.  Prefix: cv-lab-
    Do NOT touch the Vite bundle.
    ============================================================ */
@@ -14,7 +14,7 @@
     catch (_) { return false; }
   })();
   var IS_MOBILE  = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-  window.__craftverseLabVersion = "v3";
+  window.__craftverseLabVersion = "v4";
 
   /* ── State ── */
   var clickOverlay  = null;
@@ -22,6 +22,19 @@
   var lockMsgTimer  = null;
   var canvas        = null;
   var inWorld       = false;
+  var statsEl       = null;
+  var statsTimeEl   = null;
+  var statsFpsEl    = null;
+  var statsVisible  = false;
+  var playSeconds   = 0;
+  var frameCount    = 0;
+  var lastRafStamp  = -1;
+  var lastFpsCheck  = 0;
+  var shotPending   = false;
+  var shotFallback  = null;
+  var cheatsheetEl  = null;
+  var toastEl       = null;
+  var toastTimer    = null;
 
   /* ── Helpers ── */
   function $(id) { return document.getElementById(id); }
@@ -252,6 +265,246 @@
   }
 
   /* ─────────────────────────────────────────────────────
+     11. TOAST  (small transient message, bottom-center)
+     ───────────────────────────────────────────────────── */
+  function createToast() {
+    toastEl = makeEl("div", PREFIX + "toast");
+    document.body.appendChild(toastEl);
+  }
+
+  function showToast(text, ms) {
+    if (!toastEl) return;
+    toastEl.textContent = text;
+    clearTimeout(toastTimer);
+    toastEl.classList.add(PREFIX + "visible");
+    toastTimer = setTimeout(function () {
+      toastEl.classList.remove(PREFIX + "visible");
+    }, ms || 2500);
+  }
+
+  /* ─────────────────────────────────────────────────────
+     12. FRAME HOOK  (shared by FPS meter + screenshot)
+     Wraps window.requestAnimationFrame so we can:
+       a) count the game's rendered frames (FPS meter),
+       b) read the canvas right after the bundle renders —
+          required because the WebGL context does not use
+          preserveDrawingBuffer, so toBlob() is only valid
+          inside the same frame as the render call.
+     Callbacks sharing a timestamp are counted once, so
+     other rAF users (e.g. mobile shim) don't inflate FPS.
+     ───────────────────────────────────────────────────── */
+  function installFrameHook() {
+    var nativeRAF = window.requestAnimationFrame;
+    if (typeof nativeRAF !== "function") return;
+    window.requestAnimationFrame = function (cb) {
+      return nativeRAF.call(window, function (t) {
+        if (t !== lastRafStamp) {
+          lastRafStamp = t;
+          frameCount++;
+        }
+        var out = cb(t);
+        if (shotPending) {
+          shotPending = false;
+          clearTimeout(shotFallback);
+          captureScreenshot();
+        }
+        return out;
+      });
+    };
+  }
+
+  /* ─────────────────────────────────────────────────────
+     13. SESSION STATS OVERLAY  (F3)
+     Time played (while in-world) + FPS meter.
+     ───────────────────────────────────────────────────── */
+  function createStatsOverlay() {
+    statsEl = makeEl("div", PREFIX + "stats");
+
+    var head = makeEl("div", null, PREFIX + "stats-head");
+    head.textContent = "SESSION — F3 to hide";
+
+    var timeRow = makeEl("div", null, PREFIX + "stats-row");
+    var timeLabel = makeEl("span", null, PREFIX + "stats-label");
+    timeLabel.textContent = "Time played";
+    statsTimeEl = makeEl("span", null, PREFIX + "stats-value");
+    statsTimeEl.textContent = "0:00";
+    timeRow.appendChild(timeLabel);
+    timeRow.appendChild(statsTimeEl);
+
+    var fpsRow = makeEl("div", null, PREFIX + "stats-row");
+    var fpsLabel = makeEl("span", null, PREFIX + "stats-label");
+    fpsLabel.textContent = "FPS";
+    statsFpsEl = makeEl("span", null, PREFIX + "stats-value");
+    statsFpsEl.textContent = "\u2014";
+    fpsRow.appendChild(fpsLabel);
+    fpsRow.appendChild(statsFpsEl);
+
+    statsEl.appendChild(head);
+    statsEl.appendChild(timeRow);
+    statsEl.appendChild(fpsRow);
+    statsEl.classList.add(PREFIX + "hidden");
+    document.body.appendChild(statsEl);
+
+    /* Play-time accrues only while in-world and tab visible */
+    setInterval(function () {
+      if (inWorld && !document.hidden) playSeconds++;
+    }, 1000);
+
+    /* Refresh readout twice a second while shown */
+    lastFpsCheck = performance.now();
+    setInterval(function () {
+      var now = performance.now();
+      var elapsed = now - lastFpsCheck;
+      var fps = frameCount > 0 && elapsed > 0
+        ? Math.round(frameCount * 1000 / elapsed)
+        : 0;
+      frameCount = 0;
+      lastFpsCheck = now;
+      if (!statsVisible) return;
+      statsTimeEl.textContent = formatDuration(playSeconds);
+      statsFpsEl.textContent = fps > 0 ? String(fps) : "\u2014";
+    }, 500);
+  }
+
+  function formatDuration(totalSec) {
+    var h = Math.floor(totalSec / 3600);
+    var m = Math.floor((totalSec % 3600) / 60);
+    var s = totalSec % 60;
+    var mm = (h > 0 && m < 10 ? "0" : "") + m;
+    var ss = (s < 10 ? "0" : "") + s;
+    return h > 0 ? h + ":" + mm + ":" + ss : m + ":" + ss;
+  }
+
+  function toggleStats() {
+    if (!statsEl) return;
+    statsVisible = !statsVisible;
+    statsEl.classList.toggle(PREFIX + "hidden", !statsVisible);
+  }
+
+  /* ─────────────────────────────────────────────────────
+     14. SCREENSHOT  (F2)
+     Captures the game canvas via toBlob and downloads it.
+     Capture happens inside the frame hook, right after the
+     bundle renders (DOM overlays are never part of the
+     canvas, so nothing extra needs hiding). If the render
+     loop is idle, fall back to a direct capture.
+     ───────────────────────────────────────────────────── */
+  function requestScreenshot() {
+    var c = resolveCanvas();
+    if (!c || typeof c.toBlob !== "function") {
+      showToast("Screenshot unavailable \u2014 no canvas yet");
+      return;
+    }
+    shotPending = true;
+    clearTimeout(shotFallback);
+    shotFallback = setTimeout(function () {
+      if (!shotPending) return;
+      shotPending = false;
+      captureScreenshot();
+    }, 400);
+  }
+
+  function captureScreenshot() {
+    var c = resolveCanvas();
+    if (!c || typeof c.toBlob !== "function") return;
+    try {
+      c.toBlob(function (blob) {
+        if (!blob) {
+          showToast("Screenshot failed");
+          return;
+        }
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = "craftverse-" + timestampSlug() + ".png";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+        showToast("\u{1F4F8} Screenshot saved");
+      }, "image/png");
+    } catch (_) {
+      showToast("Screenshot failed");
+    }
+  }
+
+  function timestampSlug() {
+    var d = new Date();
+    function p(n) { return (n < 10 ? "0" : "") + n; }
+    return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) +
+      "-" + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
+  }
+
+  /* ─────────────────────────────────────────────────────
+     15. CONTROLS CHEATSHEET  (H)
+     ───────────────────────────────────────────────────── */
+  var CHEATSHEET_ROWS = [
+    ["W A S D", "Move"],
+    ["Space", "Jump / fly up"],
+    ["Shift", "Sprint"],
+    ["Ctrl", "Crouch / fly down"],
+    ["Mouse", "Left break \u00B7 right place"],
+    ["Wheel", "Cycle hotbar"],
+    ["E", "Inventory & crafting"],
+    ["T", "Chat"],
+    ["F", "Toggle flying"],
+    ["G", "Creative / survival"],
+    ["Esc", "Pause menu"],
+    ["F2", "Screenshot"],
+    ["F3", "Session stats"]
+  ];
+
+  function createCheatsheet() {
+    cheatsheetEl = makeEl("div", PREFIX + "cheatsheet");
+
+    var title = makeEl("div", null, PREFIX + "cheat-title");
+    title.textContent = "Controls";
+    cheatsheetEl.appendChild(title);
+
+    var grid = makeEl("div", null, PREFIX + "cheat-grid");
+    CHEATSHEET_ROWS.forEach(function (row) {
+      var key = makeEl("span", null, PREFIX + "cheat-key");
+      key.textContent = row[0];
+      var desc = makeEl("span", null, PREFIX + "cheat-desc");
+      desc.textContent = row[1];
+      grid.appendChild(key);
+      grid.appendChild(desc);
+    });
+    cheatsheetEl.appendChild(grid);
+
+    var foot = makeEl("div", null, PREFIX + "cheat-foot");
+    foot.textContent = "Press H to close";
+    cheatsheetEl.appendChild(foot);
+
+    cheatsheetEl.classList.add(PREFIX + "hidden");
+    document.body.appendChild(cheatsheetEl);
+  }
+
+  function toggleCheatsheet() {
+    if (!cheatsheetEl) return;
+    cheatsheetEl.classList.toggle(PREFIX + "hidden");
+  }
+
+  /* ─────────────────────────────────────────────────────
+     16. LAB HOTKEYS  (F2 / F3 / H — unused by the bundle)
+     Ignored while typing in chat or other inputs.
+     ───────────────────────────────────────────────────── */
+  function onLabKeydown(e) {
+    if (e.repeat) return;
+    var t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+    if (e.code === "F3") {
+      e.preventDefault();
+      toggleStats();
+    } else if (e.code === "F2") {
+      e.preventDefault();
+      requestScreenshot();
+    } else if (e.code === "KeyH") {
+      toggleCheatsheet();
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────
      INIT
      ───────────────────────────────────────────────────── */
   function init() {
@@ -266,6 +519,12 @@
       createClickOverlay();
       document.body.classList.add("cv-embedded");
     }
+
+    createToast();
+    installFrameHook();
+    createStatsOverlay();
+    createCheatsheet();
+    document.addEventListener("keydown", onLabKeydown, false);
 
     watchCanvasInsertion();
     watchScreens();

@@ -1459,6 +1459,154 @@ html, body {
   max-width: 400px;
 }
 
+/* ===== Status condition tags (battle HP boxes) ===== */
+.status-tag {
+  font-size: 6px;
+  padding: 2px 4px;
+  border-radius: 2px;
+  margin: 0 4px;
+}
+
+.status-tag.psn {
+  background: #a040a0;
+  color: #fff;
+}
+
+.status-tag.par {
+  background: #f8d030;
+  color: #333;
+}
+
+/* ===== Shiny Pokémon ===== */
+.battle-sprite.shiny {
+  filter: hue-rotate(150deg) saturate(1.45) brightness(1.06)
+    drop-shadow(0 0 8px rgba(255, 215, 64, 0.6))
+    drop-shadow(3px 5px 0 rgba(0,0,0,0.32));
+}
+
+.sprite-img.shiny,
+.hud-mini.shiny,
+.dex-sprite.shiny {
+  filter: hue-rotate(150deg) saturate(1.45) brightness(1.06)
+    drop-shadow(0 0 5px rgba(255, 215, 64, 0.6));
+}
+
+.shiny-star {
+  color: #ffd740;
+  text-shadow: 0 0 6px rgba(255, 215, 64, 0.8);
+}
+
+/* ===== Pokédex panel ===== */
+.panel-box.dex-box {
+  max-width: 560px;
+}
+
+.dex-summary {
+  text-align: center;
+  font-size: 8px;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+}
+
+.dex-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.dex-card {
+  background: rgba(0,0,0,0.25);
+  border: 2px solid var(--panel-border);
+  padding: 8px 6px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.dex-card.caught {
+  border-color: var(--accent);
+}
+
+.dex-card.unknown {
+  opacity: 0.6;
+}
+
+.dex-num {
+  font-size: 6px;
+  color: var(--text-dim);
+  align-self: flex-start;
+}
+
+.dex-sprite-wrap {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dex-sprite {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+/* Seen but not caught — silhouette */
+.dex-card.seen .dex-sprite {
+  filter: brightness(0) opacity(0.75);
+}
+
+.dex-q {
+  font-size: 22px;
+  color: var(--text-dim);
+}
+
+.dex-ball {
+  position: absolute;
+  right: -4px;
+  bottom: -2px;
+  width: 16px;
+  height: 16px;
+  image-rendering: pixelated;
+}
+
+.dex-name {
+  font-size: 7px;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.dex-types {
+  min-height: 12px;
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.dex-types .type-badge {
+  font-size: 5px;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+.panel-close.alt {
+  background: var(--panel);
+  border-color: var(--panel-border);
+  color: var(--text);
+  margin-bottom: 0;
+}
+
+.panel-close.alt:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--blue);
+}
+
 /* iPhone 14 portrait (~390px) — compact on-screen controls */
 @media (max-width: 430px) {
   .mobile-controls {

@@ -61,6 +61,12 @@ export class Game {
         this.killStreak = 0;
         this.killStreakTimer = 0;
         this.killStreakDecay = 3;
+        this.bestCombo = 0;
+
+        this.drops = [];
+        this.dropChance = 0.22;
+        this.dropLifetime = 20;
+        this._waveStatsSnapshot = null;
 
         this.muzzleFlashTimer = 0;
 
@@ -251,6 +257,8 @@ export class Game {
         const pickup = this.level.updatePickups(dt, this.player);
         if (pickup) this._handlePickup(pickup);
 
+        this._updateDrops(dt);
+
         this.particles.update(dt);
         this.cameraShake.update(dt);
         this.cameraShake.applyTo(this.renderer.camera);
@@ -292,9 +300,15 @@ export class Game {
 
         this.ui.updateHUD(this.player, this.weaponSystem.getCurrent(), this.allySquad.getAllAllies(), this.waveManager, this.currentFPS, this.weaponSystem.currentIndex, this.crosshairSpread);
 
+        this.ui.updateCombo(this.killStreak, this.killStreakTimer / this.killStreakDecay, this._comboMultiplier());
+
         // Update damage numbers and low health pulse
         this.ui.updateDamageNumbers(dt);
         this.ui.showLowHealthPulse((this.player.health / this.player.maxHealth) * 100);
+    }
+
+    _comboMultiplier() {
+        return 1 + Math.min(this.killStreak, 10) * 0.1;
     }
 
     _handleInput(dt) {
@@ -434,11 +448,14 @@ export class Game {
                     this.ui.showDamageNumber(hit.point.clone(), dmgAmount, isHeadshot, this.renderer.camera, this.renderer.renderer.domElement);
 
                     if (!hitZombie.alive) {
-                        this.gameState.addKill(isHeadshot);
-                        this.audio.play('zombieDeath');
-
                         this.killStreak++;
                         this.killStreakTimer = this.killStreakDecay;
+                        if (this.killStreak > this.bestCombo) this.bestCombo = this.killStreak;
+
+                        this.gameState.addKill(isHeadshot, this._comboMultiplier());
+                        this.audio.play('zombieDeath');
+
+                        this._maybeDropPickup(hitZombie.position);
 
                         if (isHeadshot) {
                             this.slowMotionTimer = 0.15;
@@ -527,12 +544,67 @@ export class Game {
         }
     }
 
+    _maybeDropPickup(position) {
+        if (Math.random() > this.dropChance) return;
+        if (this.drops.length >= 8) return;
+
+        const type = Math.random() < 0.6 ? 'ammo' : 'health';
+        const color = type === 'ammo' ? 0xffaa00 : 0x00ff44;
+
+        const geo = new THREE.OctahedronGeometry(0.2, 0);
+        const mat = new THREE.MeshStandardMaterial({
+            color: color,
+            emissive: color,
+            emissiveIntensity: 0.6,
+            roughness: 0.3
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(position.x, 0.6, position.z);
+        this.renderer.scene.add(mesh);
+
+        this.drops.push({ mesh, type, timer: this.dropLifetime });
+    }
+
+    _updateDrops(dt) {
+        for (let i = this.drops.length - 1; i >= 0; i--) {
+            const drop = this.drops[i];
+            drop.timer -= dt;
+
+            drop.mesh.rotation.y += dt * 3;
+            drop.mesh.position.y = 0.6 + Math.sin(Date.now() * 0.004 + i) * 0.12;
+
+            // Blink during the last few seconds before despawning
+            drop.mesh.visible = drop.timer > 4 || Math.sin(drop.timer * 10) > -0.2;
+
+            if (drop.timer <= 0) {
+                this.renderer.scene.remove(drop.mesh);
+                this.drops.splice(i, 1);
+                continue;
+            }
+
+            if (this.player.alive && drop.mesh.position.distanceTo(this.player.position) < 1.5) {
+                this.renderer.scene.remove(drop.mesh);
+                this.drops.splice(i, 1);
+                this._handlePickup(drop.type);
+                this.ui.addKillFeed(drop.type === 'ammo' ? 'Picked up ammo' : 'Picked up medkit');
+            }
+        }
+    }
+
+    _clearDrops() {
+        for (const drop of this.drops) {
+            this.renderer.scene.remove(drop.mesh);
+        }
+        this.drops = [];
+    }
+
     _handleWaveEvents() {
         if (this.waveManager.isWaveComplete() && !this._waveCompleteHandled) {
             this._waveCompleteHandled = true;
             this.gameState.stats.wavesCompleted = this.waveManager.currentWave;
             this.audio.play('waveEnd');
             this.ui.addKillFeed(`Wave ${this.waveManager.currentWave} complete!`);
+            this.ui.showWaveSummary(this.waveManager.currentWave, this._getWaveStats());
         }
 
         if (this.waveManager.shouldStartNext()) {
@@ -540,7 +612,30 @@ export class Game {
             const config = this.waveManager.startWave(this.zombieManager, this.level.getSpawnPoints());
             this.audio.play('waveStart');
             this.ui.showWaveAnnounce(this.waveManager.currentWave);
+            this._snapshotWaveStats();
         }
+    }
+
+    _snapshotWaveStats() {
+        this._waveStatsSnapshot = {
+            kills: this.gameState.stats.kills,
+            headshots: this.gameState.stats.headshots,
+            shotsFired: this.gameState.stats.shotsFired,
+            shotsHit: this.gameState.stats.shotsHit
+        };
+        this.bestCombo = 0;
+    }
+
+    _getWaveStats() {
+        const snap = this._waveStatsSnapshot || { kills: 0, headshots: 0, shotsFired: 0, shotsHit: 0 };
+        const shots = this.gameState.stats.shotsFired - snap.shotsFired;
+        const hits = this.gameState.stats.shotsHit - snap.shotsHit;
+        return {
+            kills: this.gameState.stats.kills - snap.kills,
+            headshots: this.gameState.stats.headshots - snap.headshots,
+            accuracy: shots > 0 ? Math.round((hits / shots) * 100) : 0,
+            bestCombo: this.bestCombo
+        };
     }
 
     _updateFootsteps(dt) {
@@ -600,6 +695,7 @@ export class Game {
         // Clean up existing entities before rebuilding scene
         this.zombieManager.clear();
         this.particles.clear();
+        this._clearDrops();
 
         // Rebuild the selected map (clears scene and builds new geometry)
         this._buildSelectedMap();
@@ -630,8 +726,12 @@ export class Game {
         var embedOverlay = document.getElementById('embed-overlay');
         if (embedOverlay) embedOverlay.style.display = 'none';
 
+        this.killStreak = 0;
+        this.killStreakTimer = 0;
+
         this.waveManager.startWave(this.zombieManager, this.level.getSpawnPoints());
         this.ui.showWaveAnnounce(1, 'SURVIVE THE HORDE');
+        this._snapshotWaveStats();
     }
 
     restartGame() {
@@ -662,6 +762,7 @@ export class Game {
         this.input.exitPointerLock();
         this.zombieManager.clear();
         this.particles.clear();
+        this._clearDrops();
     }
 
     _gameOver() {
@@ -753,5 +854,3 @@ export class Game {
         this._updateShopUI();
     }
 }
-
-export { Game };

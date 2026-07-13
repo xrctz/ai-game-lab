@@ -374,6 +374,31 @@ function vfxStatusSparkle(side, kind) {
   }
 }
 
+/** Golden sparkle shower for shiny Pokémon */
+function vfxShinySparkle(side) {
+  vfxInit();
+  const el = document.getElementById(side === 'player' ? 'player-sprite' : 'enemy-sprite');
+  if (!el) return;
+  const r = vfxRect(el);
+  for (let i = 0; i < 22; i++) {
+    const ang = Math.random() * Math.PI * 2;
+    const spd = 30 + Math.random() * 90;
+    spawnParticle({
+      className: 'vfx-spark',
+      char: i % 3 === 0 ? '★' : '✦',
+      color: i % 4 === 0 ? '#fff' : '#ffd740',
+      x: r.cx + (Math.random() - 0.5) * r.w * 0.8,
+      y: r.cy + (Math.random() - 0.5) * r.h * 0.8,
+      vx: Math.cos(ang) * spd,
+      vy: Math.sin(ang) * spd - 40,
+      life: 0.8 + Math.random() * 0.5,
+      gravity: -25,
+      size: 12 + Math.random() * 10,
+      spin: (Math.random() - 0.5) * 300,
+    });
+  }
+}
+
 function vfxFaint(side) {
   const el = document.getElementById(side === 'player' ? 'player-sprite' : 'enemy-sprite');
   if (!el) return;

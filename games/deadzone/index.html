@@ -237,6 +237,26 @@
                 <span id="interaction-text">Press E to interact</span>
             </div>
 
+            <div id="combo-display" class="hidden">
+                <div class="combo-count" id="combo-count">x2</div>
+                <div class="combo-mult" id="combo-mult">SCORE x1.2</div>
+                <div class="combo-timer-bg">
+                    <div class="combo-timer" id="combo-timer"></div>
+                </div>
+            </div>
+
+            <div id="reload-prompt" class="hidden">PRESS R TO RELOAD</div>
+
+            <div id="wave-summary" class="hidden">
+                <div class="wave-summary-title" id="wave-summary-title">WAVE 1 CLEAR</div>
+                <div class="wave-summary-stats">
+                    <div class="ws-stat"><span class="ws-label">KILLS</span><span class="ws-value" id="ws-kills">0</span></div>
+                    <div class="ws-stat"><span class="ws-label">HEADSHOTS</span><span class="ws-value" id="ws-headshots">0</span></div>
+                    <div class="ws-stat"><span class="ws-label">ACCURACY</span><span class="ws-value" id="ws-accuracy">0%</span></div>
+                    <div class="ws-stat"><span class="ws-label">BEST COMBO</span><span class="ws-value" id="ws-combo">x0</span></div>
+                </div>
+            </div>
+
             <div id="fps-counter" class="hidden">FPS: 60</div>
 
             <div id="kill-feed"></div>

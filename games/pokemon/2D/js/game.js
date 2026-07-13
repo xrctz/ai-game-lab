@@ -359,6 +359,7 @@ const Game = {
     mewtwoDefeated: false,
     caughtSpecies: new Set(),
     trainersDefeated: new Set(),
+    seenSpecies: new Set(),
   },
   steps: 0,
   battlesWon: 0,
@@ -450,6 +451,7 @@ function sfx(name) {
     case 'heal': playTone(440, 0.08, 'sine', 0.04); setTimeout(() => playTone(660, 0.12, 'sine', 0.04), 70); break;
     case 'save': playTone(300, 0.06); setTimeout(() => playTone(500, 0.1), 70); break;
     case 'faint': playTone(200, 0.15, 'triangle', 0.04); setTimeout(() => playTone(120, 0.2, 'triangle', 0.03), 100); break;
+    case 'shiny': playTone(660, 0.08, 'sine', 0.045); setTimeout(() => playTone(880, 0.08, 'sine', 0.045), 90); setTimeout(() => playTone(1180, 0.14, 'sine', 0.05), 180); break;
     default: break;
   }
 }
@@ -513,7 +515,7 @@ function handleKeyPress(key) {
     return;
   }
   if (Game.state === 'menu') {
-    if (key === 'escape' || key === 'm' || key === 'b' || key === 'e') closeMenus();
+    if (key === 'escape' || key === 'm' || key === 'b' || key === 'x' || key === 'e') closeMenus();
     return;
   }
   if (Game.state === 'overworld') {
@@ -526,6 +528,7 @@ function handleKeyPress(key) {
     if (key === 'e' || key === ' ') interact();
     if (key === 'm') openPartyMenu();
     if (key === 'b') openBagMenu();
+    if (key === 'x') openDexMenu();
     if (key === 'p') saveGame();
     if (key === 'escape') openPartyMenu();
   }
@@ -566,6 +569,11 @@ function bindUI() {
 
   document.getElementById('btn-close-party').addEventListener('click', closeMenus);
   document.getElementById('btn-close-bag').addEventListener('click', closeMenus);
+  document.getElementById('btn-close-dex')?.addEventListener('click', closeMenus);
+  document.getElementById('btn-open-dex')?.addEventListener('click', () => {
+    closeMenus();
+    openDexMenu();
+  });
 
   // Battle buttons
   document.getElementById('btn-fight').addEventListener('click', () => showMovesMenu());
@@ -587,6 +595,7 @@ function startGame(starterId) {
   Game.party = [createPokemon(starterId, 5)];
   Game.flags.caughtSpecies = new Set([starterId]);
   Game.flags.trainersDefeated = new Set();
+  Game.flags.seenSpecies = new Set([starterId]);
   // Spawn on town path, facing north (away from the pond)
   Game.player.x = 12;
   Game.player.y = 12;
@@ -610,6 +619,7 @@ function startGame(starterId) {
   Game.flags.mewtwoDefeated = false;
   Game.battlesWon = 0;
   Game.steps = 0;
+  Game._dayPhase = getDayNight(0).phase;
 
   showScreen('game-screen');
   Game.state = 'overworld';
@@ -617,7 +627,7 @@ function startGame(starterId) {
   startDialogue([
     `You chose ${SPECIES[starterId].name}!`,
     'Use WASD or Arrow keys to move.',
-    'Press E to talk / interact. M for party. B for bag. P to save.',
+    'Press E to talk / interact. M for party. B for bag. X for Pokédex. P to save.',
     'Talk to Nurse Joy at the pink-roof Pokémon Center to heal!',
     'Challenge Youngster Joey north of town for a real battle!',
     'Catch 6 species and defeat Mewtwo in the northern cave to win!',
@@ -699,7 +709,13 @@ function loadGame() {
   if (!(Game.flags.caughtSpecies instanceof Set)) {
     Game.flags.caughtSpecies = new Set(Game.flags.caughtSpecies || []);
   }
+  if (!(Game.flags.seenSpecies instanceof Set)) {
+    Game.flags.seenSpecies = new Set(Game.flags.seenSpecies || []);
+  }
+  // Everything caught has been seen (covers pre-Pokédex saves)
+  Game.flags.caughtSpecies.forEach((id) => Game.flags.seenSpecies.add(id));
   Game.steps = snap.steps;
+  Game._dayPhase = getDayNight(snap.steps).phase;
   Game.battlesWon = snap.battlesWon;
   Game.battle = null;
   Game.fx.trails = [];
@@ -845,6 +861,19 @@ function tryMove(dir) {
 function onStepComplete() {
   Game.steps++;
   updateHUD();
+
+  // Day / night phase transitions
+  const phase = getDayNight(Game.steps).phase;
+  if (phase !== Game._dayPhase) {
+    Game._dayPhase = phase;
+    const msgs = {
+      dusk: 'The sun is setting...',
+      night: 'Night has fallen over the routes.',
+      dawn: 'The sky brightens — dawn is here.',
+      day: "It's a bright new day!",
+    };
+    if (msgs[phase]) showToast(msgs[phase]);
+  }
 
   const tile = WORLD_MAP[Game.player.y][Game.player.x];
   // Foot plant burst
@@ -1032,6 +1061,25 @@ function drawOverworld() {
   ctx.beginPath();
   ctx.arc(ix, iy, 2, 0, Math.PI * 2);
   ctx.fill();
+
+  // Day / night tint over the whole scene
+  const dayNight = getDayNight(Game.steps);
+  const tint = dayNight.tint;
+  if (tint.a > 0.005) {
+    ctx.fillStyle = `rgba(${tint.r},${tint.g},${tint.b},${tint.a})`;
+    ctx.fillRect(0, 0, Game.canvas.width, Game.canvas.height);
+    // Soft moonlight glow around the player at night
+    if (dayNight.phase === 'night') {
+      const grad = ctx.createRadialGradient(
+        psx + TS / 2, psy + TS / 2, TS * 0.5,
+        psx + TS / 2, psy + TS / 2, TS * 4
+      );
+      grad.addColorStop(0, 'rgba(255,240,200,0.14)');
+      grad.addColorStop(1, 'rgba(255,240,200,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, Game.canvas.width, Game.canvas.height);
+    }
+  }
 }
 
 function drawGrassOverlay(ctx, sx, sy, tx, ty, tile) {
@@ -1849,7 +1897,7 @@ function updateHUD() {
   const lead = Game.party[firstAlive(Game.party)] || Game.party[0];
   if (lead) {
     const leadEl = document.getElementById('hud-lead');
-    leadEl.innerHTML = `<img class="hud-mini" src="${lead.sprite}" alt="" /> ${lead.name} Lv${lead.level}`;
+    leadEl.innerHTML = `<img class="hud-mini${lead.shiny ? ' shiny' : ''}" src="${lead.sprite}" alt="" /> ${lead.shiny ? '★' : ''}${lead.name} Lv${lead.level}`;
     const pct = Math.round((lead.hp / lead.maxHp) * 100);
     document.getElementById('hud-hp').textContent = `${lead.hp}/${lead.maxHp}`;
     const bar = document.getElementById('hud-hp-bar');
@@ -1877,10 +1925,10 @@ function openPartyMenu() {
     div.tabIndex = 0;
     div.innerHTML = `
       <div class="party-sprite-wrap">
-        <img class="sprite-img" src="${art}" alt="${mon.name}" width="72" height="72" />
+        <img class="sprite-img${mon.shiny ? ' shiny' : ''}" src="${art}" alt="${mon.name}" width="72" height="72" />
       </div>
       <div class="info">
-        <h4>${mon.name} <span style="color:var(--accent)">Lv${mon.level}</span>
+        <h4>${mon.shiny ? '<span class="shiny-star">★</span> ' : ''}${mon.name} <span style="color:var(--accent)">Lv${mon.level}</span>
           ${isLead ? '<span class="lead-badge">LEAD</span>' : ''}</h4>
         <div class="meta">${mon.types.map((t) => `<span class="type-badge type-${t}">${t}</span>`).join(' ')}
           ${mon.status ? ` · ${mon.status}` : ''}${fainted ? ' · FAINTED' : ''}</div>
@@ -1966,9 +2014,61 @@ function usePotionOnLead() {
   showToast(`${lead.name} recovered ${lead.hp - before} HP!`);
 }
 
+function markSpeciesSeen(speciesId) {
+  if (!(Game.flags.seenSpecies instanceof Set)) {
+    Game.flags.seenSpecies = new Set();
+  }
+  Game.flags.seenSpecies.add(speciesId);
+}
+
+function openDexMenu() {
+  if (Game.state !== 'overworld') return;
+  const list = document.getElementById('dex-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  const seen = Game.flags.seenSpecies instanceof Set ? Game.flags.seenSpecies : new Set();
+  const caught = Game.flags.caughtSpecies instanceof Set ? Game.flags.caughtSpecies : new Set();
+  const ids = Object.keys(SPECIES);
+
+  ids.forEach((id, i) => {
+    const sp = SPECIES[id];
+    const isCaught = caught.has(id);
+    const isSeen = isCaught || seen.has(id);
+    const card = document.createElement('div');
+    card.className = 'dex-card' + (isCaught ? ' caught' : isSeen ? ' seen' : ' unknown');
+    const label = isSeen ? sp.name : '???';
+    card.innerHTML = `
+      <span class="dex-num">#${String(i + 1).padStart(2, '0')}</span>
+      <div class="dex-sprite-wrap">
+        ${isSeen
+          ? `<img class="dex-sprite" src="${sp.sprite}" alt="${label}" loading="lazy" />`
+          : '<span class="dex-q">?</span>'}
+        ${isCaught ? '<img class="dex-ball" src="assets/ui/pokeball.png" alt="Caught" title="Caught" />' : ''}
+      </div>
+      <span class="dex-name">${label}</span>
+      <span class="dex-types">${isSeen
+        ? sp.types.map((t) => `<span class="type-badge type-${t}">${t}</span>`).join('')
+        : ''}</span>
+    `;
+    list.appendChild(card);
+  });
+
+  const summary = document.getElementById('dex-summary');
+  if (summary) {
+    const seenCount = ids.filter((id) => seen.has(id) || caught.has(id)).length;
+    const caughtCount = ids.filter((id) => caught.has(id)).length;
+    summary.textContent = `Seen: ${seenCount} · Caught: ${caughtCount} / ${ids.length}`;
+  }
+
+  document.getElementById('dex-panel').classList.add('visible');
+  Game.state = 'menu';
+}
+
 function closeMenus() {
   document.getElementById('party-panel').classList.remove('visible');
   document.getElementById('bag-panel').classList.remove('visible');
+  document.getElementById('dex-panel')?.classList.remove('visible');
   if (Game.state === 'menu') Game.state = 'overworld';
 }
 
@@ -2013,6 +2113,9 @@ function startBattle(wild, opts = {}) {
     reward: opts.reward || null,
   };
 
+  // Pokédex: encountering a species marks it as seen
+  markSpeciesSeen(wild.speciesId);
+
   // Encounter flash
   const flash = document.getElementById('encounter-flash');
   if (flash) {
@@ -2038,6 +2141,14 @@ function startBattle(wild, opts = {}) {
   if (SPECIES[wild.speciesId]?.legendary) {
     setBattleLog(`A legendary ${wild.name} appeared!`);
     vfxBanner('LEGENDARY!', 'crit');
+  }
+
+  // Shiny fanfare
+  if (wild.shiny) {
+    sfx('shiny');
+    setBattleLog(`A shiny wild ${wild.name} appeared!`);
+    vfxBanner('SHINY!', 'crit');
+    vfxShinySparkle('enemy');
   }
 }
 
@@ -2071,6 +2182,7 @@ function setBattleSprite(imgId, mon, facing) {
   img.alt = mon.name;
   img.style.opacity = mon.hp <= 0 ? '0' : '1';
   img.classList.remove('faint', 'hit', 'hit-super', 'hit-crit', 'attack', 'attack-enemy');
+  img.classList.toggle('shiny', !!mon.shiny);
 }
 
 function setHpBar(who, hp, maxHp) {
@@ -2084,6 +2196,21 @@ function setHpBar(who, hp, maxHp) {
 
 function setBattleLog(msg) {
   document.getElementById('battle-log').textContent = msg;
+}
+
+function setStatusTag(id, status) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (status === 'poison') {
+    el.textContent = 'PSN';
+    el.className = 'status-tag psn';
+  } else if (status === 'paralyze') {
+    el.textContent = 'PAR';
+    el.className = 'status-tag par';
+  } else {
+    el.textContent = '';
+    el.className = 'status-tag';
+  }
 }
 
 function showMainBattleMenu() {
@@ -2345,6 +2472,18 @@ async function executeMove(user, target, move, side) {
       renderBattle();
       await sleep(500);
     }
+
+    // Chance-based secondary effect (e.g. Poison Sting may poison)
+    const secLogs = [];
+    if (applySecondaryEffect(move, target, (m) => secLogs.push(m))) {
+      vfxStatusSparkle(
+        side === 'player' ? 'enemy' : 'player',
+        move.effect === 'paralyze' ? 'paralyze' : 'poison'
+      );
+      setBattleLog(secLogs.join(' '));
+      renderBattle();
+      await sleep(700);
+    }
   } else {
     // Status move
     if (move.effect === 'heal_full') {
@@ -2377,6 +2516,18 @@ async function applyEndTurnEffects() {
       const other = mon === player ? wild : player;
       other.hp = Math.min(other.maxHp, other.hp + dmg);
       setBattleLog(`${mon.name} is hurt by Leech Seed!`);
+      renderBattle();
+      await sleep(600);
+    }
+  }
+
+  // Poison chips 1/8 max HP each turn
+  for (const mon of [player, wild]) {
+    const psn = statusResidualDamage(mon);
+    if (psn > 0) {
+      mon.hp = Math.max(0, mon.hp - psn);
+      setBattleLog(`${mon.name} is hurt by poison!`);
+      vfxStatusSparkle(mon === player ? 'player' : 'enemy', 'poison');
       renderBattle();
       await sleep(600);
     }
@@ -2427,6 +2578,7 @@ async function onWildFainted() {
       nextMon.stages = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
       nextMon._leech = false;
       b.wild = nextMon;
+      markSpeciesSeen(nextMon.speciesId);
       setBattleLog(`${b.trainerName} sent out ${nextMon.name}!`);
       renderBattle();
       vfxEntrance('enemy');
@@ -2573,15 +2725,17 @@ async function battleCatch() {
     sfx('catch');
     setBattleLog(`Gotcha! ${wild.name} was caught!`);
     vfxBanner('Gotcha!', 'super');
+    if (wild.shiny) vfxShinySparkle('enemy');
     await sleep(800);
 
     Game.flags.caughtSpecies.add(wild.speciesId);
+    markSpeciesSeen(wild.speciesId);
 
     if (Game.party.length < 6) {
-      const caught = createPokemon(wild.speciesId, wild.level);
+      const caught = createPokemon(wild.speciesId, wild.level, { shiny: wild.shiny });
       caught.hp = Math.max(1, wild.hp);
       Game.party.push(caught);
-      setBattleLog(`${wild.name} joined your party!`);
+      setBattleLog(`${wild.shiny ? 'Shiny ' : ''}${wild.name} joined your party!`);
     } else {
       setBattleLog(`${wild.name} was sent to the PC! (party full — species counted)`);
     }
@@ -2690,15 +2844,17 @@ function renderBattle() {
   const wild = b.wild;
 
   setBattleSprite('enemy-sprite', wild, 'front');
-  const enemyLabel = b.isTrainer ? wild.name : wild.name;
+  const enemyLabel = (wild.shiny ? '★ ' : '') + wild.name;
   document.getElementById('enemy-name').textContent = enemyLabel;
   document.getElementById('enemy-level').textContent = `Lv${wild.level}`;
   setHpBar('enemy', wild.hp, wild.maxHp);
+  setStatusTag('enemy-status', wild.status);
 
   setBattleSprite('player-sprite', player, 'back');
-  document.getElementById('player-name').textContent = player.name;
+  document.getElementById('player-name').textContent = (player.shiny ? '★ ' : '') + player.name;
   document.getElementById('player-level').textContent = `Lv${player.level}`;
   setHpBar('player', player.hp, player.maxHp);
+  setStatusTag('player-status', player.status);
 
   // Catch button: enabled if any ball remains (wild only)
   const hasBall = !b.isTrainer && (Game.bag.pokeball > 0 || Game.bag.superball > 0);

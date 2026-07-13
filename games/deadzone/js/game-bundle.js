@@ -7226,7 +7226,11 @@ class UIManager {
             'setting-volume', 'setting-sensitivity', 'setting-fov', 'setting-fps',
             'ally-health-0', 'ally-health-1', 'ally-health-2',
             'ally-status-0', 'ally-status-1', 'ally-status-2',
-            'shop-panel', 'shop-currency', 'shop-items'
+            'shop-panel', 'shop-currency', 'shop-items',
+            'combo-display', 'combo-count', 'combo-mult', 'combo-timer',
+            'reload-prompt',
+            'wave-summary', 'wave-summary-title',
+            'ws-kills', 'ws-headshots', 'ws-accuracy', 'ws-combo'
         ];
 
         for (const id of ids) {
@@ -7311,6 +7315,8 @@ class UIManager {
             if (weapon.reloading) {
                 this.setHTML('weapon-name', `${weapon.name} - RELOADING`);
             }
+
+            this._updateReloadPrompt(weapon);
         }
 
         const slots = document.querySelectorAll('.weapon-slot');
@@ -7364,6 +7370,64 @@ class UIManager {
         } else {
             this.hide('fps-counter');
         }
+    }
+
+    _updateReloadPrompt(weapon) {
+        const el = this.elements['reload-prompt'];
+        if (!el) return;
+
+        if (weapon.reloading || weapon.reserveAmmo <= 0) {
+            el.classList.add('hidden');
+            return;
+        }
+
+        if (weapon.currentAmmo <= 0) {
+            el.textContent = 'PRESS R TO RELOAD';
+            el.classList.add('empty');
+            el.classList.remove('hidden');
+        } else if (weapon.currentAmmo <= weapon.magazineSize * 0.3) {
+            el.textContent = 'LOW AMMO - PRESS R';
+            el.classList.remove('empty');
+            el.classList.remove('hidden');
+        } else {
+            el.classList.add('hidden');
+        }
+    }
+
+    updateCombo(streak, timerFrac, multiplier) {
+        if (streak >= 2) {
+            this.show('combo-display');
+            const countEl = this.elements['combo-count'];
+            if (countEl && this._lastComboCount !== streak) {
+                this._lastComboCount = streak;
+                countEl.textContent = `x${streak}`;
+                countEl.classList.remove('combo-pop');
+                void countEl.offsetWidth;
+                countEl.classList.add('combo-pop');
+            }
+            this.setHTML('combo-mult', `SCORE x${multiplier.toFixed(1)}`);
+            this.setStyle('combo-timer', 'width', `${Math.max(0, Math.min(1, timerFrac)) * 100}%`);
+        } else {
+            this._lastComboCount = 0;
+            this.hide('combo-display');
+        }
+    }
+
+    showWaveSummary(waveNum, stats) {
+        this.setHTML('wave-summary-title', `WAVE ${waveNum} CLEAR`);
+        this.setHTML('ws-kills', stats.kills);
+        this.setHTML('ws-headshots', stats.headshots);
+        this.setHTML('ws-accuracy', `${stats.accuracy}%`);
+        this.setHTML('ws-combo', `x${stats.bestCombo}`);
+
+        const el = this.elements['wave-summary'];
+        if (!el) return;
+        el.classList.remove('hidden');
+        el.style.animation = 'none';
+        void el.offsetWidth;
+        el.style.animation = '';
+        clearTimeout(this._waveSummaryTimeout);
+        this._waveSummaryTimeout = setTimeout(() => this.hide('wave-summary'), 5000);
     }
 
     showHitMarker(headshot = false) {
@@ -7638,6 +7702,9 @@ class UIManager {
         this.hide('squad-wheel');
         this.hide('interaction-prompt');
         this.hide('shop-panel');
+        this.hide('combo-display');
+        this.hide('reload-prompt');
+        this.hide('wave-summary');
     }
 }
 
@@ -7690,10 +7757,10 @@ class GameState {
         this.paused = false;
     }
 
-    addKill(headshot = false) {
+    addKill(headshot = false, multiplier = 1) {
         this.stats.kills++;
         if (headshot) this.stats.headshots++;
-        this.stats.score += headshot ? 150 : 100;
+        this.stats.score += Math.round((headshot ? 150 : 100) * multiplier);
         this.currency += headshot ? 15 : 10;
     }
 
@@ -7767,6 +7834,12 @@ class Game {
         this.killStreak = 0;
         this.killStreakTimer = 0;
         this.killStreakDecay = 3;
+        this.bestCombo = 0;
+
+        this.drops = [];
+        this.dropChance = 0.22;
+        this.dropLifetime = 20;
+        this._waveStatsSnapshot = null;
 
         this.muzzleFlashTimer = 0;
 
@@ -7957,6 +8030,8 @@ class Game {
         const pickup = this.level.updatePickups(dt, this.player);
         if (pickup) this._handlePickup(pickup);
 
+        this._updateDrops(dt);
+
         this.particles.update(dt);
         this.bulletSystem.update(dt, this.level.getObjects());
         this.cameraShake.update(dt);
@@ -7999,9 +8074,15 @@ class Game {
 
         this.ui.updateHUD(this.player, this.weaponSystem.getCurrent(), this.allySquad.getAllAllies(), this.waveManager, this.currentFPS, this.weaponSystem.currentIndex, this.crosshairSpread);
 
+        this.ui.updateCombo(this.killStreak, this.killStreakTimer / this.killStreakDecay, this._comboMultiplier());
+
         // Update damage numbers and low health pulse
         this.ui.updateDamageNumbers(dt);
         this.ui.showLowHealthPulse((this.player.health / this.player.maxHealth) * 100);
+    }
+
+    _comboMultiplier() {
+        return 1 + Math.min(this.killStreak, 10) * 0.1;
     }
 
     _handleInput(dt) {
@@ -8135,10 +8216,12 @@ class Game {
                 const dmgAmount = isHeadshot ? result.damage * hitZombie.headshotMultiplier * (1 - hitZombie.armor) : result.damage * (1 - hitZombie.armor);
                 this.ui.showDamageNumber(hitPoint.clone(), dmgAmount, isHeadshot, this.renderer.camera, this.renderer.renderer.domElement);
                 if (!hitZombie.alive) {
-                    this.gameState.addKill(isHeadshot);
-                    this.audio.play('zombieDeath');
                     this.killStreak++;
                     this.killStreakTimer = this.killStreakDecay;
+                    if (this.killStreak > this.bestCombo) this.bestCombo = this.killStreak;
+                    this.gameState.addKill(isHeadshot, this._comboMultiplier());
+                    this.audio.play('zombieDeath');
+                    this._maybeDropPickup(hitZombie.position);
                     if (isHeadshot) { this.slowMotionTimer = 0.15; this.cameraShake.shake(0.08); }
                     if (this.killStreak >= 5 && this.killStreak % 5 === 0) { this.ui.showStreakAnnounce(this.killStreak); this.slowMotionTimer = 0.25; }
                     this.ui.addKillFeed(this.weaponSystem.getCurrent().name + ' > ' + hitZombie.type.toUpperCase() + (isHeadshot ? ' (HEADSHOT)' : ''));
@@ -8227,12 +8310,67 @@ class Game {
         }
     }
 
+    _maybeDropPickup(position) {
+        if (Math.random() > this.dropChance) return;
+        if (this.drops.length >= 8) return;
+
+        const type = Math.random() < 0.6 ? 'ammo' : 'health';
+        const color = type === 'ammo' ? 0xffaa00 : 0x00ff44;
+
+        const geo = new THREE.OctahedronGeometry(0.2, 0);
+        const mat = new THREE.MeshStandardMaterial({
+            color: color,
+            emissive: color,
+            emissiveIntensity: 0.6,
+            roughness: 0.3
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(position.x, 0.6, position.z);
+        this.renderer.scene.add(mesh);
+
+        this.drops.push({ mesh, type, timer: this.dropLifetime });
+    }
+
+    _updateDrops(dt) {
+        for (let i = this.drops.length - 1; i >= 0; i--) {
+            const drop = this.drops[i];
+            drop.timer -= dt;
+
+            drop.mesh.rotation.y += dt * 3;
+            drop.mesh.position.y = 0.6 + Math.sin(Date.now() * 0.004 + i) * 0.12;
+
+            // Blink during the last few seconds before despawning
+            drop.mesh.visible = drop.timer > 4 || Math.sin(drop.timer * 10) > -0.2;
+
+            if (drop.timer <= 0) {
+                this.renderer.scene.remove(drop.mesh);
+                this.drops.splice(i, 1);
+                continue;
+            }
+
+            if (this.player.alive && drop.mesh.position.distanceTo(this.player.position) < 1.5) {
+                this.renderer.scene.remove(drop.mesh);
+                this.drops.splice(i, 1);
+                this._handlePickup(drop.type);
+                this.ui.addKillFeed(drop.type === 'ammo' ? 'Picked up ammo' : 'Picked up medkit');
+            }
+        }
+    }
+
+    _clearDrops() {
+        for (const drop of this.drops) {
+            this.renderer.scene.remove(drop.mesh);
+        }
+        this.drops = [];
+    }
+
     _handleWaveEvents() {
         if (this.waveManager.isWaveComplete() && !this._waveCompleteHandled) {
             this._waveCompleteHandled = true;
             this.gameState.stats.wavesCompleted = this.waveManager.currentWave;
             this.audio.play('waveEnd');
             this.ui.addKillFeed(`Wave ${this.waveManager.currentWave} complete!`);
+            this.ui.showWaveSummary(this.waveManager.currentWave, this._getWaveStats());
         }
 
         if (this.waveManager.shouldStartNext()) {
@@ -8240,7 +8378,30 @@ class Game {
             const config = this.waveManager.startWave(this.zombieManager, this.level.getSpawnPoints());
             this.audio.play('waveStart');
             this.ui.showWaveAnnounce(this.waveManager.currentWave);
+            this._snapshotWaveStats();
         }
+    }
+
+    _snapshotWaveStats() {
+        this._waveStatsSnapshot = {
+            kills: this.gameState.stats.kills,
+            headshots: this.gameState.stats.headshots,
+            shotsFired: this.gameState.stats.shotsFired,
+            shotsHit: this.gameState.stats.shotsHit
+        };
+        this.bestCombo = 0;
+    }
+
+    _getWaveStats() {
+        const snap = this._waveStatsSnapshot || { kills: 0, headshots: 0, shotsFired: 0, shotsHit: 0 };
+        const shots = this.gameState.stats.shotsFired - snap.shotsFired;
+        const hits = this.gameState.stats.shotsHit - snap.shotsHit;
+        return {
+            kills: this.gameState.stats.kills - snap.kills,
+            headshots: this.gameState.stats.headshots - snap.headshots,
+            accuracy: shots > 0 ? Math.round((hits / shots) * 100) : 0,
+            bestCombo: this.bestCombo
+        };
     }
 
     _updateFootsteps(dt) {
@@ -8300,6 +8461,7 @@ class Game {
         // Clean up existing entities before rebuilding scene
         this.zombieManager.clear();
         this.particles.clear();
+        this._clearDrops();
         this.bulletSystem.clear();
 
         // Rebuild the selected map (clears scene and builds new geometry)
@@ -8331,8 +8493,12 @@ class Game {
         var embedOverlay = document.getElementById('embed-overlay');
         if (embedOverlay) embedOverlay.style.display = 'none';
 
+        this.killStreak = 0;
+        this.killStreakTimer = 0;
+
         this.waveManager.startWave(this.zombieManager, this.level.getSpawnPoints());
         this.ui.showWaveAnnounce(1, 'SURVIVE THE HORDE');
+        this._snapshotWaveStats();
     }
 
     restartGame() {
@@ -8364,6 +8530,7 @@ class Game {
         this.zombieManager.clear();
         this.particles.clear();
         this.bulletSystem.clear();
+        this._clearDrops();
     }
 
     _gameOver() {

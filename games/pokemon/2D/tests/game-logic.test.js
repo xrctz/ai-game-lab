@@ -63,6 +63,12 @@ const deserializeGameState = g('deserializeGameState');
 const hasValidSaveData = g('hasValidSaveData');
 const SAVE_VERSION = g('SAVE_VERSION');
 const NPCS = g('NPCS');
+const rollShiny = g('rollShiny');
+const SHINY_CHANCE = g('SHINY_CHANCE');
+const applySecondaryEffect = g('applySecondaryEffect');
+const statusResidualDamage = g('statusResidualDamage');
+const getDayNight = g('getDayNight');
+const DAY_CYCLE_STEPS = g('DAY_CYCLE_STEPS');
 
 let passed = 0;
 let failed = 0;
@@ -236,6 +242,106 @@ console.log('\n=== Save serialize / deserialize round-trip ===');
   assert(hasValidSaveData(json) === true, 'hasValidSaveData true for valid save');
   assert(hasValidSaveData(null) === false, 'hasValidSaveData false for null');
   assert(hasValidSaveData({ version: 999 }) === false, 'hasValidSaveData false for bad version');
+}
+
+console.log('\n=== Shiny Pokémon ===');
+{
+  assert(SHINY_CHANCE > 0 && SHINY_CHANCE < 0.1, 'SHINY_CHANCE is a small positive rate');
+  assert(rollShiny(0) === true, 'rollShiny true when rand below threshold');
+  assert(rollShiny(0.99) === false, 'rollShiny false when rand above threshold');
+
+  const plain = createPokemon('pidgey', 5);
+  assert(plain.shiny === false, 'default mon is not shiny');
+  const shiny = createPokemon('pidgey', 5, { shiny: true });
+  assert(shiny.shiny === true, 'opts.shiny creates shiny mon');
+}
+
+console.log('\n=== Poison status (secondary effect + residual) ===');
+{
+  const weedle = createPokemon('weedle', 5);
+  const sting = weedle.moves.find((m) => m.id === 'poisonsting');
+  assert(!!sting && sting.effect === 'poison', 'Poison Sting carries poison effect');
+  assert(sting.effectChance === 30, 'Poison Sting has 30% effect chance');
+
+  const target = createPokemon('rattata', 5);
+  const logs = [];
+  const hit = applySecondaryEffect(sting, target, (m) => logs.push(m), 0);
+  assert(hit === true && target.status === 'poison', 'secondary poison applies with low roll');
+  assert(logs.length === 1 && logs[0].includes('poisoned'), 'poison logs a message');
+
+  const target2 = createPokemon('rattata', 5);
+  const miss = applySecondaryEffect(sting, target2, () => {}, 0.99);
+  assert(miss === false && target2.status === null, 'secondary poison misses with high roll');
+
+  const poisonType = createPokemon('ekans', 5);
+  const immune = applySecondaryEffect(sting, poisonType, () => {}, 0);
+  assert(immune === false && poisonType.status === null, 'poison types cannot be poisoned');
+
+  const paralyzed = createPokemon('rattata', 5);
+  paralyzed.status = 'paralyze';
+  const blocked = applySecondaryEffect(sting, paralyzed, () => {}, 0);
+  assert(blocked === false && paralyzed.status === 'paralyze', 'existing status is not overwritten');
+
+  assert(statusResidualDamage(target) === Math.max(1, Math.floor(target.maxHp / 8)),
+    'poison residual is 1/8 max HP');
+  assert(statusResidualDamage(target2) === 0, 'no residual without status');
+  target.hp = 0;
+  assert(statusResidualDamage(target) === 0, 'no residual on fainted mon');
+}
+
+console.log('\n=== Day / night cycle ===');
+{
+  const day = getDayNight(0);
+  assert(day.phase === 'day', 'cycle starts in daytime');
+  assert(day.tint.a === 0, 'no tint during day');
+
+  const night = getDayNight(Math.floor(DAY_CYCLE_STEPS * 0.75));
+  assert(night.phase === 'night', 'mid-cycle back half is night');
+  assert(night.tint.a > 0.2, 'night tint is visible');
+
+  const wrapped = getDayNight(DAY_CYCLE_STEPS);
+  assert(wrapped.phase === 'day', 'cycle wraps back to day');
+
+  const dusk = getDayNight(Math.floor(DAY_CYCLE_STEPS * 0.58));
+  assert(dusk.phase === 'dusk', 'dusk phase between day and night');
+  assert(dusk.tint.a > 0, 'dusk has a tint');
+}
+
+console.log('\n=== Pokédex save fields (seen/shiny, backward compatible) ===');
+{
+  const shinyMon = createPokemon('pikachu', 7, { shiny: true });
+  const state = {
+    party: [shinyMon],
+    bag: { pokeball: 1, potion: 1, superball: 0 },
+    player: { x: 5, y: 6, dir: 'up' },
+    flags: {
+      shopGift: false,
+      mewtwoDefeated: false,
+      caughtSpecies: new Set(['pikachu']),
+      trainersDefeated: new Set(),
+      seenSpecies: new Set(['pikachu', 'pidgey', 'rattata']),
+    },
+    steps: 10,
+    battlesWon: 1,
+  };
+  const serialized = serializeGameState(state);
+  assert(Array.isArray(serialized.flags.seenSpecies), 'seenSpecies serialized as array');
+  assert(serialized.party[0].shiny === true, 'shiny flag serialized');
+
+  const loaded = deserializeGameState(JSON.parse(JSON.stringify(serialized)));
+  assert(loaded.flags.seenSpecies instanceof Set, 'seenSpecies restored as Set');
+  assert(loaded.flags.seenSpecies.has('pidgey'), 'seen-only species restored');
+  assert(loaded.party[0].shiny === true, 'shiny flag restored');
+
+  // Old save without seenSpecies / shiny — must still load with defaults
+  const oldSave = JSON.parse(JSON.stringify(serialized));
+  delete oldSave.flags.seenSpecies;
+  delete oldSave.party[0].shiny;
+  const oldLoaded = deserializeGameState(oldSave);
+  assert(oldLoaded != null, 'old save without new fields still loads');
+  assert(oldLoaded.party[0].shiny === false, 'shiny defaults to false for old saves');
+  assert(oldLoaded.flags.seenSpecies instanceof Set, 'seenSpecies defaults to Set for old saves');
+  assert(oldLoaded.flags.seenSpecies.has('pikachu'), 'old saves treat caught species as seen');
 }
 
 console.log('\n=== Joey trainer data shape (structure) ===');

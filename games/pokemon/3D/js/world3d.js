@@ -101,8 +101,12 @@ export class World3D {
     this.models = {};
     this.npcMeshes = [];
     this.propMeshes = [];
+    this.lampMeshes = [];
+    this.ambientMons = [];
     this.materials = {};
     this.minimapCanvas = null;
+    this.texLoader = new THREE.TextureLoader();
+    this.night = 0;
   }
 
   async loadModels(onProgress) {
@@ -254,6 +258,8 @@ export class World3D {
     }
     this.npcMeshes = [];
     this.propMeshes = [];
+    this.lampMeshes = [];
+    this.ambientMons = [];
 
     const T = window.TILE;
     const map = window.WORLD_MAP;
@@ -376,7 +382,118 @@ export class World3D {
       if (o.userData?.tile === window.TILE.WATER) this.waterMeshes.push(o);
     });
 
+    this._spawnAmbientPokemon();
     this._buildMinimap();
+  }
+
+  /** Cosmetic wild Pokémon that hop around the routes (no collision with gameplay). */
+  _spawnAmbientPokemon() {
+    const wanted = [
+      { species: 'pidgey', zone: 'grass' },
+      { species: 'rattata', zone: 'grass' },
+      { species: 'caterpie', zone: 'forest' },
+      { species: 'pikachu', zone: 'forest' },
+      { species: 'eevee', zone: 'grass' },
+    ];
+    const T = window.TILE;
+    const map = window.WORLD_MAP;
+    const spots = { grass: [], forest: [] };
+    for (let y = 0; y < mapH(); y++) {
+      for (let x = 0; x < mapW(); x++) {
+        if (map[y][x] === T.GRASS) spots.grass.push([x, y]);
+        else if (map[y][x] === T.FOREST) spots.forest.push([x, y]);
+      }
+    }
+    for (const w of wanted) {
+      const pool = spots[w.zone].length ? spots[w.zone] : spots.grass;
+      if (!pool.length) continue;
+      const [tx, ty] = pool[Math.floor(Math.random() * pool.length)];
+      const sp = window.SPECIES?.[w.species];
+      if (!sp) continue;
+      this.texLoader.load(sp.sprite, (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.magFilter = THREE.NearestFilter;
+        tex.minFilter = THREE.NearestFilter;
+        const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+        const scale = 0.9;
+        spr.scale.set(scale, scale, 1);
+        const p = tileToWorld(tx, ty);
+        const baseY = tileSurfaceY(tx, ty);
+        spr.position.set(p.x, baseY + scale / 2, p.z);
+        this.group.add(spr);
+        this.ambientMons.push({
+          sprite: spr, tx, ty, from: null, to: null,
+          moveT: 0, pauseT: 1 + Math.random() * 3,
+          phase: Math.random() * Math.PI * 2, scale,
+        });
+      });
+    }
+  }
+
+  _ambientCanWander(tx, ty) {
+    const map = window.WORLD_MAP;
+    if (tx < 0 || ty < 0 || ty >= mapH() || tx >= mapW()) return false;
+    const t = map[ty][tx];
+    if (t !== window.TILE.GRASS && t !== window.TILE.FOREST && t !== window.TILE.FLOWER) return false;
+    return !window.NPCS.some((n) => n.x === tx && n.y === ty);
+  }
+
+  updateAmbient(dt, t) {
+    for (const mon of this.ambientMons) {
+      const spr = mon.sprite;
+      if (mon.to) {
+        mon.moveT += dt * 1.4;
+        const k = Math.min(1, mon.moveT);
+        const a = tileToWorld(mon.from.x, mon.from.y);
+        const b = tileToWorld(mon.to.x, mon.to.y);
+        const y0 = tileSurfaceY(mon.from.x, mon.from.y);
+        const y1 = tileSurfaceY(mon.to.x, mon.to.y);
+        const hop = Math.sin(k * Math.PI) * 0.3;
+        spr.position.set(
+          a.x + (b.x - a.x) * k,
+          y0 + (y1 - y0) * k + mon.scale / 2 + hop,
+          a.z + (b.z - a.z) * k
+        );
+        if (k >= 1) {
+          mon.tx = mon.to.x;
+          mon.ty = mon.to.y;
+          mon.to = null;
+          mon.pauseT = 1.5 + Math.random() * 3.5;
+        }
+      } else {
+        // Idle bob while paused
+        spr.position.y = tileSurfaceY(mon.tx, mon.ty) + mon.scale / 2 + Math.abs(Math.sin(t * 2 + mon.phase)) * 0.04;
+        mon.pauseT -= dt;
+        if (mon.pauseT <= 0) {
+          const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]].sort(() => Math.random() - 0.5);
+          for (const [dx, dy] of dirs) {
+            if (this._ambientCanWander(mon.tx + dx, mon.ty + dy)) {
+              mon.from = { x: mon.tx, y: mon.ty };
+              mon.to = { x: mon.tx + dx, y: mon.ty + dy };
+              mon.moveT = 0;
+              break;
+            }
+          }
+          if (!mon.to) mon.pauseT = 2 + Math.random() * 2;
+        }
+      }
+    }
+  }
+
+  /** Night factor 0 (day) → 1 (midnight): lamps glow brighter after dark. */
+  setNight(night) {
+    if (Math.abs(night - this.night) < 0.01) return;
+    this.night = night;
+    for (const lamp of this.lampMeshes) {
+      lamp.traverse((c) => {
+        if (c.isMesh && c.material?.emissiveIntensity != null && c.material.emissive) {
+          const base = c.userData._baseEmissive != null
+            ? c.userData._baseEmissive
+            : (c.userData._baseEmissive = c.material.emissiveIntensity);
+          if (base > 0) c.material.emissiveIntensity = base * (1 + night * 2.2);
+        }
+      });
+    }
   }
 
   _placeProp(key, x, z, rotY = 0, scale = 1, surfaceY = null) {
@@ -408,6 +525,7 @@ export class World3D {
       m.userData.swayPhase = Math.random() * Math.PI * 2;
       m.userData.baseY = y;
     }
+    if (key === 'lamp') this.lampMeshes.push(m);
     this.group.add(m);
     this.propMeshes.push(m);
     return m;
@@ -654,7 +772,8 @@ export class World3D {
     npcMesh.rotation.y = Math.atan2(dx, dz);
   }
 
-  animate(t) {
+  animate(t, dt = 0.016) {
+    this.updateAmbient(dt, t);
     // Gentle water bob / color
     for (const m of this.waterMeshes || []) {
       if (m.material && m.material.emissiveIntensity != null) {

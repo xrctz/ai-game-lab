@@ -31,7 +31,11 @@ Open **http://localhost:3000/3D/**
 - GLB props: trees, tall grass, flowers, heal pad/machine, PC, cave, sign
 - GLB characters: player trainer, Nurse Joy, Oak, shop clerk, Joey
 - Orbit third-person camera with shadows and fog
-- 3D battle arena with Pokémon sprite billboards
+- Day/night cycle (~2.5 min per day): sky, fog and sun transition through sunrise, noon, sunset and night; street lamps glow brighter after dark
+- Ambient wild Pokémon hop around the grass and forest routes (cosmetic)
+- Footstep dust puffs as you walk
+- 3D battle arena with Pokémon sprite billboards, attack lunges, camera shake on hits and floating damage/heal numbers (gold for crits, green for heals)
+- Smoothly animated battle HP bars
 - Mid-battle switch, trainer multi-mon fights, catch, save/load
 - Minimap overlay
 

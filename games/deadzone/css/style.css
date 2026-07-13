@@ -619,6 +619,130 @@ body {
     100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); }
 }
 
+/* Combo Counter */
+#combo-display {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, 60px);
+    text-align: center;
+    pointer-events: none;
+}
+
+.combo-count {
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: #ffb300;
+    text-shadow: 0 0 18px rgba(255, 179, 0, 0.7);
+}
+
+.combo-count.combo-pop {
+    animation: comboPop 0.2s ease-out;
+}
+
+@keyframes comboPop {
+    0% { transform: scale(1.5); }
+    100% { transform: scale(1); }
+}
+
+.combo-mult {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: #ccc;
+    margin-top: 2px;
+}
+
+.combo-timer-bg {
+    width: 70px;
+    height: 3px;
+    margin: 5px auto 0;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.combo-timer {
+    height: 100%;
+    width: 100%;
+    background: #ffb300;
+}
+
+/* Reload Prompt */
+#reload-prompt {
+    position: absolute;
+    top: 58%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: #ff9800;
+    text-shadow: 0 0 12px rgba(255, 152, 0, 0.6);
+    animation: reloadPulse 0.8s ease-in-out infinite;
+    pointer-events: none;
+}
+
+#reload-prompt.empty {
+    color: #c62828;
+    text-shadow: 0 0 12px rgba(198, 40, 40, 0.8);
+}
+
+@keyframes reloadPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+/* Wave Summary */
+#wave-summary {
+    position: absolute;
+    top: 26%; left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 140;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid #444;
+    padding: 14px 26px;
+    animation: waveSummaryFade 5s ease forwards;
+    pointer-events: none;
+}
+
+.wave-summary-title {
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: #4caf50;
+    text-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
+    margin-bottom: 10px;
+}
+
+.wave-summary-stats {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+}
+
+.ws-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.ws-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: #888;
+}
+
+.ws-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #eee;
+}
+
+@keyframes waveSummaryFade {
+    0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+    10% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
 /* Squad Command Wheel */
 #squad-wheel {
     position: absolute;

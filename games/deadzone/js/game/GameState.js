@@ -45,10 +45,10 @@ export class GameState {
         this.paused = false;
     }
 
-    addKill(headshot = false) {
+    addKill(headshot = false, multiplier = 1) {
         this.stats.kills++;
         if (headshot) this.stats.headshots++;
-        this.stats.score += headshot ? 150 : 100;
+        this.stats.score += Math.round((headshot ? 150 : 100) * multiplier);
         this.currency += headshot ? 15 : 10;
     }
 
