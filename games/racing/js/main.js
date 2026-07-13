@@ -2,8 +2,10 @@ import * as THREE from 'three';
 import { createTrackPath, buildTrack, buildWorld } from './track.js';
 import { Racer, RIVAL_NAMES, setSkimmerTextures } from './skimmer.js';
 import { loadTexturePack } from './textures.js';
+import { audio } from './audio.js';
 
 const TOTAL_LAPS = 3;
+const BEST_LAP_KEY = 'veilrush.bestLap';
 const ASSETS = {
   titleVideo: 'assets/videos/title_cinematic.mp4',
   introVideo: 'assets/videos/intro_skimmer.mp4',
@@ -49,6 +51,7 @@ let minimapCtx = null;
 let orbsCollectedAtStart = 0;
 let texturePack = null;
 let texturesReady = false;
+let audioPrev = { boostTimer: 0, orbs: 0, gates: 0 };
 
 // ---------- Screens ----------
 function showScreen(name) {
@@ -67,6 +70,43 @@ function formatTime(t) {
 function placeStr(n) {
   const s = ['', '1st', '2nd', '3rd', '4th'];
   return s[n] || `${n}th`;
+}
+
+// ---------- Best lap persistence ----------
+function getStoredBestLap() {
+  const v = localStorage.getItem(BEST_LAP_KEY);
+  const n = v == null ? null : parseFloat(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function setStoredBestLap(seconds) {
+  localStorage.setItem(BEST_LAP_KEY, String(seconds));
+}
+
+// ---------- Audio UI ----------
+function updateMuteUI() {
+  const muted = audio.isMuted();
+  const icon = muted ? '🔈' : '🔊';
+  const muteBtn = $('btn-mute');
+  if (muteBtn) {
+    muteBtn.textContent = icon;
+    muteBtn.classList.toggle('muted', muted);
+  }
+  const pauseBtn = $('btn-mute-pause');
+  if (pauseBtn) pauseBtn.textContent = muted ? '🔈 Sound Off' : '🔊 Sound On';
+}
+
+function bindAudioUI() {
+  updateMuteUI();
+  $('btn-mute').onclick = () => {
+    audio.init();
+    audio.toggleMute();
+    updateMuteUI();
+  };
+  $('btn-mute-pause').onclick = () => {
+    audio.toggleMute();
+    updateMuteUI();
+  };
 }
 
 // ---------- Cinematics ----------
@@ -331,6 +371,7 @@ async function startRaceFlow(opts) {
     r._endScheduled = false;
   });
   orbsCollectedAtStart = 0;
+  audioPrev = { boostTimer: 0, orbs: 0, gates: 0 };
   clock.start();
   if (!animId) loop();
 }
@@ -353,6 +394,7 @@ function flashMsg(text, sec = 1.2) {
 
 function endRace() {
   state = 'result';
+  audio.stopEngine();
   const ordered = [...racers].sort((a, b) => {
     if (a.finished && b.finished) return a.finishTime - b.finishTime;
     if (a.finished) return -1;
@@ -378,6 +420,17 @@ function endRace() {
   $('result-orbs').textContent = String(player.orbs);
   const best = player.lapTimes.length ? Math.min(...player.lapTimes) : null;
   $('result-best').textContent = formatTime(best);
+
+  const prevBest = getStoredBestLap();
+  let newRecord = false;
+  if (best != null && (prevBest == null || best < prevBest)) {
+    setStoredBestLap(best);
+    newRecord = true;
+  }
+  $('result-record').classList.toggle('show', newRecord);
+  const allTimeBest = newRecord ? best : prevBest;
+  $('result-alltime').textContent =
+    !newRecord && allTimeBest != null ? `All-Time Best: ${formatTime(allTimeBest)}` : '';
 
   if (won) {
     // Victory cinematic after a short beat
@@ -405,15 +458,28 @@ function updateCountdown(dt) {
       el.classList.remove('show');
       void el.offsetWidth;
       el.classList.add('show');
+      audio.playCountdownBeep(false);
     } else if (countdownVal === 0) {
       el.textContent = 'RUSH';
       el.classList.remove('show');
       void el.offsetWidth;
       el.classList.add('show');
+      audio.playCountdownBeep(true);
       beginRacing();
       setTimeout(() => el.classList.remove('show'), 700);
     }
   }
+}
+
+function updateAudioCues() {
+  if (!player) return;
+  audio.updateEngine(player.speed, player.maxSpeed);
+  if (player.boostTimer > 0 && audioPrev.boostTimer <= 0) audio.playBoost();
+  if (player.orbs > audioPrev.orbs) audio.playOrbChime();
+  if (player.gateHits.size > audioPrev.gates) audio.playGateWhomp();
+  audioPrev.boostTimer = player.boostTimer;
+  audioPrev.orbs = player.orbs;
+  audioPrev.gates = player.gateHits.size;
 }
 
 function updateHUD() {
@@ -592,6 +658,7 @@ function loop() {
       r.speed = 0;
       r.updatePhysics(dt, track, null);
     });
+    audio.updateEngine(0, player.maxSpeed);
     updateCamera(dt);
     updatePickups(dt);
     updateHUD();
@@ -611,6 +678,7 @@ function loop() {
       input.boost = false;
       input.boostConsumed = false;
     }
+    updateAudioCues();
     updateCamera(dt);
     updatePickups(dt);
     updateHUD();
@@ -750,6 +818,7 @@ function bindInput() {
 function togglePause() {
   if (state === 'racing') {
     state = 'paused';
+    audio.stopEngine();
     showScreen('pause');
     hud.classList.add('active');
   } else if (state === 'paused') {
@@ -762,6 +831,7 @@ function togglePause() {
 
 async function returnToMenu() {
   state = 'menu';
+  audio.stopEngine();
   showScreen('menu');
   hud.classList.remove('active');
   await buildMenuBackdrop();
@@ -769,9 +839,16 @@ async function returnToMenu() {
 
 // ---------- Buttons ----------
 function bindUI() {
-  $('btn-start').onclick = () => startRaceFlow({ skipCinematics: false });
-  $('btn-quick-race').onclick = () => startRaceFlow({ skipCinematics: true });
+  $('btn-start').onclick = () => {
+    audio.init();
+    startRaceFlow({ skipCinematics: false });
+  };
+  $('btn-quick-race').onclick = () => {
+    audio.init();
+    startRaceFlow({ skipCinematics: true });
+  };
   $('btn-watch-intro').onclick = async () => {
+    audio.init();
     await playCinematic({
       src: ASSETS.racingVideo,
       title: 'Prism Tunnel',
@@ -804,6 +881,7 @@ async function boot() {
   initRenderer();
   bindInput();
   bindUI();
+  bindAudioUI();
   showScreen('loading');
   $('loading-fill').style.width = '15%';
   try {
