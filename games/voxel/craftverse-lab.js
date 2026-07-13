@@ -23,6 +23,14 @@
   var canvas        = null;
   var inWorld       = false;
 
+  /* Diagnostics overlay (F3) state */
+  var diagEl            = null;
+  var diagVisible       = false;
+  var diagRafId         = null;
+  var diagFrameCount    = 0;
+  var diagFpsSampleFrom = 0;
+  var diagFps           = 0;
+
   /* ── Helpers ── */
   function $(id) { return document.getElementById(id); }
   function makeEl(tag, id, cls) {
@@ -242,6 +250,95 @@
   }
 
   /* ─────────────────────────────────────────────────────
+     9b. DIAGNOSTICS OVERLAY  (toggle with F3, Minecraft-style)
+     Purely observational — reads canvas size/DPR/pointer-lock
+     state that already lives on the DOM/window; never touches
+     the bundle. FPS is measured entirely in this layer via our
+     own requestAnimationFrame loop (only runs while visible).
+     ───────────────────────────────────────────────────── */
+  function createDiagOverlay() {
+    diagEl = makeEl("pre", PREFIX + "diag");
+    diagEl.classList.add(PREFIX + "hidden");
+    diagEl.setAttribute("aria-hidden", "true");
+    document.body.appendChild(diagEl);
+  }
+
+  function renderDiagContents() {
+    if (!diagEl) return;
+    var c = resolveCanvas();
+    var dpr = window.devicePixelRatio || 1;
+    var resLine = c
+      ? c.width + "\u00d7" + c.height + " px canvas / " +
+        Math.round(c.clientWidth) + "\u00d7" + Math.round(c.clientHeight) + " css"
+      : "canvas not mounted yet";
+    var locked = document.pointerLockElement != null;
+
+    diagEl.textContent = [
+      "CraftVerse Lab diagnostics — F3 to close",
+      "FPS: " + (diagFps || "\u2026"),
+      "Resolution: " + resLine,
+      "Device pixel ratio: " + dpr.toFixed(2),
+      "Pointer lock: " + (locked ? "locked" : "unlocked"),
+      "Mode: " + (IS_EMBED ? "embed" : "standalone") + (IS_MOBILE ? " · mobile" : ""),
+      "In world: " + (inWorld ? "yes" : "no")
+    ].join("\n");
+  }
+
+  function diagTick(now) {
+    diagFrameCount++;
+    if (!diagFpsSampleFrom) diagFpsSampleFrom = now;
+    var elapsed = now - diagFpsSampleFrom;
+    if (elapsed >= 400) {
+      diagFps = Math.round((diagFrameCount * 1000) / elapsed);
+      diagFrameCount = 0;
+      diagFpsSampleFrom = now;
+      renderDiagContents();
+    }
+    if (diagVisible) {
+      diagRafId = requestAnimationFrame(diagTick);
+    }
+  }
+
+  function showDiagOverlay() {
+    if (!diagEl) return;
+    diagVisible = true;
+    diagFrameCount = 0;
+    diagFpsSampleFrom = 0;
+    diagEl.classList.remove(PREFIX + "hidden");
+    diagEl.setAttribute("aria-hidden", "false");
+    renderDiagContents();
+    if (diagRafId == null) diagRafId = requestAnimationFrame(diagTick);
+  }
+
+  function hideDiagOverlay() {
+    if (!diagEl) return;
+    diagVisible = false;
+    diagEl.classList.add(PREFIX + "hidden");
+    diagEl.setAttribute("aria-hidden", "true");
+    if (diagRafId != null) {
+      cancelAnimationFrame(diagRafId);
+      diagRafId = null;
+    }
+  }
+
+  function toggleDiagOverlay() {
+    if (diagVisible) hideDiagOverlay(); else showDiagOverlay();
+  }
+
+  function isTypingTarget(el) {
+    if (!el) return false;
+    var tag = el.tagName;
+    return tag === "INPUT" || tag === "TEXTAREA" || !!el.isContentEditable;
+  }
+
+  function onDiagKeyDown(e) {
+    if (e.key !== "F3" && e.code !== "F3") return;
+    if (isTypingTarget(e.target)) return;
+    e.preventDefault();
+    toggleDiagOverlay();
+  }
+
+  /* ─────────────────────────────────────────────────────
      10. HUB POSTMESSAGE LISTENER
      ───────────────────────────────────────────────────── */
   function onParentMessage(e) {
@@ -258,6 +355,7 @@
     createLockMsg();
     createMobileBanner();
     createBrandBadge();
+    createDiagOverlay();
     if (preferReducedMotion()) {
       document.documentElement.classList.add(PREFIX + "reduced-motion");
     }
@@ -272,6 +370,7 @@
 
     document.addEventListener("pointerlockchange", onPointerLockChange, false);
     document.addEventListener("pointerlockerror", onPointerLockError, false);
+    document.addEventListener("keydown", onDiagKeyDown, false);
     window.addEventListener("message", onParentMessage, false);
 
     if (!IS_EMBED) {
