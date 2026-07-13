@@ -7,6 +7,16 @@
 
   window.AIGLMobile.ensureCss();
 
+  function scheduleBannerHide(banner) {
+    if (!banner) return;
+    setTimeout(function () {
+      banner.classList.add('aigl-mob-banner-hide');
+      setTimeout(function () {
+        if (banner.parentNode) banner.parentNode.removeChild(banner);
+      }, 600);
+    }, 3500);
+  }
+
   function attach(game) {
     if (!game || !game.input || game.__mobileAttached) return;
     game.__mobileAttached = true;
