@@ -124,6 +124,10 @@ export class World3D {
       lamp: 'lamp.glb',
       lily: 'lily.glb',
       bush: 'bush.glb',
+      // Newer Blender props
+      fountain: 'fountain.glb',
+      cattail: 'cattail.glb',
+      pokeball: 'pokeball.glb',
     };
     const keys = Object.keys(files);
     let done = 0;
@@ -172,7 +176,7 @@ export class World3D {
 
     // Characters: FrontSide only (DoubleSide caused dark z-fight flecks).
     // Thin props (grass/flowers) keep DoubleSide so blades read from both sides.
-    const doubleSide = key === 'tallgrass' || key === 'flowers' || key === 'tree' || key === 'lily';
+    const doubleSide = key === 'tallgrass' || key === 'flowers' || key === 'tree' || key === 'lily' || key === 'cattail';
     root.traverse((c) => {
       if (c.isMesh) {
         c.castShadow = true;
@@ -197,7 +201,7 @@ export class World3D {
     box.getSize(size);
     // Prefer height (Y) for humanoids so wide leftover geometry can't squash them
     let refDim = size.y > 0.01 ? size.y : Math.max(size.x, size.y, size.z, 0.001);
-    if (key === 'tree' || key === 'cave' || key === 'lily') {
+    if (key === 'tree' || key === 'cave' || key === 'lily' || key === 'fountain') {
       refDim = Math.max(size.x, size.y, size.z, 0.001);
     }
     let targetH = 1.6;
@@ -212,6 +216,9 @@ export class World3D {
     if (key === 'lamp') targetH = 2.4;
     if (key === 'lily') targetH = 1.3;
     if (key === 'bush') targetH = 0.75;
+    if (key === 'fountain') targetH = 2.2;
+    if (key === 'cattail') targetH = 1.0;
+    if (key === 'pokeball') targetH = 0.5;
     if (['nurse', 'oak', 'shop', 'kid', 'player'].includes(key)) targetH = 1.7;
     const s = targetH / Math.max(refDim, 0.001);
     root.scale.setScalar(s);
@@ -310,11 +317,18 @@ export class World3D {
           // Scatter boulders on cliff/rock walls for a rugged mountain look
           if (Math.random() < 0.14) {
             this._placeProp('rock', pos.x + (Math.random() - 0.5) * 0.5, pos.z + (Math.random() - 0.5) * 0.5, Math.random() * Math.PI * 2, 0.7 + Math.random() * 0.5, sy);
+          } else if (Math.random() < 0.05) {
+            // Occasional Poké Ball resting on the rocks near the cave (non-walkable, so no walk-through)
+            this._placeProp('pokeball', pos.x + (Math.random() - 0.5) * 0.5, pos.z + (Math.random() - 0.5) * 0.5, Math.random() * Math.PI * 2, 0.8 + Math.random() * 0.3, sy);
           }
         } else if (t === T.WATER) {
           // Floating lily pads on some water tiles
           if (Math.random() < 0.28) {
             this._placeProp('lily', pos.x + (Math.random() - 0.5) * 0.7, pos.z + (Math.random() - 0.5) * 0.7, Math.random() * Math.PI * 2, 0.7 + Math.random() * 0.4, sy);
+          }
+          // Cattail reeds clustered at the pond edges
+          if (Math.random() < 0.16) {
+            this._placeProp('cattail', pos.x + (Math.random() - 0.5) * 0.7, pos.z + (Math.random() - 0.5) * 0.7, Math.random() * Math.PI * 2, 0.8 + Math.random() * 0.4, sy);
           }
         }
 
@@ -334,6 +348,13 @@ export class World3D {
     // Cave entrance prop
     const cavePos = tileToWorld(3, 3);
     this._placeProp('cave', cavePos.x, cavePos.z - 0.5, 0, 1.2, tileSurfaceY(3, 3));
+
+    // Town fountain — centerpiece in the middle of the southern pond (water is
+    // non-walkable, so it never blocks the player's path).
+    if (map[14] && map[14][14] === T.WATER) {
+      const fPos = tileToWorld(14, 14);
+      this._placeProp('fountain', fPos.x, fPos.z, 0, 1, tileSurfaceY(14, 14));
+    }
 
     // Street lamps lining the town road (offset to tile corners so they don't
     // sit in the player's walking path). Only placed on walkable path tiles.
@@ -389,10 +410,10 @@ export class World3D {
     m.rotation.y = rotY;
     m.scale.multiplyScalar(scale);
     // Environment motion: grass / flowers / trees / bushes sway in the wind
-    if (key === 'tallgrass' || key === 'flowers' || key === 'tree' || key === 'berry_tree' || key === 'bush') {
+    if (key === 'tallgrass' || key === 'flowers' || key === 'tree' || key === 'berry_tree' || key === 'bush' || key === 'cattail') {
       m.userData.sway = true;
       m.userData.swayPhase = Math.random() * Math.PI * 2;
-      const swayAmps = { tree: 0.03, berry_tree: 0.035, bush: 0.05, tallgrass: 0.09, flowers: 0.06 };
+      const swayAmps = { tree: 0.03, berry_tree: 0.035, bush: 0.05, tallgrass: 0.09, flowers: 0.06, cattail: 0.07 };
       m.userData.swayAmp = swayAmps[key] ?? 0.06;
       m.userData.baseRotY = rotY;
       m.userData.baseScale = m.scale.x;
