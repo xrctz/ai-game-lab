@@ -1247,3 +1247,28 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+@media (max-width: 720px) {
+  #hud {
+    padding: 8px;
+    gap: 6px;
+  }
+  #teammate-panel {
+    display: none;
+  }
+  #wave-display {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+  #weapon-slots {
+    transform: scale(0.9);
+    transform-origin: bottom right;
+  }
+  .kill-feed {
+    max-width: 160px;
+    font-size: 10px;
+  }
+  #crosshair {
+    transform: scale(0.85);
+  }
+}
