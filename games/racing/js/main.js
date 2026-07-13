@@ -49,6 +49,7 @@ let minimapCtx = null;
 let orbsCollectedAtStart = 0;
 let texturePack = null;
 let texturesReady = false;
+let stateBeforePause = 'racing';
 
 // ---------- Screens ----------
 function showScreen(name) {
@@ -314,6 +315,7 @@ async function startRaceFlow() {
     r.boostCooldown = 0;
     r.gateHits = new Map();
     r._endScheduled = false;
+    r._endPending = false;
   });
   orbsCollectedAtStart = 0;
   clock.start();
@@ -561,6 +563,7 @@ function checkFinish() {
       player._endScheduled = true;
       setTimeout(() => {
         if (state === 'racing') endRace();
+        else if (state === 'paused') player._endPending = true;
       }, 1800);
     }
   }
@@ -663,7 +666,7 @@ function bindInput() {
         break;
       case 'KeyP':
       case 'Escape':
-        if (down) togglePause();
+        if (down && !e.repeat) togglePause();
         e.preventDefault();
         break;
       default:
@@ -672,6 +675,10 @@ function bindInput() {
   };
   window.addEventListener('keydown', (e) => setKey(e, true));
   window.addEventListener('keyup', (e) => setKey(e, false));
+  window.addEventListener('blur', () => pauseForInterruption());
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) pauseForInterruption();
+  });
 
   if (window.AIGLMobile) {
     window.AIGLMobile.mountRacingControls({
@@ -698,21 +705,51 @@ function bindInput() {
   }
 }
 
+function resetInput() {
+  Object.keys(input).forEach((key) => {
+    input[key] = false;
+  });
+}
+
+function pauseRace(reason = '') {
+  if (state !== 'racing' && state !== 'countdown') return;
+  stateBeforePause = state;
+  state = 'paused';
+  resetInput();
+  $('pause-reason').textContent = reason || 'The Meridian holds still.';
+  showScreen('pause');
+  hud.classList.add('active');
+  $('btn-resume').focus();
+}
+
+function resumeRace() {
+  if (state !== 'paused') return;
+  state = stateBeforePause;
+  showScreen(null);
+  hud.classList.add('active');
+  clock.getDelta();
+  if (player?._endPending) {
+    player._endPending = false;
+    endRace();
+  }
+}
+
 function togglePause() {
-  if (state === 'racing') {
-    state = 'paused';
-    showScreen('pause');
-    hud.classList.add('active');
-  } else if (state === 'paused') {
-    state = 'racing';
-    showScreen(null);
-    hud.classList.add('active');
-    clock.getDelta();
+  if (state === 'racing' || state === 'countdown') pauseRace();
+  else if (state === 'paused') resumeRace();
+}
+
+function pauseForInterruption() {
+  if (state === 'racing' || state === 'countdown') {
+    pauseRace('Race paused because the game lost focus. Your controls were released.');
+  } else {
+    resetInput();
   }
 }
 
 async function returnToMenu() {
   state = 'menu';
+  resetInput();
   showScreen('menu');
   hud.classList.remove('active');
   await buildMenuBackdrop();
@@ -735,7 +772,8 @@ function bindUI() {
     showScreen('menu');
     state = 'menu';
   };
-  $('btn-resume').onclick = () => togglePause();
+  $('btn-pause').onclick = () => pauseRace();
+  $('btn-resume').onclick = () => resumeRace();
   $('btn-quit').onclick = () => returnToMenu();
   $('btn-replay').onclick = () => startRaceFlow();
   $('btn-menu').onclick = () => returnToMenu();
