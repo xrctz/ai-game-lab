@@ -192,6 +192,32 @@ body.cv-embedded #cv-lab-brand {
   color: rgba(255,255,255,0.15);
 }
 
+/* ── Diagnostics overlay (F3) ── */
+#cv-lab-diag {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top));
+  left: max(10px, env(safe-area-inset-left));
+  z-index: 100002;
+  margin: 0;
+  background: rgba(6, 8, 16, 0.74);
+  color: #b9f5c8;
+  font-family: 'SFMono-Regular', Consolas, ui-monospace, Menlo, monospace;
+  font-size: 0.72rem;
+  line-height: 1.55;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  white-space: pre;
+  pointer-events: none;
+  user-select: none;
+  max-width: min(320px, 80vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#cv-lab-diag.cv-lab-hidden {
+  display: none;
+}
+
 /* ── Title screen contrast boost in embed ── */
 body.cv-embedded #title-screen {
   background: radial-gradient(ellipse at 50% 30%, rgba(10, 10, 30, 0.92), rgba(0, 0, 0, 0.96) 80%);
