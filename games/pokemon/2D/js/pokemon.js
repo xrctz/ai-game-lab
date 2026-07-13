@@ -53,7 +53,7 @@ function createPokemon(speciesId, level, opts = {}) {
     spriteArt: sp.spriteArt || sp.sprite,
     color: sp.color,
     exp: 0,
-    expToNext: expForLevel(level + 1),
+    expToNext: expNeededForLevel(level),
     maxHp,
     hp: opts.hp != null ? opts.hp : maxHp,
     stats: {
@@ -77,6 +77,11 @@ function createPokemon(speciesId, level, opts = {}) {
 function expForLevel(level) {
   // Medium-fast: level^3
   return level * level * level;
+}
+
+function expNeededForLevel(level) {
+  if (level >= 100) return 0;
+  return expForLevel(level + 1) - expForLevel(level);
 }
 
 function stageMultiplier(stage) {
@@ -207,7 +212,7 @@ function gainExp(mon, amount) {
       spd: calcStat(sp.base.spd, mon.level),
       spe: calcStat(sp.base.spe, mon.level),
     };
-    mon.expToNext = expForLevel(mon.level + 1);
+    mon.expToNext = expNeededForLevel(mon.level);
   }
   return { leveled: levels > 0, levels };
 }
@@ -384,8 +389,10 @@ function deserializePokemon(data) {
     nickname: data.name,
     hp: data.hp,
   });
-  if (data.exp != null) mon.exp = data.exp;
-  if (data.expToNext != null) mon.expToNext = data.expToNext;
+  if (data.exp != null) mon.exp = Math.max(0, data.exp);
+  // Derive the threshold instead of trusting legacy saves, which stored the
+  // absolute cubic total and made progression increasingly grindy.
+  mon.expToNext = expNeededForLevel(mon.level);
   mon.hp = clamp(data.hp != null ? data.hp : mon.maxHp, 0, mon.maxHp);
   mon.status = data.status || null;
   if (Array.isArray(data.moves)) {
@@ -396,6 +403,8 @@ function deserializePokemon(data) {
       }
     }
   }
+  // Carry surplus EXP across levels and migrate legacy saves immediately.
+  gainExp(mon, 0);
   return mon;
 }
 
