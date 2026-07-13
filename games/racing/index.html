@@ -71,6 +71,7 @@
         <div class="label" id="spectrum-label">Spectrum</div>
         <div class="spectrum-bar"><span id="spectrum-fill"></span></div>
       </div>
+      <button class="icon-btn mute-btn" id="btn-mute" aria-label="Toggle sound" title="Toggle sound">🔊</button>
     </div>
     <div class="hud-top">
       <div class="hud-card">
@@ -104,6 +105,7 @@
       <p class="result-sub">The Meridian holds still.</p>
       <div class="menu-actions">
         <button class="btn" id="btn-resume">Resume</button>
+        <button class="btn btn-secondary" id="btn-mute-pause">🔊 Sound On</button>
         <button class="btn btn-secondary" id="btn-quit">Return to Menu</button>
       </div>
     </div>
@@ -127,11 +129,13 @@
           <div class="label">Orbs</div>
           <div class="value" id="result-orbs">0</div>
         </div>
-        <div class="hud-card">
+        <div class="hud-card best-card">
           <div class="label">Best Lap</div>
           <div class="value" id="result-best">—</div>
+          <div class="record-badge" id="result-record">New Record!</div>
         </div>
       </div>
+      <p class="alltime-note" id="result-alltime"></p>
       <div class="menu-actions">
         <button class="btn" id="btn-replay">Race Again</button>
         <button class="btn btn-secondary" id="btn-menu">Main Menu</button>

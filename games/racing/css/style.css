@@ -351,6 +351,33 @@ html, body {
   top: 1.1rem;
 }
 
+/* ===== AUDIO CONTROLS ===== */
+.icon-btn {
+  pointer-events: auto;
+  align-self: flex-start;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  color: var(--cyan);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.icon-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 20px rgba(61, 232, 255, 0.4);
+}
+
+.icon-btn.muted {
+  color: var(--muted);
+}
+
 #minimap {
   width: 150px;
   height: 150px;
@@ -493,6 +520,35 @@ html, body {
 
 .result-stats .hud-card {
   min-width: 0;
+}
+
+.best-card {
+  position: relative;
+}
+
+.record-badge {
+  display: none;
+  margin-top: 0.35rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bg-deep);
+  background: linear-gradient(120deg, var(--gold), var(--cyan));
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  box-shadow: 0 0 14px rgba(255, 200, 87, 0.6);
+  animation: blink 1s ease infinite;
+}
+
+.record-badge.show {
+  display: inline-block;
+}
+
+.alltime-note {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: -0.5rem 0 1.25rem;
 }
 
 /* ===== PAUSE ===== */
