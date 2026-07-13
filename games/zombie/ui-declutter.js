@@ -16,7 +16,8 @@
     'dt-v9-director',
     'dt-lab-panel',
     'dt-hub-chip',
-    'dt-hub-fallback'
+    'dt-hub-fallback',
+    'dt-hub-overlay'
   ];
 
   /** Last applied menu-open flag; skip redundant DOM work. */
@@ -98,7 +99,8 @@
       'html.dt-menu-open #dt-v9-director,',
       'html.dt-menu-open #dt-lab-panel,',
       'html.dt-menu-open #dt-hub-chip,',
-      'html.dt-menu-open #dt-hub-fallback{display:none!important}',
+      'html.dt-menu-open #dt-hub-fallback,',
+      'html.dt-menu-open #dt-hub-overlay{display:none!important}',
 
       '/* Fail-safe: when game hides menu, never block the canvas */',
       '#menu-overlay.is-hidden{',
