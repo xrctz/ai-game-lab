@@ -1,11 +1,16 @@
 /**
- * Dead Zone — mobile touch controls (v23)
+ * Dead Zone — mobile touch controls (v24)
  */
 (function () {
   'use strict';
   if (!window.AIGLMobile || !window.AIGLMobile.isTouchDevice()) return;
 
   window.AIGLMobile.ensureCss();
+
+  function pulseKey(input, code) {
+    input.setMobileKey(code, true);
+    input.setMobileKey(code, false);
+  }
 
   function attach(game) {
     if (!game || !game.input || game.__mobileAttached) return;
@@ -69,11 +74,55 @@
     row.appendChild(jump);
     var reload = window.AIGLMobile.makeBtn('Reload');
     reload.addEventListener('click', function () {
-      input.setMobileKey('KeyR', true);
-      input.setMobileKey('KeyR', false);
+      pulseKey(input, 'KeyR');
     });
     row.appendChild(reload);
     actions.appendChild(row);
+
+    var row2 = document.createElement('div');
+    row2.className = 'aigl-mob-btn-row';
+    var sprint = window.AIGLMobile.makeBtn('Sprint');
+    sprint.addEventListener('touchstart', function (e) {
+      e.preventDefault();
+      sprint.classList.add('is-active');
+      input.setMobileKey('ShiftLeft', true);
+    }, { passive: false });
+    sprint.addEventListener('touchend', function () {
+      sprint.classList.remove('is-active');
+      input.setMobileKey('ShiftLeft', false);
+    });
+  sprint.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      sprint.classList.add('is-active');
+      input.setMobileKey('ShiftLeft', true);
+    });
+    sprint.addEventListener('pointerup', function () {
+      sprint.classList.remove('is-active');
+      input.setMobileKey('ShiftLeft', false);
+    });
+    row2.appendChild(sprint);
+
+    var crouch = window.AIGLMobile.makeBtn('Crouch');
+    window.AIGLMobile.bindHoldButton(crouch, 'ControlLeft', 'Control');
+    row2.appendChild(crouch);
+
+    var grenade = window.AIGLMobile.makeBtn('Gren');
+    grenade.addEventListener('click', function () {
+      pulseKey(input, 'KeyG');
+    });
+    row2.appendChild(grenade);
+    actions.appendChild(row2);
+
+    var row3 = document.createElement('div');
+    row3.className = 'aigl-mob-btn-row';
+    ['1', '2', '3'].forEach(function (digit, i) {
+      var btn = window.AIGLMobile.makeBtn(digit);
+      btn.addEventListener('click', function () {
+        pulseKey(input, 'Digit' + (i + 1));
+      });
+      row3.appendChild(btn);
+    });
+    actions.appendChild(row3);
     root.appendChild(actions);
 
     var overlay = document.getElementById('embed-overlay');

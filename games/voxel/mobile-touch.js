@@ -20,25 +20,32 @@
     fireLabel: 'Mine',
   });
 
+  function whenReady(fn) {
+    var tries = 0;
+    var timer = setInterval(function () {
+      var root = document.getElementById('aigl-mob-voxel');
+      if (root) {
+        clearInterval(timer);
+        fn(root);
+        return;
+      }
+      if (++tries > 80) clearInterval(timer);
+    }, 100);
+  }
+
   function mouseBtn(type, button) {
     document.dispatchEvent(new MouseEvent(type, { button: button, bubbles: true }));
   }
 
-  function makeBtn(label) {
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'aigl-mob-btn aigl-mob-panel';
-    b.textContent = label;
-    b.setAttribute('aria-label', label);
-    return b;
-  }
+  whenReady(function (root) {
+    var actions = root.querySelector('.aigl-mob-actions');
+    if (!actions) return;
 
-  // Add Place (right-click) and Inv (KeyE) once the control root exists.
-  (function addBlockButtons() {
-    var row = document.querySelector('#aigl-mob-voxel .aigl-mob-btn-row');
-    if (!row) { requestAnimationFrame(addBlockButtons); return; }
+    var row = document.createElement('div');
+    row.className = 'aigl-mob-btn-row';
 
-    var place = makeBtn('Place');
+    // Place (right-click) — the bundle listens for mouse events on window.
+    var place = window.AIGLMobile.makeBtn('Place');
     var pressPlace = function (e) { if (e) e.preventDefault(); place.classList.add('is-active'); mouseBtn('mousedown', 2); };
     var relPlace = function () { place.classList.remove('is-active'); mouseBtn('mouseup', 2); };
     place.addEventListener('touchstart', pressPlace, { passive: false });
@@ -47,13 +54,19 @@
     place.addEventListener('pointerup', relPlace);
     row.appendChild(place);
 
-    var inv = makeBtn('Inv');
-    inv.addEventListener('click', function () {
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'e', code: 'KeyE', bubbles: true }));
+    var inventory = window.AIGLMobile.makeBtn('Inv');
+    inventory.addEventListener('click', function () {
+      window.AIGLMobile.synthKey('KeyE', true, 'e');
       setTimeout(function () {
-        document.dispatchEvent(new KeyboardEvent('keyup', { key: 'e', code: 'KeyE', bubbles: true }));
-      }, 40);
+        window.AIGLMobile.synthKey('KeyE', false, 'e');
+      }, 80);
     });
-    row.appendChild(inv);
-  })();
+    row.appendChild(inventory);
+
+    var sprint = window.AIGLMobile.makeBtn('Sprint');
+    window.AIGLMobile.bindHoldButton(sprint, 'ShiftLeft', 'Shift');
+    row.appendChild(sprint);
+
+    actions.appendChild(row);
+  });
 })();
