@@ -188,10 +188,18 @@
     }
     if(reserveEl) reserveEl.textContent = reserve;
     if(barFill){
-      var pct = Math.max(0, Math.min(100, (current / Math.max(1, current + reserve)) * 100));
-      barFill.style.width = pct + '%';
+      // Represent magazine fullness (current / mag size). We don't get mag size
+      // directly, so infer it from the highest "current" seen — it tops up on
+      // reload or weapon switch, which is exactly when the mag is full.
+      if(current > weaponPrevCurrent) weaponMagMax = current;
+      if(current > weaponMagMax) weaponMagMax = current;
+      weaponPrevCurrent = current;
+      var pct = weaponMagMax > 0 ? (current / weaponMagMax) * 100 : 0;
+      barFill.style.width = Math.max(0, Math.min(100, pct)) + '%';
     }
   }
+  var weaponMagMax = 0;
+  var weaponPrevCurrent = 0;
 
   function updateHealthOverlay(){
     if(!isGameplayActive()){
@@ -224,6 +232,7 @@
 
   function screenShake(intensity){
     if(!isGameplayActive()) return;
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     var app = $('app');
     if(!app) return;
     var cls = intensity === 'heavy' ? 'screen-shake-heavy' : 'screen-shake-light';

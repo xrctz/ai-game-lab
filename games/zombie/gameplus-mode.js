@@ -139,6 +139,9 @@
       '}',
 
       '/* ── Kill Feed Animations ── */',
+      // Anchor the bundle-created feed to the top-right corner (matches the
+      // designed HUD) instead of the default mid-screen-right position.
+      '#kill-feed{top:80px!important;right:16px!important;transform:none!important;z-index:7200!important;max-height:220px!important}',
       '.kf-show{animation:kf-slide-in .3s ease forwards}',
       '.kf-hide{animation:kf-slide-out .4s ease forwards}',
       '@keyframes kf-slide-in{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}',
@@ -298,6 +301,7 @@
     var lastStats = '';
     var lastExtra = '';
     var lastKills = 0;
+    var killsBaselineSet = false;
 
     setInterval(function(){
       var statsEl = $('stats-meta');
@@ -310,7 +314,11 @@
         var killsMatch = stats.match(/Kills:\s*(\d+)/i);
         if(killsMatch){
           var kills = parseInt(killsMatch[1], 10);
-          if(kills > lastKills && lastKills > 0){
+          // Baseline on first read so we don't spam the feed on load,
+          // but still surface the very first kill (0 -> 1).
+          if(!killsBaselineSet){
+            killsBaselineSet = true;
+          } else if(kills > lastKills){
             addKillFeedItem('💀', 'Kill', '+' + (kills - lastKills));
           }
           lastKills = kills;
