@@ -4,6 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Midnight Watch — Bruno's Pizzeria</title>
+    <meta name="description" content="Midnight Watch — survive the night shift at Bruno's Family Pizzeria. Check cameras, close doors, and manage power until 6 AM." />
+    <meta name="theme-color" content="#050508" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <style>
+      /* Keep the how-to panel scrollable on short viewports (hub iframe / landscape phones). */
+      #howto-screen .panel { max-height: min(82vh, 640px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+      /* On touch devices, the on-screen control overlay replaces the keyboard hints. */
+      .touch-only { display: none; }
+      @media (pointer: coarse) {
+        .kbd-only { display: none; }
+        .touch-only { display: block; }
+        #door-hints { display: none; }
+      }
+    </style>
     <link rel="stylesheet" href="../shared/aigl-mobile.css" />
     <script src="../shared/aigl-mobile.js"></script>
     <script>
@@ -38,8 +52,8 @@
               <option value="5">Night 5</option>
             </select>
           </div>
-          <button id="btn-start" class="btn primary">START NIGHT</button>
-          <button id="btn-howto" class="btn ghost">HOW TO PLAY</button>
+          <button type="button" id="btn-start" class="btn primary">START NIGHT</button>
+          <button type="button" id="btn-howto" class="btn ghost">HOW TO PLAY</button>
           <p class="disclaimer">
             Original fan-inspired horror game. Not affiliated with Five Nights at Freddy's.
             Characters & map built in Blender.
@@ -48,10 +62,15 @@
       </div>
 
       <!-- How to play -->
-      <div id="howto-screen" class="overlay hidden">
+      <div id="howto-screen" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="howto-title">
         <div class="panel">
-          <h2>How to Play</h2>
-          <ul>
+          <h2 id="howto-title">How to Play</h2>
+          <p class="touch-only" style="line-height:1.6">
+            <strong>Touch controls:</strong> ◀ / Desk / ▶ look · <em>L Dr</em> / <em>R Dr</em> toggle doors ·
+            hold <em>L Lt</em> / <em>R Lt</em> for hall lights · <em>Flash</em> flashlight ·
+            <em>IR</em> night vision · <em>Mute</em> audio · <em>Cameras</em> to open the security feed.
+          </p>
+          <ul class="kbd-only">
             <li><kbd>A</kbd> / <kbd>←</kbd> — Look left (left door)</li>
             <li><kbd>D</kbd> / <kbd>→</kbd> — Look right (right door)</li>
             <li><kbd>S</kbd> / <kbd>↓</kbd> — Look center (desk)</li>
@@ -69,7 +88,7 @@
             <li>Doors, lights, IR &amp; flash drain power. Use sparingly.</li>
             <li>If an animatronic reaches an open door… game over.</li>
           </ul>
-          <button id="btn-howto-close" class="btn primary">Got it</button>
+          <button type="button" id="btn-howto-close" class="btn primary">Got it</button>
         </div>
       </div>
 
@@ -100,7 +119,7 @@
             <div class="power-wrap">
               <div id="power-fill"></div>
             </div>
-            <span id="power-text">100%</span>
+            <span id="power-text" aria-live="polite">100%</span>
           </div>
           <div class="hud-block center usage-block">
             <span id="usage-dots" title="Power usage">■■□□</span>
@@ -126,11 +145,11 @@
           </div>
         </div>
 
-        <div id="tablet-prompt">[ SPACE ] Cameras</div>
+        <div id="tablet-prompt"><span class="kbd-only">[ SPACE ] Cameras</span><span class="touch-only">Tap Cameras below</span></div>
         <div id="systems-lock" class="hidden">SYSTEMS REBOOTING…</div>
-        <div id="power-out-banner" class="hidden">POWER OUT — STAY QUIET</div>
+        <div id="power-out-banner" class="hidden" role="status" aria-live="assertive">POWER OUT — STAY QUIET</div>
         <div id="mute-indicator" class="hidden">MUTED [M]</div>
-        <div id="status-toast" class="hidden"></div>
+        <div id="status-toast" class="hidden" role="status" aria-live="polite"></div>
         <div id="threat-flash" class="hidden"></div>
       </div>
 
@@ -191,12 +210,12 @@
       </div>
 
       <!-- Game over / win -->
-      <div id="end-screen" class="overlay hidden">
+      <div id="end-screen" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="end-title">
         <div class="panel">
           <h1 id="end-title">GAME OVER</h1>
           <p id="end-msg">The animatronics got you.</p>
-          <button id="btn-retry" class="btn primary">Try Again</button>
-          <button id="btn-menu" class="btn ghost">Main Menu</button>
+          <button type="button" id="btn-retry" class="btn primary">Try Again</button>
+          <button type="button" id="btn-menu" class="btn ghost">Main Menu</button>
         </div>
       </div>
 

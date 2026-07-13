@@ -202,6 +202,12 @@
   min-height: 30px;
 }
 
+/* While the camera tablet is open, hide the door/light buttons so they don't
+   cover the tablet UI — leave only the wide Cameras button to close the feed. */
+.aigl-mob-fnaf.aigl-fnaf-cams-open .aigl-mob-btn:not(.wide) {
+  display: none;
+}
+
 /* ══════════════════════════════════════════
    iPhone 14 class phones — 390×844 portrait
    Also covers 14 Pro (393), mini, hub iframes
