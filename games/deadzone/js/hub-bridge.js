@@ -53,9 +53,23 @@
     if (document.pointerLockElement) hideOverlay();
   });
 
-  if (isEmbed()) {
+  function syncMapChoices() {
+    var choices = document.querySelectorAll('.map-card[data-map]');
+    choices.forEach(function (choice) {
+      choice.addEventListener('click', function () {
+        choices.forEach(function (item) {
+          item.setAttribute('aria-pressed', item === choice ? 'true' : 'false');
+        });
+      });
+    });
+  }
+
+  function initializeBridge() {
+    syncMapChoices();
+    if (!isEmbed()) return;
+
     document.documentElement.classList.add('dz-embedded');
-    document.body && document.body.classList.add('dz-embedded');
+    document.body.classList.add('dz-embedded');
     ensureOpenTabLink();
     // Prefer full-tab hint on small viewports
     if (Math.min(window.innerWidth, window.innerHeight) < 520) {
@@ -72,6 +86,12 @@
         }
       }
     }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeBridge, { once: true });
+  } else {
+    initializeBridge();
   }
 
   window.__deadZoneShowLockError = showLockError;

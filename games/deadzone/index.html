@@ -12,11 +12,12 @@
 </head>
 <body>
     <!-- Embed / pointer-lock overlay (hub iframe support · v20) -->
-    <div id="embed-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(7,8,15,.78);backdrop-filter:blur(10px);place-items:center;text-align:center;font-family:'DM Sans','Segoe UI',Arial,sans-serif;color:#e8eaf2;padding:24px">
+    <div id="embed-overlay" role="dialog" aria-modal="true" aria-labelledby="embed-overlay-title" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(7,8,15,.78);backdrop-filter:blur(10px);place-items:center;text-align:center;font-family:'DM Sans','Segoe UI',Arial,sans-serif;color:#e8eaf2;padding:24px">
         <div>
             <div style="font-size:42px;margin-bottom:14px">🎯</div>
-            <div style="font-size:22px;font-weight:800;letter-spacing:0.12em;margin-bottom:10px;font-family:Outfit,system-ui,sans-serif">CLICK TO PLAY</div>
+            <div id="embed-overlay-title" style="font-size:22px;font-weight:800;letter-spacing:0.12em;margin-bottom:10px;font-family:Outfit,system-ui,sans-serif">CLICK TO PLAY</div>
             <div style="font-size:13px;color:#9aa3b8;max-width:360px;line-height:1.65;margin:0 auto 18px">Click anywhere to capture your mouse. Pointer lock is required to aim and shoot in the hub iframe.</div>
+            <button type="button" id="embed-play-button" class="menu-btn">CAPTURE MOUSE</button>
             <div id="embed-lock-error" style="display:none;max-width:400px;margin:0 auto">
                 <div style="font-size:12px;color:#ff6b6b;margin-bottom:12px;letter-spacing:0.04em">⚠ Pointer lock was blocked by the browser.</div>
                 <a id="open-new-tab" href="./index.html" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:11px 22px;border:1px solid rgba(255,100,120,.5);border-radius:10px;background:rgba(255,60,80,.16);color:#ff6b6b;font-weight:800;font-size:12px;letter-spacing:0.08em;text-decoration:none">OPEN IN NEW TAB</a>
@@ -25,16 +26,17 @@
     </div>
 
     <div id="game-container">
-        <canvas id="game-canvas"></canvas>
+        <canvas id="game-canvas" aria-label="Dead Zone game view"></canvas>
 
-        <div id="loading-screen">
+        <div id="loading-screen" role="status" aria-live="polite" aria-busy="true">
             <div class="loading-content">
                 <h1 class="game-title">DEAD ZONE</h1>
                 <p class="game-subtitle">EVACUATION</p>
-                <div class="loading-bar-container">
+                <div class="loading-bar-container" role="progressbar" aria-label="Game loading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                     <div class="loading-bar" id="loading-bar"></div>
                 </div>
                 <p class="loading-text" id="loading-text">INITIALIZING...</p>
+                <button type="button" class="menu-btn loading-retry hidden" id="loading-retry">RETRY</button>
             </div>
         </div>
 
@@ -54,7 +56,7 @@
             <div class="menu-content map-select-content">
                 <h2>SELECT OPERATION ZONE</h2>
                 <div class="map-grid" id="map-grid">
-                    <div class="map-card selected" data-map="outpost">
+                    <button type="button" class="map-card selected" data-map="outpost" aria-pressed="true">
                         <div class="map-preview map-preview-outpost">
                             <div class="map-preview-overlay"></div>
                             <div class="map-preview-icon">🏗</div>
@@ -67,8 +69,8 @@
                                 <span class="map-tag tag-difficulty">NORMAL</span>
                             </div>
                         </div>
-                    </div>
-                    <div class="map-card" data-map="city">
+                    </button>
+                    <button type="button" class="map-card" data-map="city" aria-pressed="false">
                         <div class="map-preview map-preview-city">
                             <div class="map-preview-overlay"></div>
                             <div class="map-preview-icon">🏙</div>
@@ -81,7 +83,7 @@
                                 <span class="map-tag tag-difficulty">HARD</span>
                             </div>
                         </div>
-                    </div>
+                    </button>
                 </div>
                 <div class="map-select-actions">
                     <button class="menu-btn" id="btn-map-start">DEPLOY</button>
@@ -305,36 +307,62 @@
     </div>
 
     <script>
-    var scriptSrc = 'https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';
-    function appendScript(src, onErr) {
+    var engineLoadTimeout;
+    var bundleRequested = false;
+    var loadingFailed = false;
+    function setLoadError(message) {
+        loadingFailed = true;
+        clearTimeout(engineLoadTimeout);
+        var loading = document.getElementById('loading-screen');
+        var loadingText = document.getElementById('loading-text');
+        var loadingBar = document.getElementById('loading-bar');
+        var retry = document.getElementById('loading-retry');
+        if (loading) {
+            loading.setAttribute('aria-busy', 'false');
+            loading.setAttribute('role', 'alert');
+        }
+        if (loadingText) {
+            loadingText.textContent = message;
+            loadingText.style.color = '#ff6b6b';
+        }
+        if (loadingBar) loadingBar.style.background = '#ff4444';
+        if (retry) retry.classList.remove('hidden');
+    }
+    function appendScript(src, onLoad, onErr) {
         var s = document.createElement('script');
         s.src = src;
+        s.onload = onLoad;
         s.onerror = onErr;
         document.head.appendChild(s);
     }
-    appendScript(scriptSrc, function() {
-        // Fallback
-        appendScript('https://unpkg.com/three@0.159.0/build/three.min.js', function() {
-            document.getElementById('loading-text').textContent = 'ERROR: Cannot load 3D engine. Check internet.';
-            document.getElementById('loading-text').style.color = '#ff4444';
-        });
-    });
-
-    function waitForTHREE() {
-        if (typeof THREE !== 'undefined') {
-            var s = document.createElement('script');
-            s.src = 'js/game-bundle.js';
-            window.__deadZoneBundleBooted = true;
-            s.onerror = function() {
-                document.getElementById('loading-text').textContent = 'ERROR: Failed to load game bundle.';
-                document.getElementById('loading-text').style.color = '#ff4444';
-            };
-            document.body.appendChild(s);
-        } else {
-            setTimeout(waitForTHREE, 200);
-        }
+    function bootGame() {
+        if (loadingFailed || bundleRequested || typeof THREE === 'undefined') return;
+        bundleRequested = true;
+        clearTimeout(engineLoadTimeout);
+        var loadingText = document.getElementById('loading-text');
+        if (loadingText) loadingText.textContent = 'STARTING MISSION...';
+        var progress = document.querySelector('.loading-bar-container');
+        if (progress) progress.setAttribute('aria-valuenow', '100');
+        var s = document.createElement('script');
+        s.src = 'js/game-bundle.js';
+        window.__deadZoneBundleBooted = true;
+        s.onerror = function() {
+            setLoadError('ERROR: Failed to load game files. Please retry.');
+        };
+        document.body.appendChild(s);
     }
-    setTimeout(waitForTHREE, 500);
+    function loadFallback() {
+        appendScript('https://unpkg.com/three@0.159.0/build/three.min.js', bootGame, function() {
+            setLoadError('ERROR: Cannot load 3D engine. Check your connection and retry.');
+        });
+    }
+    appendScript('https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js', bootGame, loadFallback);
+    engineLoadTimeout = window.setTimeout(function() {
+        if (!bundleRequested) setLoadError('ERROR: Loading took too long. Check your connection and retry.');
+    }, 30000);
+    document.getElementById('loading-retry').addEventListener('click', function() {
+        window.location.reload();
+    });
     </script>
 
     <!-- Embed mode overlay logic (pointer lock handled by game-bundle.js) -->

@@ -27,6 +27,7 @@ const firstAlive = (...a) => G('firstAlive')(...a);
 const pickWildEncounter = (...a) => G('pickWildEncounter')(...a);
 const tryCatch = (...a) => G('tryCatch')(...a);
 const getEffectiveStat = (...a) => G('getEffectiveStat')(...a);
+const applyEndTurnEffects = (...a) => G('applyEndTurnEffects')(...a);
 const getSwitchableIndices = (...a) => G('getSwitchableIndices')(...a);
 const applyBattleSwitch = (...a) => G('applyBattleSwitch')(...a);
 const buildTrainerParty = (...a) => G('buildTrainerParty')(...a);
@@ -639,6 +640,15 @@ async function executeMove(user, target, move, side) {
       renderBattle();
       await sleep(500);
     }
+    if (move.effect && move.effect !== 'drain') {
+      const logs = [];
+      applyStatusEffect(move, user, target, (m) => logs.push(m));
+      if (logs.length) {
+        setBattleLog(logs.join(' '));
+        renderBattle();
+        await sleep(650);
+      }
+    }
   } else {
     const logs = [];
     applyStatusEffect(move, user, target, (m) => logs.push(m));
@@ -646,6 +656,30 @@ async function executeMove(user, target, move, side) {
     renderBattle();
     await sleep(700);
   }
+}
+
+async function resolveEndOfTurn() {
+  const b = Game.battle;
+  if (!b) return true;
+  const player = Game.party[b.playerIdx];
+  const events = applyEndTurnEffects(player, b.wild);
+  for (const event of events) {
+    const message = event.kind === 'poison'
+      ? `${event.name} is hurt by poison! (${event.damage} HP)`
+      : `${event.name} is drained by Leech Seed! (${event.damage} HP)${event.healed ? ` The opposing Pokémon restored ${event.healed} HP!` : ''}`;
+    setBattleLog(message);
+    renderBattle();
+    await sleep(650);
+  }
+  if (player.hp <= 0) {
+    await onPlayerFainted();
+    return true;
+  }
+  if (b.wild.hp <= 0) {
+    await onEnemyFainted();
+    return true;
+  }
+  return false;
 }
 
 async function playerUseMove(moveIndex) {
@@ -673,6 +707,7 @@ async function playerUseMove(moveIndex) {
     await executeMove(player, wild, move, 'player');
     if (wild.hp <= 0) { await onEnemyFainted(); return; }
   }
+  if (await resolveEndOfTurn()) return;
   b.busy = false;
   renderBattle();
   setBattleLog('What will you do?');
@@ -697,6 +732,7 @@ async function playerSwitchTo(targetIdx) {
     await executeMove(b.wild, result.mon, enemyMove, 'enemy');
     if (result.mon.hp <= 0) { await onPlayerFainted(); return; }
   }
+  if (await resolveEndOfTurn()) return;
   b.busy = false;
   setBattleLog('What will you do?');
 }

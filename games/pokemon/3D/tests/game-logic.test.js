@@ -40,8 +40,10 @@ const deserializeGameState = g('deserializeGameState');
 const hasValidSaveData = g('hasValidSaveData');
 const typeEffectiveness = g('typeEffectiveness');
 const catchChance = g('catchChance');
+const applyEndTurnEffects = g('applyEndTurnEffects');
 const SAVE_VERSION = g('SAVE_VERSION');
 const NPCS = g('NPCS');
+const MOVES = g('MOVES');
 
 let passed = 0;
 let failed = 0;
@@ -92,6 +94,29 @@ console.log('\n=== Party alive ===');
   assert(firstAlive([a, b]) === 1, 'firstAlive index 1');
   b.hp = 0;
   assert(partyAlive([a, b]) === false, 'partyAlive all fainted');
+}
+
+console.log('\n=== End-of-turn effects ===');
+{
+  assert(MOVES.poisonsting.effect === 'poison' && MOVES.poisonsting.effectChance === 0.3, 'Poison Sting has a 30% poison effect');
+  const player = createPokemon('bulbasaur', 10);
+  const enemy = createPokemon('rattata', 10);
+  player.hp = Math.max(1, player.maxHp - 8);
+  enemy.hp = enemy.maxHp;
+  enemy.status = 'poison';
+  enemy._leech = true;
+  const poisonDamage = Math.max(1, Math.floor(enemy.maxHp / 8));
+  const events = applyEndTurnEffects(player, enemy);
+  assert(enemy.hp === enemy.maxHp - poisonDamage - poisonDamage, 'poison and Leech Seed each drain 1/8 max HP');
+  assert(player.hp === Math.min(player.maxHp, Math.max(1, player.maxHp - 8) + poisonDamage), 'Leech Seed heals opposing Pokémon by actual damage');
+  assert(events.length === 2 && events[0].kind === 'poison' && events[1].kind === 'leech', 'residual events describe poison and Leech Seed');
+
+  const fainted = createPokemon('rattata', 5);
+  fainted.hp = 1;
+  fainted.status = 'poison';
+  fainted._leech = true;
+  const noLeechAfterFaint = applyEndTurnEffects(player, fainted);
+  assert(fainted.hp === 0 && noLeechAfterFaint.length === 1, 'fainted Pokémon does not take an extra Leech Seed drain');
 }
 
 console.log('\n=== Joey trainer balance (fair for Lv5 starter) ===');

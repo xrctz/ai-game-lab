@@ -10,15 +10,17 @@
   <script src="../shared/aigl-mobile.js"></script>
 </head>
 <body>
-  <canvas id="game-canvas"></canvas>
+  <canvas id="game-canvas" role="img" aria-label="VEIL RUSH 3D race view">
+    VEIL RUSH needs a browser with canvas support to display the race.
+  </canvas>
 
   <!-- MENU -->
-  <div id="menu-screen" class="screen active">
+  <div id="menu-screen" class="screen active" role="main" aria-labelledby="game-title">
     <div class="menu-panel">
-      <h1 class="logo">VEIL RUSH</h1>
+      <h1 class="logo" id="game-title">VEIL RUSH</h1>
       <p class="tagline">Race the light before dawn</p>
       <div class="vehicle-chip">
-        <img src="assets/images/vehicle_dawnshard.jpg" alt="Dawnshard skimmer" />
+        <img src="assets/images/vehicle_dawnshard.jpg" alt="" onerror="this.hidden = true" />
         <div>
           <div class="name">Dawnshard</div>
           <div class="meta">Photon Skimmer · Spectrum Drive</div>
@@ -42,8 +44,8 @@
   </div>
 
   <!-- CINEMATIC -->
-  <div id="cinematic-screen" class="screen">
-    <video id="cinematic-video" playsinline muted></video>
+  <div id="cinematic-screen" class="screen" role="dialog" aria-modal="true" aria-labelledby="cinematic-title" aria-describedby="cinematic-sub">
+    <video id="cinematic-video" playsinline muted aria-label="VEIL RUSH cinematic"></video>
     <div class="cinematic-overlay">
       <div class="cinematic-title" id="cinematic-title">VEIL RUSH</div>
       <p class="cinematic-sub" id="cinematic-sub">The Glass Meridian awakens…</p>
@@ -52,14 +54,14 @@
   </div>
 
   <!-- LOADING -->
-  <div id="loading-screen" class="screen">
+  <div id="loading-screen" class="screen" role="status" aria-live="polite" aria-label="Loading race">
     <div class="loading-orb"></div>
     <div class="loading-text">Forging the Meridian…</div>
-    <div class="loading-bar"><span id="loading-fill"></span></div>
+    <div class="loading-bar" aria-label="Race loading progress"><span id="loading-fill"></span></div>
   </div>
 
   <!-- HUD -->
-  <div id="hud">
+  <div id="hud" aria-label="Race information">
     <div class="boost-flash" id="boost-flash"></div>
     <div class="hud-left">
       <div class="hud-card speed-card">
@@ -69,7 +71,7 @@
       </div>
       <div class="hud-card spectrum-wrap">
         <div class="label" id="spectrum-label">Spectrum</div>
-        <div class="spectrum-bar"><span id="spectrum-fill"></span></div>
+        <div class="spectrum-bar" aria-labelledby="spectrum-label"><span id="spectrum-fill"></span></div>
       </div>
     </div>
     <div class="hud-top">
@@ -87,20 +89,20 @@
       </div>
     </div>
     <div class="hud-right">
-      <canvas id="minimap" width="150" height="150"></canvas>
+      <canvas id="minimap" width="150" height="150" role="img" aria-label="Race track minimap"></canvas>
     </div>
     <div class="place-list">
       <div class="label">Standings</div>
       <div id="standings"></div>
     </div>
-    <div class="countdown" id="countdown"></div>
-    <div class="race-msg" id="race-msg"></div>
+    <div class="countdown" id="countdown" role="status" aria-live="assertive"></div>
+    <div class="race-msg" id="race-msg" role="status" aria-live="polite"></div>
   </div>
 
   <!-- PAUSE -->
-  <div id="pause-screen" class="screen">
+  <div id="pause-screen" class="screen" role="dialog" aria-modal="true" aria-labelledby="pause-title">
     <div class="result-panel">
-      <h2 class="result-title">Veil Suspended</h2>
+      <h2 class="result-title" id="pause-title">Veil Suspended</h2>
       <p class="result-sub">The Meridian holds still.</p>
       <div class="menu-actions">
         <button class="btn" id="btn-resume">Resume</button>
@@ -110,7 +112,7 @@
   </div>
 
   <!-- RESULT -->
-  <div id="result-screen" class="screen">
+  <div id="result-screen" class="screen" role="dialog" aria-modal="true" aria-labelledby="result-title" aria-describedby="result-sub">
     <div class="result-panel">
       <h2 class="result-title" id="result-title">Dawn Spark Claimed</h2>
       <p class="result-sub" id="result-sub">You crossed the finish as first light broke.</p>

@@ -2099,18 +2099,17 @@ function showMovesMenu() {
   const menu = document.getElementById('moves-list');
   menu.innerHTML = '';
 
-  player.moves.forEach((move, i) => {
+  getBattleMoveOptions(player).forEach(({ move, index, isStruggle }) => {
     const btn = document.createElement('button');
     btn.className = 'move-btn';
     btn.innerHTML = `
       <span class="move-name">${move.name}</span>
       <span class="move-meta">
         <span class="type-badge type-${move.type}">${move.type}</span>
-        PWR ${move.power || '—'} · PP ${move.pp}/${move.maxPp}
+        PWR ${move.power || '—'} · ${isStruggle ? 'No PP left' : `PP ${move.pp}/${move.maxPp}`}
       </span>
     `;
-    btn.disabled = move.pp <= 0;
-    btn.addEventListener('click', () => playerUseMove(i));
+    btn.addEventListener('click', () => playerUseMove(index));
     menu.appendChild(btn);
   });
 
@@ -2226,7 +2225,12 @@ async function playerUseMove(moveIndex) {
 
   const player = Game.party[b.playerIdx];
   const wild = b.wild;
-  const move = player.moves[moveIndex];
+  const move = moveIndex === -1 ? createStruggleMove() : player.moves[moveIndex];
+  if (!move || move.pp <= 0) {
+    setBattleLog('That move has no PP left!');
+    showMovesMenu();
+    return;
+  }
 
   // Speed order
   const pPri = move.priority || 0;

@@ -47,7 +47,7 @@ const MOVES = {
   bite:       { name: 'Bite', type: 'normal', power: 60, accuracy: 100, pp: 25, cat: 'physical' },
   confusion:  { name: 'Confusion', type: 'psychic', power: 50, accuracy: 100, pp: 25, cat: 'special' },
   psybeam:    { name: 'Psybeam', type: 'psychic', power: 65, accuracy: 100, pp: 20, cat: 'special' },
-  poisonsting: { name: 'Poison Sting', type: 'poison', power: 15, accuracy: 100, pp: 35, cat: 'physical' },
+  poisonsting: { name: 'Poison Sting', type: 'poison', power: 15, accuracy: 100, pp: 35, cat: 'physical', effect: 'poison', effectChance: 0.3 },
   stringshot: { name: 'String Shot', type: 'bug', power: 0, accuracy: 95, pp: 40, cat: 'status', effect: 'spd_down' },
   gust:       { name: 'Gust', type: 'flying', power: 40, accuracy: 100, pp: 35, cat: 'special' },
   wingattack: { name: 'Wing Attack', type: 'flying', power: 60, accuracy: 100, pp: 35, cat: 'physical' },

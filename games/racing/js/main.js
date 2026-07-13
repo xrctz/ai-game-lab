@@ -629,6 +629,16 @@ function loop() {
 }
 
 // ---------- Input ----------
+function clearInput() {
+  input.forward = false;
+  input.back = false;
+  input.left = false;
+  input.right = false;
+  input.boost = false;
+  input.drift = false;
+  input.boostConsumed = false;
+}
+
 function bindInput() {
   const setKey = (e, down) => {
     switch (e.code) {
@@ -653,7 +663,7 @@ function bindInput() {
         e.preventDefault();
         break;
       case 'Space':
-        if (down && state === 'racing') input.boost = true;
+        if (down && !e.repeat && state === 'racing') input.boost = true;
         e.preventDefault();
         break;
       case 'ShiftLeft':
@@ -663,7 +673,7 @@ function bindInput() {
         break;
       case 'KeyP':
       case 'Escape':
-        if (down) togglePause();
+        if (down && !e.repeat) togglePause();
         e.preventDefault();
         break;
       default:
@@ -672,6 +682,10 @@ function bindInput() {
   };
   window.addEventListener('keydown', (e) => setKey(e, true));
   window.addEventListener('keyup', (e) => setKey(e, false));
+  window.addEventListener('blur', clearInput);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) clearInput();
+  });
 
   if (window.AIGLMobile) {
     window.AIGLMobile.mountRacingControls({
@@ -700,10 +714,12 @@ function bindInput() {
 
 function togglePause() {
   if (state === 'racing') {
+    clearInput();
     state = 'paused';
     showScreen('pause');
     hud.classList.add('active');
   } else if (state === 'paused') {
+    clearInput();
     state = 'racing';
     showScreen(null);
     hud.classList.add('active');

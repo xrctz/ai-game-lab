@@ -178,6 +178,12 @@ function applyStatusEffect(move, user, target, log) {
         log(`${target.name} is paralyzed! It may be unable to move!`);
       }
       break;
+    case 'poison':
+      if (target.status == null && Math.random() < (move.effectChance ?? 1)) {
+        target.status = 'poison';
+        log(`${target.name} was poisoned!`);
+      }
+      break;
     case 'drain': {
       // handled via damage
       break;
@@ -261,6 +267,36 @@ function catchChance(wild, ballBonus = 1) {
 function tryCatch(wild, ballBonus = 1) {
   const chance = catchChance(wild, ballBonus);
   return Math.random() < chance;
+}
+
+/**
+ * Apply residual effects after both sides have acted.
+ * Poison deals 1/8 max HP. Leech Seed drains 1/8 max HP and restores the
+ * opposing Pokémon by the damage actually dealt. Returns displayable events.
+ */
+function applyEndTurnEffects(player, enemy) {
+  const events = [];
+  const sides = [
+    { mon: player, opponent: enemy, label: 'player' },
+    { mon: enemy, opponent: player, label: 'enemy' },
+  ];
+  for (const { mon, opponent, label } of sides) {
+    if (!mon || mon.hp <= 0) continue;
+    if (mon.status === 'poison') {
+      const damage = Math.min(mon.hp, Math.max(1, Math.floor(mon.maxHp / 8)));
+      mon.hp -= damage;
+      events.push({ side: label, kind: 'poison', damage, name: mon.name });
+    }
+    if (mon.hp <= 0 || !mon._leech) continue;
+    const damage = Math.min(mon.hp, Math.max(1, Math.floor(mon.maxHp / 8)));
+    mon.hp -= damage;
+    const healed = opponent && opponent.hp > 0
+      ? Math.min(damage, Math.max(0, opponent.maxHp - opponent.hp))
+      : 0;
+    if (healed) opponent.hp += healed;
+    events.push({ side: label, kind: 'leech', damage, healed, name: mon.name });
+  }
+  return events;
 }
 
 // ---------- Mid-battle switch helpers (pure) ----------
@@ -481,6 +517,7 @@ if (typeof window !== 'undefined') {
     randInt, clamp, calcStat, createPokemon, expForLevel, stageMultiplier,
     getEffectiveStat, typeEffectiveness, calcDamage, applyStatusEffect, gainExp,
     healParty, partyAlive, firstAlive, pickWildEncounter, catchChance, tryCatch,
+    applyEndTurnEffects,
     canSwitchTo, getSwitchableIndices, applyBattleSwitch, buildTrainerParty,
     nextTrainerMonIndex, applyTrainerReward, formatRewardText, SAVE_VERSION,
     SAVE_STORAGE_KEY, serializePokemon, deserializePokemon, serializeGameState,

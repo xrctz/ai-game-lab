@@ -298,13 +298,19 @@ export async function loadTexturePack(renderer) {
   // Environment reflections (big visual upgrade)
   let envMap = null;
   if (envSky && renderer) {
-    envSky.mapping = THREE.EquirectangularReflectionMapping;
-    envSky.colorSpace = THREE.SRGBColorSpace;
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    pmrem.compileEquirectangularShader();
-    const rt = pmrem.fromEquirectangular(envSky);
-    envMap = rt.texture;
-    pmrem.dispose();
+    let pmrem = null;
+    try {
+      envSky.mapping = THREE.EquirectangularReflectionMapping;
+      envSky.colorSpace = THREE.SRGBColorSpace;
+      pmrem = new THREE.PMREMGenerator(renderer);
+      pmrem.compileEquirectangularShader();
+      envMap = pmrem.fromEquirectangular(envSky).texture;
+    } catch (err) {
+      // Reflections are optional: retain the procedural world if GPU processing fails.
+      console.warn('Environment reflection setup failed; continuing without reflections.', err);
+    } finally {
+      pmrem?.dispose();
+    }
   }
 
   const pack = {
