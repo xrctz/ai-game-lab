@@ -92,18 +92,23 @@ function showToast(msg, duration){
   var toggle = document.getElementById('menuToggle');
   var rail = document.getElementById('siteRail') || document.getElementById('siteNav');
   if (!toggle || !rail) return;
-  function closeMenu(){
-    rail.classList.remove('open');
-    toggle.setAttribute('aria-expanded', 'false');
-  }
-  toggle.addEventListener('click', function(){
-    var open = rail.classList.toggle('open');
+  var scrim = document.createElement('div');
+  scrim.className = 'nav-scrim';
+  scrim.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(scrim);
+  function setOpen(open){
+    rail.classList.toggle('open', open);
+    document.body.classList.toggle('nav-open', open);
     toggle.setAttribute('aria-expanded', String(open));
+  }
+  function closeMenu(){ setOpen(false); }
+  toggle.addEventListener('click', function(){
+    setOpen(!rail.classList.contains('open'));
   });
-  document.addEventListener('click', function(e){
-    if (!rail.classList.contains('open')) return;
-    if (!rail.contains(e.target) && !toggle.contains(e.target)) closeMenu();
-  });
+  // Tapping the dimmed backdrop only closes the drawer; because the scrim
+  // covers page content it also prevents the tap from leaking through to
+  // links behind the menu.
+  scrim.addEventListener('click', closeMenu);
   rail.querySelectorAll('a').forEach(function(a){ a.addEventListener('click', closeMenu); });
   document.addEventListener('keydown', function(e){
     if (e.key === 'Escape' && rail.classList.contains('open')) closeMenu();
