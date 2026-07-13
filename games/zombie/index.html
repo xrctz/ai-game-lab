@@ -54,8 +54,10 @@
     <script src="./visual-effects.js"></script>
     <script src="./hub-embed-bridge.js"></script>
     <script src="./ui-declutter.js"></script>
+    <script src="./accessibility.js"></script>
     <script>
       (function(){
+        function initLoader(){
         var loader=document.createElement('div');
         loader.id='game-loader';
         loader.innerHTML='<div class="loader-title">DeadTakeover</div>'
@@ -89,13 +91,17 @@
             if(!loader.classList.contains('hidden'))window.__hideLoader();
           },800);
         });
-        document.addEventListener('DOMContentLoaded',function(){
-          var obs=new MutationObserver(function(){
-            var c=document.getElementById('game');
-            if(c&&c.width>0&&c.height>0){window.__hideLoader();obs.disconnect();}
-          });
-          obs.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['width','height']});
+        var obs=new MutationObserver(function(){
+          var c=document.getElementById('game');
+          if(c&&c.width>0&&c.height>0){window.__hideLoader();obs.disconnect();}
         });
+        obs.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['width','height']});
+        }
+        if(document.readyState==='loading'){
+          document.addEventListener('DOMContentLoaded',initLoader,{once:true});
+        }else{
+          initLoader();
+        }
       })();
     </script>
     <script type="module" crossorigin src="./assets/index-labplus-v9.js"></script>
