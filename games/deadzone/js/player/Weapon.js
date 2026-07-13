@@ -39,6 +39,10 @@ export class Weapon {
         }
     }
 
+    shouldFire(isTriggerHeld, isTriggerPressed) {
+        return this.automatic ? isTriggerHeld : isTriggerPressed;
+    }
+
     fire(aiming) {
         if (this.reloading || this.fireTimer > 0 || this.currentAmmo <= 0) return null;
 
