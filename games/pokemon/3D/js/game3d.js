@@ -232,7 +232,7 @@ function showToast(msg, ms = 2500) {
 function updateHUD() {
   const alive = Game.party.filter((m) => m.hp > 0).length;
   document.getElementById('hud-party').textContent = `${alive}/${Game.party.length}`;
-  document.getElementById('hud-balls').textContent = (Game.bag.pokeball || 0) + (Game.bag.superball || 0);
+  document.getElementById('hud-balls').textContent = `${Game.bag.pokeball || 0}+${Game.bag.superball || 0}`;
   document.getElementById('hud-potions').textContent = Game.bag.potion || 0;
   document.getElementById('hud-caught').textContent = `${Game.flags.caughtSpecies.size}/6`;
   document.getElementById('hud-battles').textContent = Game.battlesWon;
@@ -906,6 +906,10 @@ function endBattle(caught) {
   updateCamera(true);
   if (Game.flags.mewtwoDefeated && Game.flags.caughtSpecies.size >= 6) {
     showEndScreen();
+  } else if (Game.flags.mewtwoDefeated) {
+    showToast(`Mewtwo defeated! Catch ${6 - Game.flags.caughtSpecies.size} more species to win!`);
+  } else if (Game.flags.caughtSpecies.size >= 6) {
+    showToast('6 species caught! Now find Mewtwo in the northern cave!');
   } else if (caught) {
     showToast('Pokémon caught!');
   }
@@ -1145,6 +1149,12 @@ function bindUI() {
   });
   document.querySelectorAll('.starter-card').forEach((card) => {
     card.addEventListener('click', () => startGame(card.dataset.species));
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        startGame(card.dataset.species);
+      }
+    });
   });
   document.getElementById('dialogue')?.addEventListener('click', () => {
     if (Game.state === 'dialogue') advanceDialogue();
