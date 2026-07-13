@@ -49,6 +49,7 @@
 ## Features
 
 - **Library OS** — Side-rail game storefront with featured carousel, horizontal shelves, and ambient FX.
+- **Cinematic motion** — Constellation particles, pointer spotlight, scroll progress, magnetic CTAs, and carousel crossfades (respects reduced motion).
 - **Embedded player** — Click-to-play overlays, pointer-lock handling, quality modes, and isolated iframes.
 - **Mobile ready** — On-screen touch controls for playable games, tuned for phone layouts.
 - **Command launcher** — Press `Ctrl+K` to jump to any page or game.

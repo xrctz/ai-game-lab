@@ -2,11 +2,11 @@
    AI Game Lab — Library OS (live hub) + FX polish
    ================================================================ */
 var AIGL = window.AIGL_Config || {
-  BUILD: '24-library',
+  BUILD: '25-cinematic',
   ROOT: '/ai-game-lab',
   HUB: '/ai-game-lab'
 };
-var AIGL_ASSET_BUILD = AIGL.BUILD || '24-library';
+var AIGL_ASSET_BUILD = AIGL.BUILD || '25-cinematic';
 var AIGL_HUB = AIGL.HUB || '/ai-game-lab';
 var AIGL_ROOT = AIGL.ROOT || '/ai-game-lab';
 var AIGL_REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -675,26 +675,46 @@ function showToast(msg, duration){
 })();
 
 (function initBuildBadge(){
-  document.documentElement.dataset.build = 'v24-library';
+  document.documentElement.dataset.build = 'v25-cinematic';
   window.__aiGameLabBuild = {
-    version: 'v24-library',
+    version: 'v25-cinematic',
     assets: AIGL_ASSET_BUILD,
     hub: AIGL_HUB,
-    note: 'Library OS + FX polish — live hub'
+    note: 'Library OS cinematic motion — live hub'
   };
+  requestAnimationFrame(function(){
+    document.body.classList.remove('boot');
+    document.body.classList.add('booted');
+  });
 })();
 
-/* ---- Ambient stage inject (all pages) ---- */
+/* ---- Ambient stage + chrome inject (all pages) ---- */
 (function initAmbientStage(){
-  if (document.querySelector('.ambient-stage')) return;
-  var stage = document.createElement('div');
-  stage.className = 'ambient-stage';
-  stage.setAttribute('aria-hidden', 'true');
-  stage.innerHTML = '<div class="ambient-mesh"></div><div class="ambient-grid"></div><div class="ambient-scan"></div><div class="ambient-noise"></div>';
-  document.body.prepend(stage);
+  if (!document.querySelector('.ambient-stage')) {
+    var stage = document.createElement('div');
+    stage.className = 'ambient-stage';
+    stage.setAttribute('aria-hidden', 'true');
+    stage.innerHTML = '<div class="ambient-mesh"></div><div class="ambient-grid"></div><div class="ambient-scan"></div><div class="ambient-noise"></div>';
+    document.body.prepend(stage);
+  }
+  if (!document.getElementById('scrollProgress')) {
+    var bar = document.createElement('div');
+    bar.className = 'scroll-progress';
+    bar.id = 'scrollProgress';
+    bar.setAttribute('aria-hidden', 'true');
+    bar.innerHTML = '<i></i>';
+    document.body.prepend(bar);
+  }
+  if (!document.getElementById('pointerGlow') && !AIGL_REDUCED) {
+    var glow = document.createElement('div');
+    glow.className = 'pointer-glow';
+    glow.id = 'pointerGlow';
+    glow.setAttribute('aria-hidden', 'true');
+    document.body.prepend(glow);
+  }
 })();
 
-/* ---- Lime spark canvas ---- */
+/* ---- Constellation ambient canvas ---- */
 (function initAmbientCanvas(){
   if (AIGL_REDUCED) return;
   if (document.documentElement.getAttribute('data-theme') === 'light') return;
@@ -705,20 +725,23 @@ function showToast(msg, duration){
   var ctx = canvas.getContext('2d');
   if (!ctx) return;
   var w = 0, h = 0, parts = [], raf = null, paused = false, last = 0;
+  var linkDist = 110;
   function resize(){
     w = canvas.width = innerWidth;
     h = canvas.height = innerHeight;
+    linkDist = Math.min(140, Math.max(90, innerWidth / 12));
   }
   function create(){
-    var n = Math.min(22, Math.max(10, Math.round(innerWidth / 70)));
+    var n = Math.min(36, Math.max(14, Math.round(innerWidth / 48)));
     parts = Array.from({ length: n }, function(){
       return {
         x: Math.random() * w,
         y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.18,
-        vy: (Math.random() - 0.5) * 0.18,
-        r: Math.random() * 1.5 + 0.4,
-        o: Math.random() * 0.22 + 0.08
+        vx: (Math.random() - 0.5) * 0.22,
+        vy: (Math.random() - 0.5) * 0.22,
+        r: Math.random() * 1.8 + 0.5,
+        o: Math.random() * 0.28 + 0.1,
+        pulse: Math.random() * Math.PI * 2
       };
     });
   }
@@ -727,17 +750,41 @@ function showToast(msg, duration){
     var dt = Math.min((ts - last) / 16 || 1, 2);
     last = ts;
     ctx.clearRect(0, 0, w, h);
-    for (var i = 0; i < parts.length; i++) {
-      var p = parts[i];
+    var i, j, p, q, dx, dy, dist, alpha;
+    for (i = 0; i < parts.length; i++) {
+      p = parts[i];
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      if (p.x < -6) p.x = w + 6;
-      if (p.x > w + 6) p.x = -6;
-      if (p.y < -6) p.y = h + 6;
-      if (p.y > h + 6) p.y = -6;
+      p.pulse += 0.02 * dt;
+      if (p.x < -8) p.x = w + 8;
+      if (p.x > w + 8) p.x = -8;
+      if (p.y < -8) p.y = h + 8;
+      if (p.y > h + 8) p.y = -8;
+    }
+    for (i = 0; i < parts.length; i++) {
+      p = parts[i];
+      for (j = i + 1; j < parts.length; j++) {
+        q = parts[j];
+        dx = p.x - q.x;
+        dy = p.y - q.y;
+        dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < linkDist) {
+          alpha = (1 - dist / linkDist) * 0.14;
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(q.x, q.y);
+          ctx.strokeStyle = 'rgba(200,245,66,' + alpha.toFixed(3) + ')';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      }
+    }
+    for (i = 0; i < parts.length; i++) {
+      p = parts[i];
+      var glow = p.o * (0.75 + 0.25 * Math.sin(p.pulse));
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(200,245,66,' + p.o + ')';
+      ctx.fillStyle = 'rgba(200,245,66,' + glow.toFixed(3) + ')';
       ctx.fill();
     }
     raf = requestAnimationFrame(draw);
@@ -799,12 +846,16 @@ function showToast(msg, duration){
   var play = document.getElementById('bannerPlay');
   var progress = document.getElementById('bannerProgress');
   var dotsWrap = document.getElementById('bannerDots');
+  var content = root.querySelector('.feature-banner-content');
+  var prevBtn = document.getElementById('bannerPrev');
+  var nextBtn = document.getElementById('bannerNext');
   var slideEls = bg ? bg.querySelectorAll('.banner-slide') : [];
   var idx = 0;
   var duration = 8000;
   var started = 0;
   var timer = null;
   var raf = null;
+  var swapping = false;
 
   function renderDots(){
     if (!dotsWrap) return;
@@ -815,7 +866,7 @@ function showToast(msg, duration){
       btn.addEventListener('click', function(){ go(+btn.getAttribute('data-i')); });
     });
   }
-  function apply(i){
+  function paint(i){
     idx = (i + slides.length) % slides.length;
     var s = slides[idx];
     slideEls.forEach(function(el, n){ el.classList.toggle('is-active', n === idx); });
@@ -834,8 +885,28 @@ function showToast(msg, duration){
     renderDots();
     started = performance.now();
   }
+  function apply(i, animate){
+    if (!animate || AIGL_REDUCED || !content) {
+      paint(i);
+      if (content) {
+        content.classList.remove('is-swapping');
+        content.classList.add('is-ready');
+      }
+      return;
+    }
+    if (swapping) return;
+    swapping = true;
+    content.classList.add('is-swapping');
+    content.classList.remove('is-ready');
+    setTimeout(function(){
+      paint(i);
+      content.classList.remove('is-swapping');
+      content.classList.add('is-ready');
+      swapping = false;
+    }, 220);
+  }
   function go(i){
-    apply(i);
+    apply(i, true);
   }
   function tick(now){
     if (AIGL_REDUCED) return;
@@ -844,7 +915,7 @@ function showToast(msg, duration){
     if (p >= 1) go(idx + 1);
     raf = requestAnimationFrame(tick);
   }
-  apply(0);
+  apply(0, false);
   if (!AIGL_REDUCED) {
     started = performance.now();
     raf = requestAnimationFrame(tick);
@@ -854,6 +925,13 @@ function showToast(msg, duration){
       if (!raf) raf = requestAnimationFrame(tick);
     });
   }
+  if (prevBtn) prevBtn.addEventListener('click', function(){ go(idx - 1); });
+  if (nextBtn) nextBtn.addEventListener('click', function(){ go(idx + 1); });
+  root.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowLeft') { e.preventDefault(); go(idx - 1); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); go(idx + 1); }
+  });
+  root.setAttribute('tabindex', '0');
 
   // Pointer parallax on banner bg
   if (!AIGL_REDUCED && bg && window.matchMedia('(hover: hover)').matches) {
@@ -938,5 +1016,97 @@ function showToast(msg, duration){
     overlay.className = 'tile-play';
     overlay.innerHTML = '<span>▶ View</span>';
     art.appendChild(overlay);
+  });
+})();
+
+/* ---- Scroll progress ---- */
+(function initScrollProgress(){
+  var bar = document.getElementById('scrollProgress');
+  if (!bar) return;
+  var fill = bar.querySelector('i');
+  if (!fill) return;
+  var ticking = false;
+  function update(){
+    var max = document.documentElement.scrollHeight - innerHeight;
+    var p = max > 0 ? (scrollY / max) * 100 : 0;
+    fill.style.width = Math.max(0, Math.min(100, p)).toFixed(2) + '%';
+  }
+  addEventListener('scroll', function(){
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function(){ update(); ticking = false; });
+  }, { passive: true });
+  addEventListener('resize', update, { passive: true });
+  update();
+})();
+
+/* ---- Pointer glow / spotlight ---- */
+(function initPointerGlow(){
+  if (AIGL_REDUCED || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  var glow = document.getElementById('pointerGlow');
+  if (!glow) return;
+  var x = innerWidth / 2, y = innerHeight / 2, tx = x, ty = y, raf = null;
+  function loop(){
+    x += (tx - x) * 0.12;
+    y += (ty - y) * 0.12;
+    glow.style.transform = 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0)';
+    raf = requestAnimationFrame(loop);
+  }
+  addEventListener('pointermove', function(e){
+    tx = e.clientX;
+    ty = e.clientY;
+    glow.classList.add('is-on');
+    if (!raf) raf = requestAnimationFrame(loop);
+  }, { passive: true });
+  addEventListener('pointerleave', function(){
+    glow.classList.remove('is-on');
+  });
+  document.addEventListener('visibilitychange', function(){
+    if (document.hidden) {
+      glow.classList.remove('is-on');
+      if (raf) cancelAnimationFrame(raf);
+      raf = null;
+    }
+  });
+})();
+
+/* ---- Magnetic panels + CTAs ---- */
+(function initMagnetic(){
+  if (AIGL_REDUCED || !window.matchMedia('(hover: hover)').matches) return;
+  document.querySelectorAll('[data-magnetic], .btn-primary, .btn-rail.primary').forEach(function(el){
+    if (el._magBound) return;
+    el._magBound = true;
+    el.addEventListener('pointermove', function(e){
+      var r = el.getBoundingClientRect();
+      var mx = ((e.clientX - r.left) / r.width) * 100;
+      var my = ((e.clientY - r.top) / r.height) * 100;
+      el.style.setProperty('--mx', mx.toFixed(1) + '%');
+      el.style.setProperty('--my', my.toFixed(1) + '%');
+      if (el.classList.contains('btn-primary') || el.classList.contains('btn-rail')) {
+        var dx = (e.clientX - (r.left + r.width / 2)) * 0.12;
+        var dy = (e.clientY - (r.top + r.height / 2)) * 0.16;
+        el.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px)';
+      }
+    }, { passive: true });
+    el.addEventListener('pointerleave', function(){
+      el.style.transform = '';
+      el.style.removeProperty('--mx');
+      el.style.removeProperty('--my');
+    });
+  });
+})();
+
+/* ---- Section underline trigger via parent reveal ---- */
+(function initSectionHeads(){
+  document.querySelectorAll('.section > .section-head').forEach(function(head){
+    if (!head.classList.contains('reveal')) return;
+    var section = head.parentElement;
+    if (!section) return;
+    var obsTarget = head;
+    if (!('IntersectionObserver' in window) || AIGL_REDUCED) {
+      head.classList.add('visible');
+      return;
+    }
+    // already handled by initReveal; ensure underline draws
   });
 })();

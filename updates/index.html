@@ -2,24 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="aigl-theme" content="24-library" />
+  <meta name="aigl-theme" content="25-cinematic" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Release notes for AI Game Lab." />
   <meta name="theme-color" content="#0a0a0b" />
   <title>Updates — AI Game Lab Library</title>
-  <link rel="icon" type="image/svg+xml" href="/ai-game-lab/showcase/favicon.svg?v=24-library" />
+  <link rel="icon" type="image/svg+xml" href="/ai-game-lab/showcase/favicon.svg?v=25-cinematic" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/ai-game-lab/styles.css?v=24-library" />
+  <link rel="stylesheet" href="/ai-game-lab/styles.css?v=25-cinematic" />
 </head>
-<body>
+<body class="boot">
   <a class="skip" href="#main">Skip to content</a>
+  <div class="scroll-progress" id="scrollProgress" aria-hidden="true"><i></i></div>
+  <div class="pointer-glow" id="pointerGlow" aria-hidden="true"></div>
+  <div class="ambient-stage" aria-hidden="true">
+    <div class="ambient-mesh"></div>
+    <div class="ambient-grid"></div>
+    <div class="ambient-scan"></div>
+    <div class="ambient-noise"></div>
+  </div>
   <div class="app-shell">
     <aside class="rail" id="siteRail" aria-label="Primary">
       <a class="rail-brand" href="/ai-game-lab/">
-        <img src="/ai-game-lab/showcase/brand-mark.svg?v=24-library" alt="" width="36" height="36" />
-        <span><strong>AI Game Lab</strong><small>Library OS · v24</small></span>
+        <img src="/ai-game-lab/showcase/brand-mark.svg?v=25-cinematic" alt="" width="36" height="36" />
+        <span><strong>AI Game Lab</strong><small>Library OS · v25</small></span>
       </a>
       <nav id="siteNav" class="rail-nav" aria-label="Site">
         <a href="/ai-game-lab/"><span class="nav-ico" aria-hidden="true">▣</span> Library</a>
@@ -30,7 +38,8 @@
       </nav>
       <div class="rail-footer">
         <a class="btn-rail primary" href="/ai-game-lab/play/?game=zombie">Play now</a>
-</div>
+        <a class="btn-rail" href="https://github.com/xrctz/ai-game-lab" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
     </aside>
     <div class="main-col">
       <div class="top-strip">
@@ -59,6 +68,7 @@
           </div>
         </header>
         <div class="release-list">
+          <article class="release-note reveal"><span>v25</span><div><h3>Cinematic motion</h3><p>Constellation ambient, pointer spotlight, scroll progress, brand ticker, magnetic CTAs, featured carousel crossfades with arrow controls, and cache bump to <code>25-cinematic</code>.</p></div></article>
           <article class="release-note reveal"><span>v24</span><div><h3>Library OS live</h3><p>Promoted to the public hub: left rail, acid lime, Archivo Black type, featured carousel, shelves, theater dock, ambient FX. Pink studio UI retired.</p></div></article>
           <article class="release-note reveal"><span>v23</span><div><h3>Library OS redesign</h3><p>Complete visual reset developed as a parallel shell, then promoted. Featured banner, motion polish, catalog search.</p></div></article>
           <article class="release-note reveal"><span>v20–21</span><div><h3>Hub + games overhaul</h3><p>player-urls.js, Dead Zone UI bridge, DeadTakeover embed bridge, CraftVerse inject, verify suite. Live on main site.</p></div></article>
@@ -88,8 +98,8 @@
     </div>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="/ai-game-lab/config.js?v=24-library"></script>
-  <script src="/ai-game-lab/player-urls.js?v=24-library"></script>
-  <script src="/ai-game-lab/script.js?v=24-library"></script>
+  <script src="/ai-game-lab/config.js?v=25-cinematic"></script>
+  <script src="/ai-game-lab/player-urls.js?v=25-cinematic"></script>
+  <script src="/ai-game-lab/script.js?v=25-cinematic"></script>
 </body>
 </html>

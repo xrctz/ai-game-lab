@@ -1,12 +1,12 @@
 /**
- * AI Game Lab v22-july — Service Worker
+ * AI Game Lab v25-cinematic — Service Worker
  * Hub HTML/CSS/JS: network-only (never serve stale hub shell).
  * Game HTML documents: network-first (always pick up rebuilt bundle refs).
  * Game static assets (hashed JS/CSS, models, media): cache-first w/ refresh.
  */
-const BUILD = '21-neat';
-const CACHE_HUB = 'ai-game-lab-hub-v24-iphone14';
-const CACHE_GAMES = 'ai-game-lab-games-v24-iphone14';
+const BUILD = '25-cinematic';
+const CACHE_HUB = 'ai-game-lab-hub-v25-cinematic';
+const CACHE_GAMES = 'ai-game-lab-games-v25-cinematic';
 const HUB_STYLE = '/ai-game-lab/styles.css?v=' + BUILD;
 const HUB_SCRIPT = '/ai-game-lab/script.js?v=' + BUILD;
 
