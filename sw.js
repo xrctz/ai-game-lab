@@ -5,8 +5,8 @@
  * Game static assets (hashed JS/CSS, models, media): cache-first w/ refresh.
  */
 const BUILD = '21-neat';
-const CACHE_HUB = 'ai-game-lab-hub-v24-iphone14';
-const CACHE_GAMES = 'ai-game-lab-games-v24-iphone14';
+const CACHE_HUB = 'ai-game-lab-hub-v25-motion';
+const CACHE_GAMES = 'ai-game-lab-games-v25-motion';
 const HUB_STYLE = '/ai-game-lab/styles.css?v=' + BUILD;
 const HUB_SCRIPT = '/ai-game-lab/script.js?v=' + BUILD;
 

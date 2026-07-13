@@ -12,7 +12,7 @@
 
   var ROOT = '/ai-game-lab';
   var HUB = ROOT;
-  var BUILD = '24-library';
+  var BUILD = '25-motion';
 
   return {
     BUILD: BUILD,
