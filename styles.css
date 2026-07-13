@@ -51,7 +51,7 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scroll-padding-top: 76px; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {
@@ -70,6 +70,13 @@ body {
   line-height: 1.55;
   background: var(--bg);
   overflow-x: hidden;
+}
+
+/* Use the dynamic viewport where supported so mobile browser toolbars
+   don't cause the shell to under/over-scroll. */
+@supports (min-height: 100dvh) {
+  body { min-height: 100dvh; }
+  .app-shell { min-height: 100dvh; }
 }
 
 body::selection {
@@ -124,6 +131,22 @@ code, kbd, pre { font-family: var(--font-mono); }
   border-right: 1px solid var(--line);
   z-index: 40;
   overflow-y: auto;
+}
+
+/* Dimmed backdrop behind the mobile nav drawer. Sits below the rail (z40)
+   but above page content so taps close the menu instead of leaking through
+   to links underneath. Inert on desktop (display:none until the drawer exists). */
+.nav-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+  display: none;
+  background: rgba(6, 6, 8, 0.6);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s var(--ease);
 }
 
 .rail-brand {
@@ -518,7 +541,9 @@ code, kbd, pre { font-family: var(--font-mono); }
   grid-auto-columns: minmax(200px, 240px);
   gap: 12px;
   overflow-x: auto;
-  padding-bottom: 12px;
+  /* Top padding gives the hover-lift room inside the scrollport so the
+     raised tile isn't vertically clipped by overflow-x's scroll container. */
+  padding: 8px 0 12px;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
 }
@@ -1656,6 +1681,9 @@ body.player-active .launch-orb { opacity: 0.25; pointer-events: none; }
     box-shadow: var(--shadow);
   }
   .rail.open { transform: translateX(0); }
+  .nav-scrim { display: block; }
+  body.nav-open { overflow: hidden; }
+  body.nav-open .nav-scrim { opacity: 1; pointer-events: auto; }
   .menu-toggle { display: grid; }
   .theater { grid-template-columns: 1fr; }
   .theater-stage { border-right: 0; }
@@ -2041,7 +2069,7 @@ body.player-active .launch-orb { opacity: 0.25; pointer-events: none; }
   position: absolute;
   top: 0;
   bottom: 12px;
-  width: 40px;
+  width: 24px;
   z-index: 3;
   pointer-events: none;
 }
