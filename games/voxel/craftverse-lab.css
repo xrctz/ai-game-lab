@@ -370,3 +370,37 @@ html.cv-lab-contrast-crosshair #crosshair::after {
     gap: 10px;
   }
 }
+
+/* ── Embed performance hint ── */
+#cv-lab-perf-hint {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99997;
+  max-width: min(92vw, 420px);
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: rgba(220, 235, 255, 0.9);
+  background: rgba(8, 16, 32, 0.9);
+  border: 1px solid rgba(100, 180, 255, 0.25);
+  text-align: center;
+}
+#cv-lab-perf-hint button {
+  margin-left: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(100, 180, 255, 0.35);
+  background: rgba(20, 40, 70, 0.8);
+  color: #9fd0ff;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+#cv-lab-perf-hint.cv-lab-perf-hint-fade {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}

@@ -280,17 +280,32 @@ function wait(ms) {
 }
 
 // ---------- Race flow ----------
-async function startRaceFlow() {
-  await playCinematic({
-    src: ASSETS.titleVideo,
-    title: 'VEIL RUSH',
-    sub: 'The Glass Meridian awakens under twin moons…',
-  });
-  await playCinematic({
-    src: ASSETS.introVideo,
-    title: 'Dawnshard Online',
-    sub: 'Spectrum Drive charged. Prism Gates aligned. Three laps to dawn.',
-  });
+function isHubEmbed() {
+  if (typeof window.__veilRushIsEmbed === 'function') return window.__veilRushIsEmbed();
+  try {
+    if (window.self !== window.top) return true;
+  } catch (e) {
+    return true;
+  }
+  return /(?:^|[?&])embed=1(?:&|$)/.test(location.search);
+}
+
+async function startRaceFlow(opts) {
+  opts = opts || {};
+  const skipCinematics = opts.skipCinematics || isHubEmbed();
+
+  if (!skipCinematics) {
+    await playCinematic({
+      src: ASSETS.titleVideo,
+      title: 'VEIL RUSH',
+      sub: 'The Glass Meridian awakens under twin moons…',
+    });
+    await playCinematic({
+      src: ASSETS.introVideo,
+      title: 'Dawnshard Online',
+      sub: 'Spectrum Drive charged. Prism Gates aligned. Three laps to dawn.',
+    });
+  }
 
   await buildRace();
 
@@ -687,8 +702,41 @@ function bindInput() {
         else if (name === 'right') input.right = on;
         else if (name === 'boost') input.boost = on;
         else if (name === 'drift') input.drift = on;
+        else if (name === 'back') input.back = on;
       },
     });
+    var mobRoot = document.getElementById('aigl-mob-racing');
+    if (mobRoot) {
+      var extra = document.createElement('div');
+      extra.className = 'aigl-mob-btn-row';
+      var brake = window.AIGLMobile.makeBtn('Brake');
+      brake.addEventListener('touchstart', function (e) {
+        e.preventDefault();
+        brake.classList.add('is-active');
+        input.back = true;
+      }, { passive: false });
+      brake.addEventListener('touchend', function () {
+        brake.classList.remove('is-active');
+        input.back = false;
+      });
+      brake.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        brake.classList.add('is-active');
+        input.back = true;
+      });
+      brake.addEventListener('pointerup', function () {
+        brake.classList.remove('is-active');
+        input.back = false;
+      });
+      extra.appendChild(brake);
+      var pauseBtn = window.AIGLMobile.makeBtn('Pause');
+      pauseBtn.addEventListener('click', function () {
+        togglePause();
+      });
+      extra.appendChild(pauseBtn);
+      var actions = mobRoot.querySelector('.aigl-mob-actions');
+      if (actions) actions.appendChild(extra);
+    }
   } else {
     window.addEventListener('load', function () {
       if (window.AIGLMobile) {
@@ -698,6 +746,7 @@ function bindInput() {
             else if (name === 'right') input.right = on;
             else if (name === 'boost') input.boost = on;
             else if (name === 'drift') input.drift = on;
+            else if (name === 'back') input.back = on;
           },
         });
       }
@@ -757,7 +806,8 @@ async function returnToMenu() {
 
 // ---------- Buttons ----------
 function bindUI() {
-  $('btn-start').onclick = () => startRaceFlow();
+  $('btn-start').onclick = () => startRaceFlow({ skipCinematics: false });
+  $('btn-quick-race').onclick = () => startRaceFlow({ skipCinematics: true });
   $('btn-watch-intro').onclick = async () => {
     await playCinematic({
       src: ASSETS.racingVideo,
@@ -775,7 +825,7 @@ function bindUI() {
   $('btn-pause').onclick = () => pauseRace();
   $('btn-resume').onclick = () => resumeRace();
   $('btn-quit').onclick = () => returnToMenu();
-  $('btn-replay').onclick = () => startRaceFlow();
+  $('btn-replay').onclick = () => startRaceFlow({ skipCinematics: true });
   $('btn-menu').onclick = () => returnToMenu();
 }
 

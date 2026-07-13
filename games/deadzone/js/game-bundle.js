@@ -7647,6 +7647,25 @@ class UIManager {
 
 // --- game/GameState.js ---
 
+const SETTINGS_KEY = 'deadzone-settings-v1';
+
+function loadPersistedSettings() {
+    const defaults = { volume: 0.7, sensitivity: 5, fov: 75, showFPS: false };
+    try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (!raw) return { ...defaults };
+        const parsed = JSON.parse(raw);
+        return {
+            volume: typeof parsed.volume === 'number' ? parsed.volume : defaults.volume,
+            sensitivity: typeof parsed.sensitivity === 'number' ? parsed.sensitivity : defaults.sensitivity,
+            fov: typeof parsed.fov === 'number' ? parsed.fov : defaults.fov,
+            showFPS: typeof parsed.showFPS === 'boolean' ? parsed.showFPS : defaults.showFPS
+        };
+    } catch (e) {
+        return { ...defaults };
+    }
+}
+
 class GameState {
     constructor() {
         this.state = 'loading';
@@ -7669,12 +7688,7 @@ class GameState {
         this.currency = 0;
         this.paused = false;
 
-        this.settings = {
-            volume: 0.7,
-            sensitivity: 5,
-            fov: 75,
-            showFPS: false
-        };
+        this.settings = loadPersistedSettings();
     }
 
     changeState(newState) {
@@ -7718,6 +7732,9 @@ class GameState {
     updateSetting(key, value) {
         if (key in this.settings) {
             this.settings[key] = value;
+            try {
+                localStorage.setItem(SETTINGS_KEY, JSON.stringify(this.settings));
+            } catch (e) {}
         }
     }
 }
@@ -7874,6 +7891,11 @@ class Game {
     }
 
     async init() {
+        const settings = this.gameState.getSettings();
+        this.audio.setVolume(settings.volume);
+        this.input.setSensitivity(settings.sensitivity);
+        this.renderer.setFOV(settings.fov);
+
         this.ui.updateLoading(10, 'BUILDING LEVEL...');
         await this._delay(100);
 

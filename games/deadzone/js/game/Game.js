@@ -164,6 +164,11 @@ export class Game {
     }
 
     async init() {
+        const settings = this.gameState.getSettings();
+        this.audio.setVolume(settings.volume);
+        this.input.setSensitivity(settings.sensitivity);
+        this.renderer.setFOV(settings.fov);
+
         this.ui.updateLoading(10, 'BUILDING LEVEL...');
         await this._delay(100);
 

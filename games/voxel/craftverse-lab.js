@@ -15,6 +15,7 @@
   })();
   var IS_MOBILE  = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
   var ASSIST_KEY = "craftverse-accessibility-v1";
+  var EMBED_RENDER_KEY = "cv-lab-embed-render-distance";
   window.__craftverseLabVersion = "v4";
 
   /* ── State ── */
@@ -460,6 +461,37 @@
   }
 
   /* ─────────────────────────────────────────────────────
+     EMBED PERFORMANCE HINT
+     Lower render distance in hub iframe unless user opted out.
+     ───────────────────────────────────────────────────── */
+  function applyEmbedRenderHint() {
+    if (!IS_EMBED) return;
+    try {
+      if (localStorage.getItem(EMBED_RENDER_KEY) === "off") return;
+      if (!localStorage.getItem(EMBED_RENDER_KEY)) {
+        localStorage.setItem(EMBED_RENDER_KEY, "6");
+      }
+      var hint = document.createElement("div");
+      hint.id = PREFIX + "perf-hint";
+      hint.className = PREFIX + "perf-hint";
+      hint.innerHTML =
+        "Hub embed mode — render distance capped for smoother FPS. " +
+        "<button type=\"button\" id=\"" + PREFIX + "perf-dismiss\">Use full quality</button>";
+      document.body.appendChild(hint);
+      var btn = $(PREFIX + "perf-dismiss");
+      if (btn) {
+        btn.addEventListener("click", function () {
+          localStorage.setItem(EMBED_RENDER_KEY, "off");
+          hint.remove();
+        });
+      }
+      setTimeout(function () {
+        if (hint.parentNode) hint.classList.add(PREFIX + "perf-hint-fade");
+      }, 8000);
+    } catch (_) {}
+  }
+
+  /* ─────────────────────────────────────────────────────
      11. HUB POSTMESSAGE LISTENER
      ───────────────────────────────────────────────────── */
   function onParentMessage(e) {
@@ -479,6 +511,11 @@
     createLockMsg();
     createMobileBanner();
     createBrandBadge();
+    applyEmbedRenderHint();
+    if (preferReducedMotion()) {
+      document.documentElement.classList.add(PREFIX + "reduced-motion");
+    }
+
     if (IS_EMBED) {
       createClickOverlay();
       document.body.classList.add("cv-embedded");

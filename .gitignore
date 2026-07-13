@@ -24,6 +24,8 @@ target/
 # Blender working files (not used at runtime; export glb/png instead)
 *.blend
 *.blend1
+# Blender QA render previews (regenerate with RENDER=1)
+scripts/blender/previews/
 
 # Python caches
 __pycache__/
