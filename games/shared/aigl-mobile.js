@@ -569,6 +569,7 @@
     ensureCss: ensureCss,
     synthKey: synthKey,
     bindHoldButton: bindHoldButton,
+    scheduleBannerHide: scheduleBannerHide,
     makeBtn: makeBtn,
     createRoot: createRoot,
     createJoystick: createJoystick,
