@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   if (window.__dtHubEmbedBridge) return;
-  window.__dtHubEmbedBridge = 'v20';
+  window.__dtHubEmbedBridge = 'v21';
 
   function isEmbed() {
     try {
@@ -54,9 +54,51 @@
       'border:1px solid rgba(255,79,216,.35);color:#ffb0ea;',
       'background:linear-gradient(165deg,rgba(20,8,28,.9),rgba(8,6,16,.92));',
       'box-shadow:0 10px 28px rgba(0,0,0,.35)}',
-      '#dt-hub-fallback a:hover{border-color:rgba(53,231,255,.4);color:#35e7ff}'
+      '#dt-hub-fallback a:hover{border-color:rgba(53,231,255,.4);color:#35e7ff}',
+      '#dt-hub-overlay{position:fixed;inset:0;z-index:9400;display:grid;place-items:center;',
+      'background:rgba(5,8,16,.82);backdrop-filter:blur(10px);cursor:pointer;',
+      'font-family:Inter,system-ui,sans-serif;color:#eaf0ff;text-align:center;padding:24px}',
+      '#dt-hub-overlay.dt-hub-overlay-hidden{display:none}',
+      '.dt-hub-overlay-icon{font-size:42px;margin-bottom:12px}',
+      '.dt-hub-overlay-title{font-size:20px;font-weight:800;letter-spacing:.1em;margin-bottom:8px}',
+      '.dt-hub-overlay-sub{font-size:12px;color:#8a96be;max-width:340px;line-height:1.6;margin:0 auto 16px}',
+      '#dt-hub-overlay #dt-hub-open-tab{display:inline-block;padding:9px 14px;border-radius:12px;',
+      'text-decoration:none;font-weight:800;font-size:12px;border:1px solid rgba(255,79,216,.35);',
+      'color:#ffb0ea;background:rgba(20,8,28,.9);pointer-events:auto}'
     ].join('');
     document.head.appendChild(s);
+  }
+
+  function mountEmbedOverlay() {
+    if (!isEmbed() || document.getElementById('dt-hub-overlay')) return;
+    var overlay = document.createElement('div');
+    overlay.id = 'dt-hub-overlay';
+    overlay.innerHTML =
+      '<div class="dt-hub-overlay-inner">' +
+      '<div class="dt-hub-overlay-icon">🎯</div>' +
+      '<div class="dt-hub-overlay-title">CLICK TO PLAY</div>' +
+      '<div class="dt-hub-overlay-sub">Click to capture your mouse. Pointer lock is required to aim in the hub iframe.</div>' +
+      '<a id="dt-hub-open-tab" href="' + standaloneHref() + '" target="_blank" rel="noopener noreferrer">Open full tab</a>' +
+      '</div>';
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', function (e) {
+      if (e.target.closest('#dt-hub-open-tab')) return;
+      var canvas = document.querySelector('canvas');
+      if (canvas) {
+        try { canvas.requestPointerLock(); } catch (err) {}
+      }
+    });
+
+    document.addEventListener('pointerlockchange', function () {
+      if (document.pointerLockElement) overlay.classList.add('dt-hub-overlay-hidden');
+      else overlay.classList.remove('dt-hub-overlay-hidden');
+    });
+    document.addEventListener('pointerlockerror', function () {
+      overlay.classList.remove('dt-hub-overlay-hidden');
+      var bar = document.getElementById('dt-hub-fallback');
+      if (bar) bar.classList.add('show');
+    });
   }
 
   function mountChrome() {
@@ -72,8 +114,10 @@
 
     var bar = document.createElement('div');
     bar.id = 'dt-hub-fallback';
-    bar.innerHTML = '<a id="dt-hub-open-tab" href="' + standaloneHref() + '" target="_blank" rel="noopener noreferrer">Open full tab</a>';
+    bar.innerHTML = '<a href="' + standaloneHref() + '" target="_blank" rel="noopener noreferrer">Open full tab</a>';
     document.body.appendChild(bar);
+
+    mountEmbedOverlay();
 
     document.addEventListener('pointerlockerror', function () {
       bar.classList.add('show');
