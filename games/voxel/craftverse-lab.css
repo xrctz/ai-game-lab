@@ -169,7 +169,7 @@ body.cv-embedded .menu-btn {
   text-align: center;
   display: none;
 }
-body.cv-embedded #cv-lab-mobile-banner.cv-lab-show-mobile {
+#cv-lab-mobile-banner.cv-lab-show-mobile {
   display: block;
 }
 #cv-lab-mobile-banner .cv-lab-mob-icon {

@@ -14,7 +14,7 @@
     catch (_) { return false; }
   })();
   var IS_MOBILE  = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-  window.__craftverseLabVersion = "v3";
+  window.__craftverseLabVersion = "v4";
 
   /* ── State ── */
   var clickOverlay  = null;
@@ -129,6 +129,8 @@
      ───────────────────────────────────────────────────── */
   function createClickOverlay() {
     clickOverlay = makeEl("div", PREFIX + "click-overlay");
+    clickOverlay.setAttribute("role", "status");
+    clickOverlay.setAttribute("aria-live", "polite");
 
     var icon  = makeEl("div", null, PREFIX + "overlay-icon");
     icon.textContent = "\u{1F3AE}";
@@ -164,6 +166,10 @@
 
   function showClickOverlay() {
     if (!clickOverlay) return;
+    // On touch devices the virtual pointer-lock shim handles look controls, so
+    // a "click to capture mouse" prompt is misleading — rely on the mobile
+    // banner instead.
+    if (IS_MOBILE) return;
     clickOverlay.classList.remove(PREFIX + "hidden");
   }
   function hideClickOverlay() {
@@ -193,6 +199,8 @@
      ───────────────────────────────────────────────────── */
   function createLockMsg() {
     lockMsg = makeEl("div", PREFIX + "lock-msg");
+    lockMsg.setAttribute("role", "status");
+    lockMsg.setAttribute("aria-live", "polite");
     lockMsg.innerHTML =
       "Mouse captured — <b>Esc</b> to release. " +
       "If stuck, <a href=\"" + FULL_PATH + "\" target=\"_blank\" rel=\"noopener\">open full screen ↗</a>";
@@ -221,7 +229,8 @@
       " CraftVerse on mobile — use the on-screen joystick and look zone."
     ));
     document.body.appendChild(banner);
-    if (IS_EMBED) banner.classList.add(PREFIX + "show-mobile");
+    // Show the mobile hint for standalone play too, not just hub embeds.
+    banner.classList.add(PREFIX + "show-mobile");
   }
 
   /* ─────────────────────────────────────────────────────
@@ -262,8 +271,11 @@
       document.documentElement.classList.add(PREFIX + "reduced-motion");
     }
 
+    // Create the click-to-play overlay for both embed and standalone play so
+    // full-tab visitors also get a clear "click to capture mouse" affordance.
+    // The "open full screen" link inside it stays embed-only (see createClickOverlay).
+    createClickOverlay();
     if (IS_EMBED) {
-      createClickOverlay();
       document.body.classList.add("cv-embedded");
     }
 
