@@ -2267,6 +2267,245 @@ body.player-active .launch-orb { opacity: 0.25; pointer-events: none; }
   filter: none;
 }
 
+/* ================================================================
+   v25-motion — scroll progress, ticker, spotlight, page enter
+   ================================================================ */
+
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 9998;
+  pointer-events: none;
+  background: transparent;
+}
+.scroll-progress > i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-3), var(--accent-2));
+  box-shadow: 0 0 12px rgba(200, 245, 66, 0.55);
+  transition: width 0.08s linear;
+}
+
+.live-ticker {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: 28px;
+  background: color-mix(in srgb, var(--bg-2) 88%, var(--accent) 4%);
+  border-bottom: 1px solid var(--line-soft);
+  overflow: hidden;
+  position: relative;
+}
+.live-ticker::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  z-index: 2;
+  background: linear-gradient(90deg, var(--bg-2), transparent);
+  pointer-events: none;
+}
+.live-ticker::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  z-index: 2;
+  background: linear-gradient(270deg, var(--bg-2), transparent);
+  pointer-events: none;
+}
+.live-ticker-label {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border-right: 1px solid var(--line-soft);
+  z-index: 3;
+  background: var(--bg-2);
+}
+.live-ticker-label::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 8px var(--ok);
+  animation: live-dot 1.4s ease-in-out infinite;
+}
+.live-ticker-track {
+  flex: 1;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.live-ticker-inner {
+  display: inline-flex;
+  gap: 48px;
+  white-space: nowrap;
+  padding: 0 24px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  animation: ticker-scroll 32s linear infinite;
+}
+.live-ticker-inner span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.live-ticker-inner em {
+  color: var(--accent);
+  font-style: normal;
+  font-weight: 600;
+}
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.cursor-spotlight {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(
+    520px circle at var(--spot-x, 50%) var(--spot-y, 40%),
+    rgba(200, 245, 66, 0.07),
+    transparent 55%
+  );
+  opacity: 0;
+  transition: opacity 0.35s var(--ease);
+}
+body.has-spotlight .cursor-spotlight { opacity: 1; }
+:root[data-theme="light"] .cursor-spotlight {
+  background: radial-gradient(
+    520px circle at var(--spot-x, 50%) var(--spot-y, 40%),
+    rgba(101, 163, 13, 0.05),
+    transparent 55%
+  );
+}
+
+body.page-enter .app-shell {
+  animation: shell-enter 0.7s var(--ease) both;
+}
+@keyframes shell-enter {
+  from { opacity: 0; transform: translateY(10px); filter: blur(3px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+.section-head h2 {
+  position: relative;
+  display: inline-block;
+}
+.section-head h2::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  height: 2px;
+  width: 0;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  box-shadow: 0 0 8px rgba(200, 245, 66, 0.4);
+  transition: width 0.6s var(--ease);
+}
+.section-head.visible h2::after,
+.reveal.visible .section-head h2::after {
+  width: 100%;
+}
+
+.rail-nav a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%);
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity 0.2s, transform 0.25s var(--ease);
+}
+.rail-nav a:hover::after {
+  opacity: 1;
+  transform: none;
+}
+.rail-nav a:hover {
+  color: var(--text);
+  padding-left: 18px;
+}
+
+.panel-ico {
+  display: inline-block;
+  transition: letter-spacing 0.25s var(--ease), color 0.2s;
+}
+.panel:hover .panel-ico {
+  letter-spacing: 0.16em;
+  color: var(--accent);
+}
+
+.status-card {
+  transition: transform 0.22s var(--ease), border-color 0.2s, box-shadow 0.22s;
+}
+.status-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), 0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.feature-banner-content.is-fading {
+  opacity: 0;
+  transform: translateY(8px);
+  filter: blur(3px);
+  transition: opacity 0.35s var(--ease), transform 0.35s var(--ease), filter 0.35s var(--ease);
+}
+.feature-banner-content {
+  transition: opacity 0.4s var(--ease), transform 0.4s var(--ease), filter 0.4s var(--ease);
+}
+
+.btn-magnetic {
+  transition: transform 0.15s var(--ease), box-shadow 0.2s, filter 0.2s;
+}
+
+.site-footer {
+  position: relative;
+  overflow: hidden;
+}
+.site-footer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent-2), transparent);
+  opacity: 0.45;
+}
+
+.check-list li.ok::before {
+  animation: check-pop 0.4s var(--ease) both;
+}
+@keyframes check-pop {
+  from { transform: scale(0.6); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.top-strip {
+  backdrop-filter: blur(10px);
+  background: color-mix(in srgb, var(--bg-2) 85%, transparent);
+}
+
 /* Reduced motion kill-switch for FX */
 @media (prefers-reduced-motion: reduce) {
   .ambient-mesh,
@@ -2282,6 +2521,16 @@ body.player-active .launch-orb { opacity: 0.25; pointer-events: none; }
   .launch-orb {
     animation: none !important;
   }
+  .live-ticker-inner {
+    animation: none !important;
+  }
+  body.page-enter .app-shell {
+    animation: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+  }
+  .cursor-spotlight { display: none !important; }
   .feature-banner-bg { transform: none !important; transition: none !important; }
   .feature-banner .stagger,
   .page-hero h1,
