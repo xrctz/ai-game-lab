@@ -145,6 +145,12 @@ export function createSkimmer(paletteKey = 'player') {
   );
   root.add(trail);
 
+  // Precomputed wake colors: brighter/hotter variants used while drifting or boosting,
+  // so the trail material can be lerped toward them without recomputing color math per-frame.
+  const trailBaseColor = new THREE.Color(pal.trail);
+  const trailDriftColor = trailBaseColor.clone().offsetHSL(0, 0.12, 0.22);
+  const trailBoostColor = new THREE.Color(0xffffff).lerp(new THREE.Color(pal.accent), 0.4);
+
   return {
     root,
     wings: [wingL, wingR],
@@ -152,6 +158,10 @@ export function createSkimmer(paletteKey = 'player') {
     trail,
     trailPos,
     trailIdx: 0,
+    trailCount,
+    trailBaseColor,
+    trailDriftColor,
+    trailBoostColor,
     palette: pal,
   };
 }
@@ -186,6 +196,9 @@ export class Racer {
     this.finishedPlace = null;
     this.totalDistance = 0;
     this.gateHits = new Map();
+    // Dynamic rubber-banding state (AI only) — see updateAI().
+    this.aiRaceClock = 0;
+    this.rubberband = 1;
   }
 
   get raceMetric() {
@@ -201,19 +214,39 @@ export class Racer {
   updateAI(dt, track, racers) {
     if (!this.ai || this.finished) return;
     const skill = this.ai.skill;
+    this.aiRaceClock += dt;
 
     const weaveAmp = this.ai.weaveAmp ?? 0.55;
     const weave = Math.sin(performance.now() * 0.001 * this.ai.weave + this.ai.phase) * weaveAmp;
     const targetLat = THREE.MathUtils.clamp(weave + (this.ai.laneBias || 0), -0.88, 0.88);
     this.lateral += (targetLat - this.lateral) * dt * (0.9 + skill * 0.5);
 
-    this.throttle = this.ai.throttle ?? 0.78;
-
     if (this.boostCooldown > 0) this.boostCooldown -= dt;
 
     const player = racers.find((r) => r.isPlayer);
     let gap = 0;
     if (player) gap = this.raceMetric - player.raceMetric;
+
+    // Dynamic rubber-banding: nudge (not override) this rival's aggressiveness based on
+    // how far ahead/behind the player it is. Bounded to a subtle range so personality
+    // (skill/weave/etc.) still dominates and nobody can trivially teleport past.
+    // - Ramps in smoothly over RUBBERBAND_WARMUP seconds of actual racing so the first
+    //   few seconds (and countdown, where updateAI isn't called at all) never feel odd.
+    // - Heavily damped so already-close races stay smooth instead of jittering.
+    const RUBBERBAND_WARMUP = 3; // seconds of racing before rubber-banding fully kicks in
+    const RUBBERBAND_RANGE = 0.35; // gap (lap-fractions) at which the effect saturates
+    const RUBBERBAND_MIN = 0.85;
+    const RUBBERBAND_MAX = 1.15;
+    const warmup = THREE.MathUtils.clamp(this.aiRaceClock / RUBBERBAND_WARMUP, 0, 1);
+    // gap > 0 means this rival is ahead of the player -> ease down; gap < 0 -> behind -> assist.
+    const norm = THREE.MathUtils.clamp(-gap / RUBBERBAND_RANGE, -1, 1);
+    const bandSpread = norm >= 0 ? RUBBERBAND_MAX - 1 : 1 - RUBBERBAND_MIN;
+    const targetBand = 1 + norm * bandSpread * warmup;
+    this.rubberband = THREE.MathUtils.damp(this.rubberband, targetBand, 0.5, dt);
+
+    // Throttle gets only a soft echo of the band so per-rival personality still reads clearly.
+    const throttleBand = THREE.MathUtils.clamp(this.rubberband, 0.94, 1.06);
+    this.throttle = (this.ai.throttle ?? 0.78) * throttleBand;
 
     const minCharge = this.ai.boostMinCharge ?? 70;
     const canBoost = this.spectrum >= minCharge && this.boostCooldown <= 0 && this.boostTimer <= 0;
@@ -223,15 +256,12 @@ export class Racer {
       if (behind) chance = this.ai.boostRateBehind ?? 0.12;
       else if (gap < 0.08) chance = this.ai.boostRateClose ?? 0.04;
       else chance = this.ai.boostRateAhead ?? 0.008;
+      chance *= this.rubberband;
 
       if (Math.random() < dt * chance) this.tryBoost();
     }
 
-    let speedScale = 1;
-    if (gap > 0.15) speedScale = 0.88;
-    else if (gap > 0.08) speedScale = 0.94;
-    else if (gap < -0.2) speedScale = 1.04;
-    this.maxSpeed = this.ai.baseMax * speedScale;
+    this.maxSpeed = this.ai.baseMax * this.rubberband;
   }
 
   tryBoost() {
@@ -337,14 +367,38 @@ export class Racer {
       this.mesh.wings[0].rotation.z = 0.25 + flap;
       this.mesh.wings[1].rotation.z = -0.25 - flap;
     }
-    this.mesh.light.intensity = this.boostTimer > 0 ? 3.2 : 1.3;
+    const boosting = this.boostTimer > 0;
+    this.mesh.light.intensity = boosting ? 3.2 : this.drift ? 1.7 : 1.3;
+
+    // Drift trail / boost light-wake: lerp the trail's color, size and opacity toward
+    // a hotter variant while actively drifting, and toward a bright streak while boosting.
+    const trailMat = this.mesh.trail.material;
+    let targetColor = this.mesh.trailBaseColor;
+    let targetSize = 0.42;
+    let targetOpacity = 0.75;
+    if (this.drift) {
+      targetColor = this.mesh.trailDriftColor;
+      targetSize = 0.6;
+      targetOpacity = 0.92;
+    }
+    if (boosting) {
+      targetColor = this.mesh.trailBoostColor;
+      targetSize = 0.9;
+      targetOpacity = 1;
+    }
+    trailMat.color.lerp(targetColor, 1 - Math.exp(-dt * 8));
+    trailMat.size = THREE.MathUtils.damp(trailMat.size, targetSize, 6, dt);
+    trailMat.opacity = THREE.MathUtils.damp(trailMat.opacity, targetOpacity, 6, dt);
 
     if (this.speed > 5) {
-      const idx = this.mesh.trailIdx % 40;
-      const back = pos.clone().addScaledVector(lookDir, -2.2);
-      this.mesh.trailPos[idx * 3] = back.x + (Math.random() - 0.5) * 0.4;
+      const trailCount = this.mesh.trailCount;
+      const idx = this.mesh.trailIdx % trailCount;
+      const spreadJitter = this.drift ? 0.7 : 0.4;
+      const backDist = boosting ? 3.2 : 2.2;
+      const back = pos.clone().addScaledVector(lookDir, -backDist);
+      this.mesh.trailPos[idx * 3] = back.x + (Math.random() - 0.5) * spreadJitter;
       this.mesh.trailPos[idx * 3 + 1] = back.y;
-      this.mesh.trailPos[idx * 3 + 2] = back.z + (Math.random() - 0.5) * 0.4;
+      this.mesh.trailPos[idx * 3 + 2] = back.z + (Math.random() - 0.5) * spreadJitter;
       this.mesh.trailIdx++;
       this.mesh.trail.geometry.attributes.position.needsUpdate = true;
     }
