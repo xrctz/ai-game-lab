@@ -279,17 +279,19 @@ function wait(ms) {
 }
 
 // ---------- Race flow ----------
-async function startRaceFlow() {
-  await playCinematic({
-    src: ASSETS.titleVideo,
-    title: 'VEIL RUSH',
-    sub: 'The Glass Meridian awakens under twin moons…',
-  });
-  await playCinematic({
-    src: ASSETS.introVideo,
-    title: 'Dawnshard Online',
-    sub: 'Spectrum Drive charged. Prism Gates aligned. Three laps to dawn.',
-  });
+async function startRaceFlow(skipIntro = false) {
+  if (!skipIntro) {
+    await playCinematic({
+      src: ASSETS.titleVideo,
+      title: 'VEIL RUSH',
+      sub: 'The Glass Meridian awakens under twin moons…',
+    });
+    await playCinematic({
+      src: ASSETS.introVideo,
+      title: 'Dawnshard Online',
+      sub: 'Spectrum Drive charged. Prism Gates aligned. Three laps to dawn.',
+    });
+  }
 
   await buildRace();
 
@@ -407,6 +409,7 @@ function updateHUD() {
   $('hud-laps').textContent = String(TOTAL_LAPS);
   $('hud-time').textContent = formatTime(raceTime);
   $('spectrum-fill').style.width = `${player.spectrum}%`;
+  $('hud-orbs').textContent = String(player.orbs);
   const lab = $('spectrum-label');
   if (player.spectrum >= 30) {
     lab.textContent = 'SPECTRUM READY';
@@ -489,6 +492,21 @@ function drawMinimap(ordered) {
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 1.5;
       ctx.stroke();
+
+      // Heading arrow: project a point slightly ahead on the track and point
+      // a triangle toward it so the twisty meridian is easier to read.
+      const ahead = map(track.getFrame((r.progress + 0.02) % 1).position);
+      const ang = Math.atan2(ahead.y - m.y, ahead.x - m.x);
+      const len = 9;
+      const wingA = ang + Math.PI * 0.82;
+      const wingB = ang - Math.PI * 0.82;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.moveTo(m.x + Math.cos(ang) * len, m.y + Math.sin(ang) * len);
+      ctx.lineTo(m.x + Math.cos(wingA) * 5, m.y + Math.sin(wingA) * 5);
+      ctx.lineTo(m.x + Math.cos(wingB) * 5, m.y + Math.sin(wingB) * 5);
+      ctx.closePath();
+      ctx.fill();
     }
   });
 }
@@ -573,8 +591,11 @@ function loop() {
   if (state === 'countdown') {
     updateCountdown(dt);
     racers.forEach((r) => {
-      // idle hover only
+      // Freeze the grid on the start line: clear any throttle/steer left over
+      // from a previous race so skimmers hover in place instead of creeping.
       r.speed = 0;
+      r.throttle = 0;
+      r.steer = 0;
       r.updatePhysics(dt, track, null);
     });
     updateCamera(dt);
@@ -737,7 +758,8 @@ function bindUI() {
   };
   $('btn-resume').onclick = () => togglePause();
   $('btn-quit').onclick = () => returnToMenu();
-  $('btn-replay').onclick = () => startRaceFlow();
+  // Skip the intro cinematics on a rematch — straight back to the grid.
+  $('btn-replay').onclick = () => startRaceFlow(true);
   $('btn-menu').onclick = () => returnToMenu();
 }
 
