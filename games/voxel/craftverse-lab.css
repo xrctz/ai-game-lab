@@ -1,5 +1,5 @@
 /* ============================================================
-   CraftVerse Lab — inject layer styles (v3 hub overhaul)
+   CraftVerse Lab — inject layer styles (v4 accessibility assists)
    Scope: games/voxel/ only.  Prefix: cv-lab-
    ============================================================ */
 
@@ -90,8 +90,11 @@ body.cv-embedded .title-hint {
   color: #ff9ed2;
 }
 html.cv-lab-reduced-motion #cv-lab-click-overlay,
-html.cv-lab-reduced-motion #cv-lab-lock-msg {
+html.cv-lab-reduced-motion #cv-lab-lock-msg,
+html.cv-lab-reduced-motion #cv-lab-assist-dialog,
+html.cv-lab-reduced-motion #cv-lab-assist-dialog * {
   transition: none !important;
+  animation: none !important;
 }
 
 /* v21 neatness — quieter brand chip, roomier title */
@@ -201,4 +204,169 @@ body.cv-embedded #title-main h1 span {
 }
 body.cv-embedded .menu-btn {
   border-color: rgba(100, 180, 255, 0.35);
+}
+
+/* ── Controls and accessibility panel ── */
+#cv-lab-assist-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 100010;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(3, 4, 12, 0.82);
+  backdrop-filter: blur(8px);
+  color: #f7f7ff;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  transition: opacity 0.2s ease;
+}
+#cv-lab-assist-dialog.cv-lab-hidden {
+  display: none;
+}
+.cv-lab-assist-card {
+  width: min(520px, 100%);
+  max-height: min(720px, calc(100dvh - 40px));
+  overflow-y: auto;
+  padding: 24px;
+  border: 1px solid rgba(126, 211, 255, 0.32);
+  border-radius: 16px;
+  background: linear-gradient(160deg, rgba(20, 22, 42, 0.98), rgba(8, 9, 20, 0.98));
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+}
+.cv-lab-assist-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.cv-lab-assist-heading h2 {
+  margin: 0;
+  font-size: clamp(1.25rem, 4vw, 1.7rem);
+}
+.cv-lab-assist-close {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font: 700 1.5rem/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+.cv-lab-assist-intro {
+  margin: 10px 0 18px;
+  color: rgba(238, 240, 255, 0.72);
+  line-height: 1.45;
+}
+.cv-lab-assist-options {
+  display: grid;
+  gap: 8px;
+}
+.cv-lab-assist-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+}
+.cv-lab-assist-option-copy {
+  display: grid;
+  gap: 3px;
+}
+.cv-lab-assist-option-copy strong {
+  font-size: 0.92rem;
+}
+.cv-lab-assist-option-copy span {
+  color: rgba(238, 240, 255, 0.64);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+.cv-lab-assist-toggle {
+  min-width: 58px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font: 700 0.78rem system-ui, sans-serif;
+  cursor: pointer;
+}
+.cv-lab-assist-toggle[aria-checked="true"] {
+  border-color: #5eead4;
+  background: rgba(45, 212, 191, 0.2);
+  color: #9ff7e9;
+}
+.cv-lab-assist-card h3 {
+  margin: 20px 0 10px;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ccfff;
+}
+.cv-lab-assist-controls {
+  display: grid;
+  grid-template-columns: minmax(110px, auto) 1fr;
+  gap: 7px 16px;
+  margin: 0;
+  font-size: 0.84rem;
+}
+.cv-lab-assist-controls dt {
+  color: #fff;
+  font-weight: 700;
+}
+.cv-lab-assist-controls dd {
+  margin: 0;
+  color: rgba(238, 240, 255, 0.7);
+}
+.cv-lab-assist-open {
+  font-size: 0.88rem !important;
+}
+.cv-lab-sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+.cv-lab-assist-close:focus-visible,
+.cv-lab-assist-toggle:focus-visible,
+.cv-lab-assist-open:focus-visible {
+  outline: 3px solid #facc15 !important;
+  outline-offset: 3px;
+}
+
+/* Crosshair assists override the bundle's centered pseudo-element marker. */
+html.cv-lab-large-crosshair #crosshair {
+  width: 34px !important;
+  height: 34px !important;
+}
+html.cv-lab-large-crosshair #crosshair::before {
+  width: 34px !important;
+  height: 4px !important;
+}
+html.cv-lab-large-crosshair #crosshair::after {
+  width: 4px !important;
+  height: 34px !important;
+}
+html.cv-lab-contrast-crosshair #crosshair::before,
+html.cv-lab-contrast-crosshair #crosshair::after {
+  background: #fff !important;
+  box-shadow: 0 0 0 2px #000, 0 0 5px 3px rgba(0, 0, 0, 0.9) !important;
+}
+
+@media (max-width: 520px) {
+  .cv-lab-assist-card {
+    padding: 18px;
+  }
+  .cv-lab-assist-option {
+    gap: 10px;
+  }
 }

@@ -22,7 +22,8 @@ Browser-based Minecraft-style voxel sandbox built with Three.js (Vite bundle).
 - **Click-to-play overlay**: shown in embed until user clicks (triggers pointer lock)
 - **Pointer-lock error handling**: friendly message + "open full screen" link
 - **Mobile banner**: "desktop recommended" notice
-- **Render distance hint**: lower default in embed (localStorage, non-destructive)
+- **Accessibility assists**: persistent large/high-contrast crosshair and reduced-motion controls
+- **Controls reference**: accessible from title/pause menus or with `H`
 
 ### ID Prefix Convention
 All inject IDs use `cv-lab-` prefix to avoid collisions with the bundle's IDs:
@@ -30,6 +31,7 @@ All inject IDs use `cv-lab-` prefix to avoid collisions with the bundle's IDs:
 - `#cv-lab-lock-msg`
 - `#cv-lab-mobile-banner`
 - `#cv-lab-brand`
+- `#cv-lab-assist-dialog`
 
 ### Bundle DOM IDs (DO NOT duplicate)
 `#app`, `#title-screen`, `#title-main`, `#title-worlds`, `#title-new-world`,
