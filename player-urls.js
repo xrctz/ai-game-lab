@@ -21,7 +21,8 @@
     minecraft: ROOT + '/games/voxel/index.html',
     racing: ROOT + '/games/racing/index.html',
     fnaf: ROOT + '/games/fnaf/index.html',
-    pokemon: ROOT + '/games/pokemon/index.html'
+    pokemon: ROOT + '/games/pokemon/index.html',
+    snake: ROOT + '/games/snake/index.html'
   };
 
   var GAME_NAMES = {
@@ -33,6 +34,7 @@
     racing: 'VEIL RUSH',
     fnaf: 'Midnight Watch',
     pokemon: 'Pokémon Adventure',
+    snake: 'Retro Snake',
     nightofthedead: 'Night of the Dead'
   };
 
@@ -43,6 +45,7 @@
     racing: { genre: 'Racing', engine: 'Three.js', status: 'playable', accent: '#38bdf8' },
     fnaf: { genre: 'Horror', engine: 'Three.js', status: 'playable', accent: '#a78bfa' },
     pokemon: { genre: 'RPG', engine: 'Canvas + Three.js', status: 'playable', accent: '#fbbf24' },
+    snake: { genre: 'Arcade', engine: 'Canvas', status: 'playable', accent: '#22c55e' },
     mindcraft: { genre: 'Tool', engine: 'Java + Node', status: 'local', accent: '#94a3b8' },
     nightofthedead: { genre: 'FPS', engine: 'Raylib + .NET', status: 'native', accent: '#fb7185' }
   };
@@ -80,7 +83,7 @@
       if (opts.debug) params.push('debug=1');
       url = base + '?' + params.join('&');
     } else if (game === 'deadzone' || game === 'voxel' || game === 'minecraft' ||
-        game === 'racing' || game === 'fnaf' || game === 'pokemon') {
+        game === 'racing' || game === 'fnaf' || game === 'pokemon' || game === 'snake') {
       url = base + '?embed=1';
     } else {
       url = base;
