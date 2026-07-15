@@ -532,6 +532,7 @@ function showToast(msg, duration){
     {title:'Play VEIL RUSH', detail:'Racing', href: pages.play + '?game=racing', tag:'game'},
     {title:'Play Midnight Watch', detail:'Horror', href: pages.play + '?game=fnaf', tag:'game'},
     {title:'Play Pokémon Adventure', detail:'RPG', href: pages.play + '?game=pokemon', tag:'game'},
+    {title:'Play Retro Snake', detail:'Arcade', href: pages.play + '?game=snake', tag:'game'},
     {title:'Story', detail:'Origin log', href: pages.story, tag:'page'},
     {title:'Updates', detail:'Release notes', href: pages.updates, tag:'page'},
     {title:'Mindcraft Setup', detail:'Local tool', href: pages.mindcraft, tag:'tool'},
@@ -1030,7 +1031,7 @@ function showToast(msg, duration){
   var mainCol = document.querySelector('.main-col');
   if (!mainCol || document.querySelector('.live-ticker')) return;
   var items = [
-    '<span><em>6</em> browser games ready to launch</span>',
+    '<span><em>7</em> browser games ready to launch</span>',
     '<span><em>Ctrl+K</em> command deck — jump anywhere</span>',
     '<span><em>0</em> installers — play in the theater</span>',
     '<span><em>WebGL2</em> verified at runtime</span>',

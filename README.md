@@ -41,6 +41,7 @@
 | **VEIL RUSH** | [`/play/?game=racing`](https://xrctz.github.io/ai-game-lab/play/?game=racing) | Racing | Three.js |
 | **Midnight Watch** | [`/play/?game=fnaf`](https://xrctz.github.io/ai-game-lab/play/?game=fnaf) | Horror | Three.js |
 | **Pokémon Adventure** | [`/play/?game=pokemon`](https://xrctz.github.io/ai-game-lab/play/?game=pokemon) | RPG | Canvas + Three.js |
+| **Retro Snake** | [`/play/?game=snake`](https://xrctz.github.io/ai-game-lab/play/?game=snake) | Arcade | Canvas |
 | **Night of the Dead** | [Setup notes](https://xrctz.github.io/ai-game-lab/nightofthedead-info.html) | FPS (native) | Raylib + .NET + Rust |
 | **Mindcraft Control Deck** | [Setup notes](https://xrctz.github.io/ai-game-lab/mindcraft-info.html) | Tool (local) | Java + Node |
 
