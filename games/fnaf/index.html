@@ -5,9 +5,106 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Midnight Watch — Bruno's Pizzeria</title>
     <link rel="stylesheet" href="../shared/aigl-mobile.css" />
+    <style>
+      .accessibility-option {
+        width: max-content;
+        max-width: 100%;
+        color: #c5c9d1;
+        cursor: pointer;
+        justify-content: center;
+        align-items: center;
+        gap: 0.55rem;
+        margin: 0.75rem auto 0;
+        padding: 0.45rem 0.65rem;
+        font-size: 0.85rem;
+        display: flex;
+      }
+
+      .accessibility-option input {
+        accent-color: var(--amber);
+        width: 1.1rem;
+        height: 1.1rem;
+      }
+
+      .btn:focus-visible,
+      .night-select select:focus-visible,
+      .cam-btn:focus-visible,
+      .vision-btn:focus-visible,
+      .accessibility-option:has(input:focus-visible) {
+        outline: 3px solid #ffd166;
+        outline-offset: 3px;
+      }
+
+      .reduce-motion *,
+      .reduce-motion *::before,
+      .reduce-motion *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.001ms !important;
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+      }
+
+      .reduce-motion #jumpscare-flash {
+        opacity: 0.42;
+        background: #160000;
+        transform: none !important;
+      }
+
+      .reduce-motion #jumpscare-name {
+        transform: none !important;
+      }
+
+      .reduce-motion #threat-flash {
+        display: none !important;
+      }
+
+      .reduce-motion #cam-static {
+        opacity: 0.06;
+      }
+    </style>
     <script src="../shared/aigl-mobile.js"></script>
     <script src="./hub-bridge.js"></script>
     <script>
+      (function () {
+        var storageKey = 'midnight-watch-reduce-motion';
+        var mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        var savedPreference = null;
+
+        try {
+          savedPreference = window.localStorage.getItem(storageKey);
+        } catch (error) {
+          // Storage can be unavailable in privacy-restricted embeds.
+        }
+
+        function applyPreference(enabled) {
+          document.documentElement.classList.toggle('reduce-motion', enabled);
+          var input = document.getElementById('reduce-motion');
+          if (input) input.checked = enabled;
+        }
+
+        applyPreference(savedPreference === null ? mediaQuery.matches : savedPreference === 'true');
+
+        document.addEventListener('DOMContentLoaded', function () {
+          var input = document.getElementById('reduce-motion');
+          if (!input) return;
+
+          applyPreference(document.documentElement.classList.contains('reduce-motion'));
+          input.addEventListener('change', function () {
+            applyPreference(input.checked);
+            savedPreference = String(input.checked);
+            try {
+              window.localStorage.setItem(storageKey, String(input.checked));
+            } catch (error) {
+              // The preference still applies for the current session.
+            }
+          });
+        });
+
+        mediaQuery.addEventListener('change', function (event) {
+          if (savedPreference === null) applyPreference(event.matches);
+        });
+      })();
+
       document.addEventListener('DOMContentLoaded', function () {
         if (window.AIGLMobile) window.AIGLMobile.mountFnafControls();
       });
@@ -41,6 +138,10 @@
           </div>
           <button id="btn-start" class="btn primary">START NIGHT</button>
           <button id="btn-howto" class="btn ghost">HOW TO PLAY</button>
+          <label class="accessibility-option" for="reduce-motion">
+            <input id="reduce-motion" type="checkbox" />
+            <span>Reduce flashes &amp; motion</span>
+          </label>
           <p class="disclaimer">
             Original fan-inspired horror game. Not affiliated with Five Nights at Freddy's.
             Characters & map built in Blender.
@@ -131,7 +232,7 @@
         <div id="systems-lock" class="hidden">SYSTEMS REBOOTING…</div>
         <div id="power-out-banner" class="hidden">POWER OUT — STAY QUIET</div>
         <div id="mute-indicator" class="hidden">MUTED [M]</div>
-        <div id="status-toast" class="hidden"></div>
+        <div id="status-toast" class="hidden" role="status" aria-live="polite"></div>
         <div id="threat-flash" class="hidden"></div>
       </div>
 

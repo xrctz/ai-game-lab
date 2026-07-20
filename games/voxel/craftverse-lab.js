@@ -1,5 +1,5 @@
 /* ============================================================
-   CraftVerse Lab — inject layer  (v3 — hub overhaul)
+   CraftVerse Lab — inject layer  (v4 — accessibility assists)
    Scope: games/voxel/ only.  Prefix: cv-lab-
    Do NOT touch the Vite bundle.
    ============================================================ */
@@ -14,6 +14,7 @@
     catch (_) { return false; }
   })();
   var IS_MOBILE  = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  var ASSIST_KEY = "craftverse-accessibility-v1";
   var EMBED_RENDER_KEY = "cv-lab-embed-render-distance";
   window.__craftverseLabVersion = "v4";
 
@@ -23,6 +24,10 @@
   var lockMsgTimer  = null;
   var canvas        = null;
   var inWorld       = false;
+  var assistDialog  = null;
+  var assistStatus  = null;
+  var lastFocus     = null;
+  var assistPrefs   = loadAssistPrefs();
 
   /* ── Helpers ── */
   function $(id) { return document.getElementById(id); }
@@ -31,6 +36,38 @@
     if (id) el.id = id;
     if (cls) el.className = cls;
     return el;
+  }
+
+  function loadAssistPrefs() {
+    var defaults = {
+      largeCrosshair: false,
+      contrastCrosshair: false,
+      reduceMotion: preferReducedMotion()
+    };
+    try {
+      var saved = JSON.parse(localStorage.getItem(ASSIST_KEY));
+      if (!saved || typeof saved !== "object") return defaults;
+      return {
+        largeCrosshair: saved.largeCrosshair === true,
+        contrastCrosshair: saved.contrastCrosshair === true,
+        reduceMotion: typeof saved.reduceMotion === "boolean" ? saved.reduceMotion : defaults.reduceMotion
+      };
+    } catch (_) {
+      return defaults;
+    }
+  }
+
+  function saveAssistPrefs() {
+    try {
+      localStorage.setItem(ASSIST_KEY, JSON.stringify(assistPrefs));
+    } catch (_) {}
+  }
+
+  function applyAssistPrefs() {
+    var root = document.documentElement;
+    root.classList.toggle(PREFIX + "large-crosshair", assistPrefs.largeCrosshair);
+    root.classList.toggle(PREFIX + "contrast-crosshair", assistPrefs.contrastCrosshair);
+    root.classList.toggle(PREFIX + "reduced-motion", assistPrefs.reduceMotion);
   }
 
   /* ─────────────────────────────────────────────────────
@@ -243,6 +280,187 @@
   }
 
   /* ─────────────────────────────────────────────────────
+     10. ACCESSIBILITY ASSISTS
+     Persistent crosshair and motion preferences, with a
+     keyboard-accessible controls reference available from
+     title, pause, and settings screens.
+     ───────────────────────────────────────────────────── */
+  function makeAssistToggle(label, description, key) {
+    var row = makeEl("div", null, PREFIX + "assist-option");
+    var copy = makeEl("div", null, PREFIX + "assist-option-copy");
+    var title = makeEl("strong");
+    title.textContent = label;
+    var detail = makeEl("span");
+    detail.textContent = description;
+    copy.appendChild(title);
+    copy.appendChild(detail);
+
+    var toggle = makeEl("button", PREFIX + "toggle-" + key, PREFIX + "assist-toggle");
+    toggle.type = "button";
+    toggle.setAttribute("role", "switch");
+    toggle.setAttribute("aria-label", label);
+
+    function sync() {
+      var enabled = assistPrefs[key];
+      toggle.setAttribute("aria-checked", enabled ? "true" : "false");
+      toggle.textContent = enabled ? "On" : "Off";
+    }
+
+    toggle.addEventListener("click", function () {
+      assistPrefs[key] = !assistPrefs[key];
+      saveAssistPrefs();
+      applyAssistPrefs();
+      sync();
+      if (assistStatus) {
+        assistStatus.textContent = label + " " + (assistPrefs[key] ? "enabled" : "disabled");
+      }
+    });
+    sync();
+    row.appendChild(copy);
+    row.appendChild(toggle);
+    return row;
+  }
+
+  function closeAssistDialog() {
+    if (!assistDialog || assistDialog.classList.contains(PREFIX + "hidden")) return;
+    assistDialog.classList.add(PREFIX + "hidden");
+    assistDialog.setAttribute("aria-hidden", "true");
+    if (lastFocus && lastFocus.isConnected) lastFocus.focus();
+  }
+
+  function openAssistDialog() {
+    if (!assistDialog) return;
+    lastFocus = document.activeElement;
+    assistDialog.classList.remove(PREFIX + "hidden");
+    assistDialog.setAttribute("aria-hidden", "false");
+    var close = $(PREFIX + "assist-close");
+    if (close) close.focus();
+  }
+
+  function createAssistDialog() {
+    assistDialog = makeEl("div", PREFIX + "assist-dialog", PREFIX + "hidden");
+    assistDialog.setAttribute("role", "dialog");
+    assistDialog.setAttribute("aria-modal", "true");
+    assistDialog.setAttribute("aria-hidden", "true");
+    assistDialog.setAttribute("aria-labelledby", PREFIX + "assist-title");
+
+    var card = makeEl("div", null, PREFIX + "assist-card");
+    var heading = makeEl("div", null, PREFIX + "assist-heading");
+    var title = makeEl("h2", PREFIX + "assist-title");
+    title.textContent = "Controls & Accessibility";
+    var close = makeEl("button", PREFIX + "assist-close", PREFIX + "assist-close");
+    close.type = "button";
+    close.setAttribute("aria-label", "Close controls and accessibility");
+    close.textContent = "\u00d7";
+    close.addEventListener("click", closeAssistDialog);
+    heading.appendChild(title);
+    heading.appendChild(close);
+
+    var intro = makeEl("p", null, PREFIX + "assist-intro");
+    intro.textContent = "Adjust aiming visibility and motion. Preferences are saved on this device.";
+
+    var options = makeEl("div", null, PREFIX + "assist-options");
+    options.appendChild(makeAssistToggle(
+      "Large crosshair",
+      "Makes the aiming marker easier to locate.",
+      "largeCrosshair"
+    ));
+    options.appendChild(makeAssistToggle(
+      "High-contrast crosshair",
+      "Adds a dark outline around a bright marker.",
+      "contrastCrosshair"
+    ));
+    options.appendChild(makeAssistToggle(
+      "Reduce motion",
+      "Removes non-essential interface animation.",
+      "reduceMotion"
+    ));
+
+    var controlsTitle = makeEl("h3");
+    controlsTitle.textContent = "Keyboard & mouse";
+    var controls = makeEl("dl", null, PREFIX + "assist-controls");
+    [
+      ["W A S D", "Move"],
+      ["Mouse", "Look"],
+      ["Left / right click", "Break / place"],
+      ["Space", "Jump"],
+      ["E", "Inventory"],
+      ["Esc", "Release mouse / pause"],
+      ["H", "Open this panel from a menu"]
+    ].forEach(function (entry) {
+      var key = makeEl("dt");
+      var action = makeEl("dd");
+      key.textContent = entry[0];
+      action.textContent = entry[1];
+      controls.appendChild(key);
+      controls.appendChild(action);
+    });
+
+    assistStatus = makeEl("div", PREFIX + "assist-status", PREFIX + "sr-only");
+    assistStatus.setAttribute("role", "status");
+    assistStatus.setAttribute("aria-live", "polite");
+
+    card.appendChild(heading);
+    card.appendChild(intro);
+    card.appendChild(options);
+    card.appendChild(controlsTitle);
+    card.appendChild(controls);
+    card.appendChild(assistStatus);
+    assistDialog.appendChild(card);
+    assistDialog.addEventListener("mousedown", function (event) {
+      if (event.target === assistDialog) closeAssistDialog();
+    });
+    document.body.appendChild(assistDialog);
+  }
+
+  function addAssistButton(container, before) {
+    if (!container) return;
+    var button = makeEl("button", null, "menu-btn " + PREFIX + "assist-open");
+    button.type = "button";
+    button.textContent = "Controls & Accessibility";
+    button.addEventListener("click", openAssistDialog);
+    container.insertBefore(button, before || null);
+  }
+
+  function mountAssistEntryPoints() {
+    var titleMain = $("title-main");
+    addAssistButton(titleMain, titleMain ? titleMain.querySelector(".title-hint") : null);
+    var pause = $("pause-screen");
+    addAssistButton(pause, pause ? $("btn-save-quit") : null);
+  }
+
+  function onAssistKeydown(event) {
+    var target = event.target;
+    var isTyping = target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
+    var dialogOpen = assistDialog && !assistDialog.classList.contains(PREFIX + "hidden");
+    if (event.key === "Tab" && dialogOpen) {
+      var focusable = assistDialog.querySelectorAll("button:not([disabled]), a[href], input:not([disabled])");
+      if (focusable.length) {
+        var first = focusable[0];
+        var last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    }
+    if (event.key === "Escape" && dialogOpen) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeAssistDialog();
+      return;
+    }
+    if ((event.key === "h" || event.key === "H") && !event.repeat && !isTyping && !inWorld) {
+      event.preventDefault();
+      if (assistDialog.classList.contains(PREFIX + "hidden")) openAssistDialog();
+      else closeAssistDialog();
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────
      EMBED PERFORMANCE HINT
      Lower render distance in hub iframe unless user opted out.
      ───────────────────────────────────────────────────── */
@@ -274,7 +492,7 @@
   }
 
   /* ─────────────────────────────────────────────────────
-     10. HUB POSTMESSAGE LISTENER
+     11. HUB POSTMESSAGE LISTENER
      ───────────────────────────────────────────────────── */
   function onParentMessage(e) {
     if (!e.data || typeof e.data !== "object") return;
@@ -287,6 +505,9 @@
      INIT
      ───────────────────────────────────────────────────── */
   function init() {
+    applyAssistPrefs();
+    createAssistDialog();
+    mountAssistEntryPoints();
     createLockMsg();
     createMobileBanner();
     createBrandBadge();
@@ -305,6 +526,7 @@
 
     document.addEventListener("pointerlockchange", onPointerLockChange, false);
     document.addEventListener("pointerlockerror", onPointerLockError, false);
+    document.addEventListener("keydown", onAssistKeydown, true);
     window.addEventListener("message", onParentMessage, false);
 
     if (!IS_EMBED) {

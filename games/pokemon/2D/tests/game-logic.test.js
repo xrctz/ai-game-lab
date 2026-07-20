@@ -49,6 +49,9 @@ function g(name) {
 const typeEffectiveness = g('typeEffectiveness');
 const catchChance = g('catchChance');
 const createPokemon = g('createPokemon');
+const expForLevel = g('expForLevel');
+const expNeededForLevel = g('expNeededForLevel');
+const gainExp = g('gainExp');
 const partyAlive = g('partyAlive');
 const firstAlive = g('firstAlive');
 const canSwitchTo = g('canSwitchTo');
@@ -115,6 +118,36 @@ console.log('\n=== Catch chance (shipped formula) ===');
   wild.hp = 1;
   const low = catchChance(wild, 1);
   assert(low >= mid, '1 HP catch chance is at least mid HP chance');
+}
+
+console.log('\n=== Level progression ===');
+{
+  const mon = createPokemon('charmander', 5);
+  const level5Cost = expForLevel(6) - expForLevel(5);
+  assert(level5Cost === 91, 'medium-fast Lv5→6 cost is 91 EXP');
+  assert(expNeededForLevel(5) === level5Cost, 'level cost uses the cubic total delta');
+  assert(mon.expToNext === level5Cost, 'new Pokémon exposes the correct next-level cost');
+
+  const beforeMaxHp = mon.maxHp;
+  const result = gainExp(mon, level5Cost + expNeededForLevel(6));
+  assert(result.leveled && result.levels === 2, 'one large award can gain multiple levels');
+  assert(mon.level === 7 && mon.exp === 0, 'surplus EXP carries across both levels');
+  assert(mon.maxHp > beforeMaxHp, 'leveling recalculates stats');
+
+  const legacy = JSON.parse(JSON.stringify(serializeGameState({
+    party: [createPokemon('squirtle', 5)],
+    bag: {},
+    player: {},
+    flags: {},
+  })));
+  legacy.party[0].exp = level5Cost;
+  legacy.party[0].expToNext = expForLevel(6);
+  const migrated = deserializeGameState(legacy);
+  assert(migrated.party[0].level === 6, 'legacy save migrates accumulated EXP into a level');
+  assert(
+    migrated.party[0].expToNext === expNeededForLevel(6),
+    'legacy absolute threshold is replaced with the current-level cost'
+  );
 }
 
 console.log('\n=== Party alive / firstAlive ===');

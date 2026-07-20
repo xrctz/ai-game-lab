@@ -1077,6 +1077,10 @@ class Weapon {
         }
     }
 
+    shouldFire(isTriggerHeld, isTriggerPressed) {
+        return this.automatic ? isTriggerHeld : isTriggerPressed;
+    }
+
     fire(aiming) {
         if (this.reloading || this.fireTimer > 0 || this.currentAmmo <= 0) return null;
 
@@ -8040,7 +8044,8 @@ class Game {
 
         if (this.shopOpen) return;
 
-        if (this.input.isMouseDown(0)) {
+        const weapon = this.weaponSystem.getCurrent();
+        if (weapon?.shouldFire(this.input.isMouseDown(0), this.input.isMouseJustPressed(0))) {
             this._fireWeapon();
         }
 

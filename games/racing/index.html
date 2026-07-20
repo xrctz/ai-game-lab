@@ -63,6 +63,10 @@
   <!-- HUD -->
   <div id="hud">
     <div class="boost-flash" id="boost-flash"></div>
+    <button class="hud-pause" id="btn-pause" type="button" aria-label="Pause race" aria-keyshortcuts="P Escape">
+      <span aria-hidden="true">Ⅱ</span>
+      <span>Pause</span>
+    </button>
     <div class="hud-left">
       <div class="hud-card speed-card">
         <div class="label">Velocity</div>
@@ -95,15 +99,15 @@
       <div class="label">Standings</div>
       <div id="standings"></div>
     </div>
-    <div class="countdown" id="countdown"></div>
-    <div class="race-msg" id="race-msg"></div>
+    <div class="countdown" id="countdown" aria-live="assertive"></div>
+    <div class="race-msg" id="race-msg" aria-live="polite"></div>
   </div>
 
   <!-- PAUSE -->
-  <div id="pause-screen" class="screen">
+  <div id="pause-screen" class="screen" role="dialog" aria-modal="true" aria-labelledby="pause-title">
     <div class="result-panel">
-      <h2 class="result-title">Veil Suspended</h2>
-      <p class="result-sub">The Meridian holds still.</p>
+      <h2 class="result-title" id="pause-title">Veil Suspended</h2>
+      <p class="result-sub" id="pause-reason">The Meridian holds still.</p>
       <div class="menu-actions">
         <button class="btn" id="btn-resume">Resume</button>
         <button class="btn btn-secondary" id="btn-quit">Return to Menu</button>

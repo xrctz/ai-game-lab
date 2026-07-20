@@ -316,7 +316,8 @@ export class Game {
 
         if (this.shopOpen) return;
 
-        if (this.input.isMouseDown(0)) {
+        const weapon = this.weaponSystem.getCurrent();
+        if (weapon?.shouldFire(this.input.isMouseDown(0), this.input.isMouseJustPressed(0))) {
             this._fireWeapon();
         }
 
