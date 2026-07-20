@@ -241,15 +241,16 @@ export class World3D {
   mat(hex, opts = {}) {
     const id = hex + (opts.transparent ? 't' : '') + (opts.emissive || '');
     if (!this.materials[id]) {
-      this.materials[id] = new THREE.MeshStandardMaterial({
+      const materialOptions = {
         color: hex,
         roughness: opts.roughness ?? 0.85,
         metalness: opts.metalness ?? 0.05,
         transparent: !!opts.transparent,
         opacity: opts.opacity ?? 1,
-        emissive: opts.emissive ? new THREE.Color(opts.emissive) : undefined,
         emissiveIntensity: opts.emissiveIntensity ?? 0,
-      });
+      };
+      if (opts.emissive) materialOptions.emissive = new THREE.Color(opts.emissive);
+      this.materials[id] = new THREE.MeshStandardMaterial(materialOptions);
     }
     return this.materials[id];
   }

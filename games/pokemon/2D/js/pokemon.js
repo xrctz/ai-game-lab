@@ -263,6 +263,37 @@ function tryCatch(wild, ballBonus = 1) {
   return Math.random() < chance;
 }
 
+// ---------- Battle move selection helpers (pure) ----------
+
+function createStruggleMove() {
+  return {
+    id: 'struggle',
+    name: 'Struggle',
+    type: 'normal',
+    power: 50,
+    accuracy: 100,
+    pp: 1,
+    maxPp: 1,
+    cat: 'physical',
+    effect: null,
+    priority: 0,
+  };
+}
+
+/**
+ * Return selectable battle moves with their source indices. If a Pokémon has
+ * no PP left, provide Struggle so the battle cannot become unwinnable.
+ */
+function getBattleMoveOptions(mon) {
+  const moves = Array.isArray(mon?.moves) ? mon.moves : [];
+  const options = moves
+    .map((move, index) => ({ move, index, isStruggle: false }))
+    .filter(({ move }) => move && move.pp > 0);
+  return options.length
+    ? options
+    : [{ move: createStruggleMove(), index: -1, isStruggle: true }];
+}
+
 // ---------- Mid-battle switch helpers (pure) ----------
 
 /**

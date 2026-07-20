@@ -49,6 +49,8 @@ function g(name) {
 const typeEffectiveness = g('typeEffectiveness');
 const catchChance = g('catchChance');
 const createPokemon = g('createPokemon');
+const createStruggleMove = g('createStruggleMove');
+const getBattleMoveOptions = g('getBattleMoveOptions');
 const partyAlive = g('partyAlive');
 const firstAlive = g('firstAlive');
 const canSwitchTo = g('canSwitchTo');
@@ -115,6 +117,26 @@ console.log('\n=== Catch chance (shipped formula) ===');
   wild.hp = 1;
   const low = catchChance(wild, 1);
   assert(low >= mid, '1 HP catch chance is at least mid HP chance');
+}
+
+console.log('\n=== Battle move selection ===');
+{
+  const mon = createPokemon('charmander', 5);
+  const options = getBattleMoveOptions(mon);
+  assert(options.length === mon.moves.length, 'available moves are selectable');
+  assert(options.every((option) => option.isStruggle === false), 'usable moves do not use Struggle');
+  assert(options.every((option) => option.move === mon.moves[option.index]), 'move options retain source indices');
+
+  mon.moves.forEach((move) => { move.pp = 0; });
+  const fallback = getBattleMoveOptions(mon);
+  assert(fallback.length === 1, 'Struggle is the only option when all PP is depleted');
+  assert(fallback[0].index === -1 && fallback[0].isStruggle === true, 'Struggle uses fallback index');
+  assert(fallback[0].move.name === 'Struggle' && fallback[0].move.pp === 1, 'Struggle has usable move data');
+
+  const struggleA = createStruggleMove();
+  const struggleB = createStruggleMove();
+  struggleA.pp = 0;
+  assert(struggleB.pp === 1, 'Struggle instances do not share mutable PP');
 }
 
 console.log('\n=== Party alive / firstAlive ===');
