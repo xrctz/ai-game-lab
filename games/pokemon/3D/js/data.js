@@ -502,10 +502,32 @@ function isEncounterTile(tile) {
   return tile === TILE.GRASS || tile === TILE.FOREST || tile === TILE.CAVE || tile === TILE.FLOWER;
 }
 
+/** 3D landmark hints — world-space tile anchors for readable navigation. */
+const LANDMARKS = [
+  { id: 'center', name: 'Pokémon Center', tx: 7, ty: 10, color: 0xff6b8a, icon: '+' },
+  { id: 'mart', name: 'Poké Mart', tx: 22, ty: 10, color: 0x4a90d9, icon: 'M' },
+  { id: 'lab', name: "Oak's Lab", tx: 12, ty: 10, color: 0xc4a35a, icon: 'L' },
+  { id: 'cave', name: 'Deep Cave', tx: 3, ty: 3, color: 0x9b7bff, icon: '!' },
+  { id: 'oak', name: 'Prof. Oak', tx: 4, ty: 12, color: 0xffcb05, icon: '?' },
+];
+
+/** Tile in front of an NPC based on facing (default south). */
+function getNpcInteractTile(npc) {
+  const face = npc.face || 'down';
+  let x = npc.x;
+  let y = npc.y;
+  if (face === 'up') y--;
+  else if (face === 'down') y++;
+  else if (face === 'left') x--;
+  else if (face === 'right') x++;
+  return { x, y };
+}
+
 // Expose for ES modules (game3d.js)
 if (typeof window !== 'undefined') {
   Object.assign(window, {
     TYPES, TYPE_CHART, MOVES, SPECIES, ENCOUNTERS, TILE, MAP_W, MAP_H, WORLD_MAP,
-    NPCS, TILE_COLORS, TILE_DECOR, getZone, isWalkable, isEncounterTile,
+    NPCS, TILE_COLORS, TILE_DECOR, LANDMARKS, getZone, isWalkable, isEncounterTile,
+    getNpcInteractTile,
   });
 }

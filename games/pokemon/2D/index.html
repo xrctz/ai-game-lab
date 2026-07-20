@@ -101,6 +101,7 @@
 
       <div class="game-frame">
         <canvas id="game-canvas" width="720" height="480"></canvas>
+        <div id="interact-prompt" class="interact-prompt" aria-hidden="true"></div>
         <div id="dialogue" class="dialogue">
           <div id="dialogue-text" class="dialogue-text"></div>
           <div class="dialogue-continue"><span class="btn-glyph">&#9660;</span> E / Space</div>
@@ -163,6 +164,7 @@
 
         <div id="catch-overlay" class="catch-overlay">
           <img id="catch-ball-img" class="catch-ball-img" src="assets/ui/pokeball.png" alt="Poké Ball" />
+          <div id="catch-shake-text" class="catch-shake-text"></div>
         </div>
       </div>
 
@@ -218,6 +220,7 @@
   </div>
 
   <div id="toast" class="toast"></div>
+  <div id="screen-fade" class="screen-fade" aria-hidden="true"></div>
   <div id="encounter-flash" class="encounter-flash" aria-hidden="true"></div>
 
   <script src="../edition-bridge.js"></script>

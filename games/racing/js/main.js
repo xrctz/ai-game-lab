@@ -36,6 +36,11 @@ let countdownVal = 3;
 let countdownTimer = 0;
 let animId = null;
 let camVel = new THREE.Vector3();
+let camPos = new THREE.Vector3();
+let camLook = new THREE.Vector3();
+let camInitialized = false;
+let hudPulse = { orb: 0, gate: 0, boost: 0 };
+let msgTimer = null;
 let input = {
   forward: false,
   back: false,
@@ -165,59 +170,33 @@ async function buildRace() {
     startProgress: 0.0,
     lateral: 0,
     maxSpeed: 48,
-    accel: 38,
-    turnRate: 2.8,
+    accel: 40,
+    turnRate: 3.05,
   });
   scene.add(player.mesh.root);
   racers.push(player);
 
-  // Even grid start; AI is deliberately slower than the player
-  // Ember Quill (green) used to be overtuned — now the mild mid-pack rival
+  // Even grid start; rivals compete on lines and boosts — no hidden rubberband speed
   const rivalConfigs = [
     {
-      // Nyx Arc — pink, cautious
+      // Nyx Arc — pink, cautious but punishes mistakes on straights
       lateral: -0.4,
       start: 0.008,
       maxSpeed: 36,
       accel: 22,
       ai: {
-        skill: 0.35,
-        baseMax: 35.5,
-        throttle: 0.74,
+        skill: 0.4,
+        baseMax: 36,
+        throttle: 0.76,
         weave: 0.55,
-        weaveAmp: 0.62,
+        weaveAmp: 0.58,
         laneBias: -0.15,
         phase: 0.4,
-        boostPower: 1.18,
-        boostMinCharge: 75,
-        boostCooldown: 4.5,
-        boostRateBehind: 0.1,
-        boostRateClose: 0.03,
-        boostRateAhead: 0.005,
-        orbGain: 9,
-        gateSpec: 7,
-        gateSpeed: 3,
-      },
-    },
-    {
-      // Sol Vire — gold, mid pack
-      lateral: 0.4,
-      start: 0.01,
-      maxSpeed: 37,
-      accel: 23,
-      ai: {
-        skill: 0.42,
-        baseMax: 36.5,
-        throttle: 0.76,
-        weave: 0.7,
-        weaveAmp: 0.5,
-        laneBias: 0.2,
-        phase: 1.8,
         boostPower: 1.2,
         boostMinCharge: 72,
-        boostCooldown: 4.0,
-        boostRateBehind: 0.12,
-        boostRateClose: 0.035,
+        boostCooldown: 4.2,
+        boostRateBehind: 0.14,
+        boostRateClose: 0.045,
         boostRateAhead: 0.006,
         orbGain: 10,
         gateSpec: 8,
@@ -225,28 +204,53 @@ async function buildRace() {
       },
     },
     {
-      // Ember Quill — green, was overpowered; now solid but beatable
+      // Sol Vire — gold, mid-pack duelist
+      lateral: 0.4,
+      start: 0.01,
+      maxSpeed: 37,
+      accel: 23,
+      ai: {
+        skill: 0.48,
+        baseMax: 37,
+        throttle: 0.78,
+        weave: 0.7,
+        weaveAmp: 0.48,
+        laneBias: 0.2,
+        phase: 1.8,
+        boostPower: 1.24,
+        boostMinCharge: 68,
+        boostCooldown: 3.6,
+        boostRateBehind: 0.16,
+        boostRateClose: 0.05,
+        boostRateAhead: 0.008,
+        orbGain: 11,
+        gateSpec: 9,
+        gateSpeed: 4,
+      },
+    },
+    {
+      // Ember Quill — green, aggressive closer without overtuning raw speed
       lateral: -0.15,
       start: 0.006,
       maxSpeed: 37.5,
       accel: 24,
       ai: {
-        skill: 0.48,
-        baseMax: 37,
-        throttle: 0.78,
+        skill: 0.52,
+        baseMax: 37.5,
+        throttle: 0.8,
         weave: 0.65,
-        weaveAmp: 0.48,
+        weaveAmp: 0.44,
         laneBias: 0.05,
         phase: 2.6,
-        boostPower: 1.22,
-        boostMinCharge: 70,
-        boostCooldown: 3.8,
-        boostRateBehind: 0.14,
-        boostRateClose: 0.04,
-        boostRateAhead: 0.007,
-        orbGain: 11,
-        gateSpec: 8,
-        gateSpeed: 4,
+        boostPower: 1.26,
+        boostMinCharge: 65,
+        boostCooldown: 3.2,
+        boostRateBehind: 0.18,
+        boostRateClose: 0.055,
+        boostRateAhead: 0.01,
+        orbGain: 12,
+        gateSpec: 9,
+        gateSpeed: 4.5,
       },
     },
   ];
@@ -315,6 +319,7 @@ async function startRaceFlow(opts) {
   showScreen(null);
   hud.classList.add('active');
   $('countdown').textContent = '3';
+  $('countdown').style.color = 'var(--cyan)';
   $('countdown').classList.add('show');
   $('race-msg').classList.remove('show');
   racers.forEach((r) => {
@@ -329,8 +334,11 @@ async function startRaceFlow(opts) {
     r.boostCooldown = 0;
     r.gateHits = new Map();
     r._endScheduled = false;
+    r._lapFlash = {};
   });
   orbsCollectedAtStart = 0;
+  hudPulse = { orb: 0, gate: 0, boost: 0 };
+  camInitialized = false;
   clock.start();
   if (!animId) loop();
 }
@@ -341,14 +349,19 @@ function beginRacing() {
   racers.forEach((r) => {
     r.lapStart = now;
   });
-  flashMsg('GO!', 1.1);
+  flashMsg('GO!', 1.2, 'go');
 }
 
-function flashMsg(text, sec = 1.2) {
+function flashMsg(text, sec = 1.2, kind = 'default') {
   const el = $('race-msg');
   el.textContent = text;
+  el.dataset.kind = kind;
   el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), sec * 1000);
+  if (msgTimer) clearTimeout(msgTimer);
+  msgTimer = setTimeout(() => {
+    el.classList.remove('show');
+    delete el.dataset.kind;
+  }, sec * 1000);
 }
 
 function endRace() {
@@ -364,6 +377,7 @@ function endRace() {
   });
   const place = player.finishedPlace;
   const won = place === 1;
+  const winner = ordered[0];
 
   showScreen('result');
   hud.classList.remove('active');
@@ -372,7 +386,7 @@ function endRace() {
   $('result-title').textContent = won ? 'Dawn Spark Claimed' : 'Veil Dims';
   $('result-sub').textContent = won
     ? 'You crossed the Meridian as first light broke. The crystal desert remembers your wake.'
-    : `Finished ${placeStr(place)}. The Dawn Spark slips to another Veilrunner — challenge the Meridian again.`;
+    : `${winner?.name || 'A rival'} took the Dawn Spark. You finished ${placeStr(place)} — the Meridian awaits another run.`;
   $('result-place').textContent = placeStr(place);
   $('result-time').textContent = formatTime(player.finishTime ?? raceTime);
   $('result-orbs').textContent = String(player.orbs);
@@ -394,29 +408,36 @@ function endRace() {
 }
 
 // ---------- Update / render ----------
+const COUNTDOWN_BEATS = [0.85, 0.85, 0.75, 0.55];
+
 function updateCountdown(dt) {
   countdownTimer += dt;
-  if (countdownTimer >= 1) {
-    countdownTimer = 0;
+  const beat = COUNTDOWN_BEATS[3 - countdownVal] ?? 0.85;
+  if (countdownTimer < beat) return;
+  countdownTimer = 0;
+
+  const el = $('countdown');
+  if (countdownVal > 0) {
     countdownVal -= 1;
-    const el = $('countdown');
     if (countdownVal > 0) {
       el.textContent = String(countdownVal);
+      el.style.color = countdownVal === 1 ? 'var(--gold)' : 'var(--cyan)';
       el.classList.remove('show');
       void el.offsetWidth;
       el.classList.add('show');
-    } else if (countdownVal === 0) {
+    } else {
       el.textContent = 'RUSH';
+      el.style.color = 'var(--magenta)';
       el.classList.remove('show');
       void el.offsetWidth;
       el.classList.add('show');
       beginRacing();
-      setTimeout(() => el.classList.remove('show'), 700);
+      setTimeout(() => el.classList.remove('show'), 750);
     }
   }
 }
 
-function updateHUD() {
+function updateHUD(dt = 0.016) {
   $('hud-speed').textContent = String(Math.round(player.speed * 4.2));
   $('hud-lap').textContent = String(Math.min(player.lap, TOTAL_LAPS));
   $('hud-laps').textContent = String(TOTAL_LAPS);
@@ -424,13 +445,29 @@ function updateHUD() {
   $('spectrum-fill').style.width = `${player.spectrum}%`;
   const lab = $('spectrum-label');
   if (player.spectrum >= 30) {
-    lab.textContent = 'SPECTRUM READY';
+    lab.textContent = player.spectrum >= 85 ? 'SPECTRUM FULL' : 'SPECTRUM READY';
     lab.classList.add('spectrum-ready');
   } else {
     lab.textContent = 'Spectrum';
     lab.classList.remove('spectrum-ready');
   }
-  $('boost-flash').classList.toggle('on', player.boostTimer > 0);
+
+  if (hudPulse.orb > 0) hudPulse.orb = Math.max(0, hudPulse.orb - dt);
+  if (hudPulse.gate > 0) hudPulse.gate = Math.max(0, hudPulse.gate - dt);
+  if (hudPulse.boost > 0) hudPulse.boost = Math.max(0, hudPulse.boost - dt);
+
+  const spectrumWrap = document.querySelector('.spectrum-wrap');
+  const spectrumFill = $('spectrum-fill');
+  if (hudPulse.orb > 0) {
+    spectrumFill.style.boxShadow = `0 0 ${14 + hudPulse.orb * 30}px rgba(103, 232, 249, 0.9)`;
+  } else if (hudPulse.gate > 0) {
+    spectrumFill.style.boxShadow = `0 0 ${16 + hudPulse.gate * 28}px rgba(255, 61, 154, 0.85)`;
+  } else {
+    spectrumFill.style.boxShadow = '';
+  }
+  spectrumWrap?.style.setProperty('transform', hudPulse.gate > 0 ? 'scale(1.04)' : 'scale(1)');
+
+  $('boost-flash').classList.toggle('on', player.boostTimer > 0 || hudPulse.boost > 0);
 
   const ordered = [...racers].sort((a, b) => b.raceMetric - a.raceMetric);
   const place = ordered.indexOf(player) + 1;
@@ -453,14 +490,15 @@ function drawMinimap(ordered) {
   const h = 150;
   ctx.clearRect(0, 0, w, h);
 
-  // Background glow
-  ctx.fillStyle = 'rgba(10, 8, 28, 0.9)';
+  const bgGrad = ctx.createRadialGradient(w * 0.5, h * 0.5, 8, w * 0.5, h * 0.5, w * 0.72);
+  bgGrad.addColorStop(0, 'rgba(18, 14, 42, 0.95)');
+  bgGrad.addColorStop(1, 'rgba(8, 6, 20, 0.92)');
+  ctx.fillStyle = bgGrad;
   ctx.beginPath();
-  ctx.roundRect?.(0, 0, w, h, 12);
-  if (!ctx.roundRect) ctx.fillRect(0, 0, w, h);
-  else ctx.fill();
+  if (ctx.roundRect) ctx.roundRect(0, 0, w, h, 12);
+  else ctx.rect(0, 0, w, h);
+  ctx.fill();
 
-  // Track path
   const pts = track.centerLine;
   let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
   for (const p of pts) {
@@ -469,7 +507,7 @@ function drawMinimap(ordered) {
     minZ = Math.min(minZ, p.z);
     maxZ = Math.max(maxZ, p.z);
   }
-  const pad = 14;
+  const pad = 16;
   const sx = (w - pad * 2) / (maxX - minX || 1);
   const sz = (h - pad * 2) / (maxZ - minZ || 1);
   const s = Math.min(sx, sz);
@@ -480,8 +518,9 @@ function drawMinimap(ordered) {
     y: oz + (p.z - minZ) * s,
   });
 
-  ctx.strokeStyle = 'rgba(61, 232, 255, 0.45)';
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = 'rgba(61, 232, 255, 0.12)';
+  ctx.lineWidth = 9;
+  ctx.lineJoin = 'round';
   ctx.beginPath();
   pts.forEach((p, i) => {
     const m = map(p);
@@ -491,14 +530,56 @@ function drawMinimap(ordered) {
   ctx.closePath();
   ctx.stroke();
 
-  // Racers
+  ctx.strokeStyle = 'rgba(61, 232, 255, 0.55)';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  pts.forEach((p, i) => {
+    const m = map(p);
+    if (i === 0) ctx.moveTo(m.x, m.y);
+    else ctx.lineTo(m.x, m.y);
+  });
+  ctx.closePath();
+  ctx.stroke();
+
+  const startF = track.getFrame(0);
+  const startM = map(startF.position);
+  const startN = map(startF.position.clone().add(startF.tangent.clone().multiplyScalar(8)));
+  ctx.strokeStyle = 'rgba(255, 200, 87, 0.9)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(startM.x, startM.y);
+  ctx.lineTo(startN.x, startN.y);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(255, 200, 87, 0.85)';
+  ctx.beginPath();
+  ctx.arc(startM.x, startM.y, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  for (const gate of track.gates) {
+    const gf = track.getFrame(gate.t);
+    const gm = map(gf.position);
+    ctx.fillStyle = 'rgba(255, 61, 154, 0.55)';
+    ctx.fillRect(gm.x - 1.5, gm.y - 1.5, 3, 3);
+  }
+
   const colors = ['#3de8ff', '#ff3d9a', '#ffc857', '#34d399'];
-  racers.forEach((r, i) => {
+  const drawOrder = [...racers].sort((a, b) => (a.isPlayer ? 1 : 0) - (b.isPlayer ? 1 : 0));
+  drawOrder.forEach((r) => {
+    const idx = racers.indexOf(r);
     const frame = track.getFrame(r.progress);
     const m = map(frame.position);
-    ctx.fillStyle = r.isPlayer ? '#3de8ff' : colors[(i % colors.length)];
+    const tip = map(frame.position.clone().add(frame.tangent.clone().multiplyScalar(r.isPlayer ? 5 : 3.5)));
+
+    ctx.strokeStyle = r.isPlayer ? '#fff' : colors[idx % colors.length];
+    ctx.lineWidth = r.isPlayer ? 2 : 1;
     ctx.beginPath();
-    ctx.arc(m.x, m.y, r.isPlayer ? 5 : 3.5, 0, Math.PI * 2);
+    ctx.moveTo(m.x, m.y);
+    ctx.lineTo(tip.x, tip.y);
+    ctx.stroke();
+
+    ctx.fillStyle = r.isPlayer ? '#3de8ff' : colors[idx % colors.length];
+    ctx.beginPath();
+    ctx.arc(m.x, m.y, r.isPlayer ? 4.5 : 3.2, 0, Math.PI * 2);
     ctx.fill();
     if (r.isPlayer) {
       ctx.strokeStyle = '#fff';
@@ -511,16 +592,44 @@ function drawMinimap(ordered) {
 function updateCamera(dt) {
   if (!player) return;
   const frame = track.getFrame(player.progress);
-  const lookAhead = track.getFrame((player.progress + 0.03) % 1);
-  const behind = frame.tangent.clone().multiplyScalar(-12 - player.speed * 0.08);
-  const up = frame.up.clone().multiplyScalar(5.5);
-  const target = player.mesh.root.position.clone().add(behind).add(up);
-  camera.position.lerp(target, 1 - Math.exp(-4 * dt));
-  const look = lookAhead.position.clone().add(frame.up.clone().multiplyScalar(1.5));
-  // Smooth look
-  if (!camera.userData.look) camera.userData.look = look.clone();
-  camera.userData.look.lerp(look, 1 - Math.exp(-5 * dt));
-  camera.lookAt(camera.userData.look);
+  const lookAheadT = (player.progress + 0.028 + player.speed * 0.00035) % 1;
+  const lookAhead = track.getFrame(lookAheadT);
+
+  const distBack = 11.5 + player.speed * 0.07;
+  const height = 5.2 + player.speed * 0.018;
+  const behind = frame.tangent.clone().multiplyScalar(-distBack);
+  const up = frame.up.clone().multiplyScalar(height);
+  const lateralCam = frame.side.clone().multiplyScalar(player.lateral * 1.8);
+  const target = player.mesh.root.position.clone().add(behind).add(up).add(lateralCam);
+
+  if (!camInitialized) {
+    camPos.copy(target);
+    camLook.copy(lookAhead.position).add(frame.up.clone().multiplyScalar(1.2));
+    camInitialized = true;
+  }
+
+  const smooth = 1 - Math.exp(-7.5 * dt);
+  camPos.lerp(target, smooth);
+  camera.position.copy(camPos);
+
+  const lookTarget = lookAhead.position.clone().add(frame.up.clone().multiplyScalar(1.2));
+  camLook.lerp(lookTarget, 1 - Math.exp(-9 * dt));
+  camera.lookAt(camLook);
+}
+
+function handlePlayerPickups(pickup, prevBoost) {
+  if (pickup.orb) {
+    hudPulse.orb = 0.45;
+    if (player.orbs % 3 === 0) flashMsg('ORB CHARGE', 0.7, 'pickup');
+  }
+  if (pickup.gate) {
+    hudPulse.gate = 0.55;
+    flashMsg('PRISM GATE', 0.85, 'pickup');
+  }
+  if (player.boostTimer > 0 && prevBoost <= 0) {
+    hudPulse.boost = 0.35;
+    flashMsg('BOOST!', 0.65, 'boost');
+  }
 }
 
 function updatePickups(dt) {
@@ -565,7 +674,14 @@ function checkFinish() {
       r.lap = TOTAL_LAPS;
       if (r.isPlayer) {
         const alreadyDone = racers.filter((x) => x.finished && x !== r).length;
-        flashMsg(alreadyDone === 0 ? 'FINISH!' : 'FINISHED', 1.5);
+        flashMsg(alreadyDone === 0 ? 'FINISH!' : 'FINISHED', 1.5, 'go');
+      }
+    } else if (r.isPlayer && r.lap > 1 && r.prevProgress > 0.85 && r.progress < 0.12) {
+      const lapNum = Math.min(r.lap - 1, TOTAL_LAPS);
+      if (lapNum < TOTAL_LAPS && !r._lapFlash?.[lapNum]) {
+        if (!r._lapFlash) r._lapFlash = {};
+        r._lapFlash[lapNum] = true;
+        flashMsg(`LAP ${lapNum}`, 0.9, 'default');
       }
     }
   }
@@ -594,7 +710,7 @@ function loop() {
     });
     updateCamera(dt);
     updatePickups(dt);
-    updateHUD();
+    updateHUD(dt);
     renderer.render(scene, camera);
     return;
   }
@@ -603,8 +719,10 @@ function loop() {
     raceTime += dt;
     racers.forEach((r) => {
       if (!r.isPlayer) r.updateAI(dt, track, racers);
+      const prevBoost = r.isPlayer ? r.boostTimer : 0;
       r.updatePhysics(dt, track, r.isPlayer ? input : null);
-      r.checkPickups(track);
+      const pickup = r.checkPickups(track);
+      if (r.isPlayer) handlePlayerPickups(pickup, prevBoost);
     });
     // reset boost edge
     if (input.boostConsumed) {
@@ -613,7 +731,7 @@ function loop() {
     }
     updateCamera(dt);
     updatePickups(dt);
-    updateHUD();
+    updateHUD(dt);
     checkFinish();
     renderer.render(scene, camera);
     return;
@@ -752,11 +870,18 @@ function togglePause() {
     state = 'paused';
     showScreen('pause');
     hud.classList.add('active');
+    const ordered = [...racers].sort((a, b) => b.raceMetric - a.raceMetric);
+    const place = ordered.indexOf(player) + 1;
+    const pauseSub = document.querySelector('#pause-screen .result-sub');
+    if (pauseSub) {
+      pauseSub.textContent = `Lap ${Math.min(player.lap, TOTAL_LAPS)}/${TOTAL_LAPS} · ${placeStr(place)} · ${formatTime(raceTime)}`;
+    }
   } else if (state === 'paused') {
     state = 'racing';
     showScreen(null);
     hud.classList.add('active');
     clock.getDelta();
+    flashMsg('RESUME', 0.55, 'default');
   }
 }
 

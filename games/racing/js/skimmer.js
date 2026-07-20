@@ -194,44 +194,60 @@ export class Racer {
 
   get boostMul() {
     if (this.boostTimer <= 0) return 1;
-    if (this.isPlayer) return 1.65;
+    if (this.isPlayer) return 1.78;
     return this.ai?.boostPower ?? 1.22;
   }
 
   updateAI(dt, track, racers) {
     if (!this.ai || this.finished) return;
-    const skill = this.ai.skill;
-
-    const weaveAmp = this.ai.weaveAmp ?? 0.55;
-    const weave = Math.sin(performance.now() * 0.001 * this.ai.weave + this.ai.phase) * weaveAmp;
-    const targetLat = THREE.MathUtils.clamp(weave + (this.ai.laneBias || 0), -0.88, 0.88);
-    this.lateral += (targetLat - this.lateral) * dt * (0.9 + skill * 0.5);
-
-    this.throttle = this.ai.throttle ?? 0.78;
-
-    if (this.boostCooldown > 0) this.boostCooldown -= dt;
+    const skill = this.ai.skill ?? 0.4;
 
     const player = racers.find((r) => r.isPlayer);
     let gap = 0;
     if (player) gap = this.raceMetric - player.raceMetric;
 
+    // Approximate cornering via track tangent change — ease off in bends, push on straights
+    const frame = track.getFrame(this.progress);
+    const ahead = track.getFrame((this.progress + 0.018) % 1);
+    const bend = 1 - Math.abs(frame.tangent.dot(ahead.tangent));
+    const straightMul = THREE.MathUtils.lerp(0.9, 1, 1 - bend * 4.5);
+    const baseThrottle = this.ai.throttle ?? 0.78;
+    this.throttle = THREE.MathUtils.clamp(baseThrottle * straightMul, 0.68, 0.92);
+
+    // Inside-line bias on curves; personality weave on straights
+    const weaveAmp = (this.ai.weaveAmp ?? 0.55) * (1 - bend * 0.65);
+    const weave = Math.sin(performance.now() * 0.001 * this.ai.weave + this.ai.phase) * weaveAmp;
+    const insideLine = bend > 0.08 ? Math.sin(this.progress * Math.PI * 2) * 0.35 * bend : 0;
+    const targetLat = THREE.MathUtils.clamp(
+      weave + (this.ai.laneBias || 0) + insideLine,
+      -0.88,
+      0.88
+    );
+    const react = 1.1 + skill * 0.85 + (gap < -0.04 ? 0.35 : 0);
+    this.lateral += (targetLat - this.lateral) * Math.min(1, dt * react);
+
+    if (this.boostCooldown > 0) this.boostCooldown -= dt;
+
     const minCharge = this.ai.boostMinCharge ?? 70;
     const canBoost = this.spectrum >= minCharge && this.boostCooldown <= 0 && this.boostTimer <= 0;
     if (canBoost) {
-      const behind = gap < -0.02;
+      const behind = gap < -0.025;
+      const close = gap >= -0.025 && gap < 0.1;
       let chance = 0;
       if (behind) chance = this.ai.boostRateBehind ?? 0.12;
-      else if (gap < 0.08) chance = this.ai.boostRateClose ?? 0.04;
+      else if (close) chance = this.ai.boostRateClose ?? 0.04;
       else chance = this.ai.boostRateAhead ?? 0.008;
 
+      // Rivals save boost for straights and duels — no hidden speed cheats
+      if (straightMul > 0.94 || behind) chance *= 1.35;
       if (Math.random() < dt * chance) this.tryBoost();
     }
 
-    let speedScale = 1;
-    if (gap > 0.15) speedScale = 0.88;
-    else if (gap > 0.08) speedScale = 0.94;
-    else if (gap < -0.2) speedScale = 1.04;
-    this.maxSpeed = this.ai.baseMax * speedScale;
+    // Fixed ceiling per rival — challenge comes from lines and boost timing, not rubberband speed
+    this.maxSpeed = this.ai.baseMax;
+    if (gap < -0.12 && straightMul > 0.95) {
+      this.throttle = Math.min(0.95, this.throttle + dt * (0.4 + skill * 0.5));
+    }
   }
 
   tryBoost() {
@@ -241,8 +257,10 @@ export class Racer {
     if (this.isPlayer) {
       const cost = Math.min(this.spectrum, 40);
       this.spectrum -= cost;
-      this.boostTimer = 1.35 + (cost / 40) * 0.4;
-      this.boostCooldown = 0.35;
+      this.boostTimer = 1.45 + (cost / 40) * 0.55;
+      this.boostCooldown = 0.3;
+      const punch = 8 + (cost / 40) * 14;
+      this.speed = Math.min(this.maxSpeed * this.boostMul, this.speed + punch);
     } else {
       const cost = Math.min(this.spectrum, 55);
       this.spectrum -= cost;
@@ -270,11 +288,12 @@ export class Racer {
 
     if (this.boostCooldown > 0 && this.isPlayer) this.boostCooldown -= dt;
 
-    const driftMul = this.drift ? 0.88 : 1;
+    const driftMul = this.drift ? 0.9 : 1;
+    const boostAccel = this.boostTimer > 0 && this.isPlayer ? 1.45 : 1;
     const target = Math.max(0, this.throttle) * this.maxSpeed * this.boostMul * driftMul;
     if (this.throttle >= 0) {
-      const accelScale = this.isPlayer ? 1.15 : 1;
-      this.speed += (target - this.speed) * Math.min(1, (this.accel * accelScale * dt) / this.maxSpeed);
+      const accelScale = this.isPlayer ? 1.28 : 1;
+      this.speed += (target - this.speed) * Math.min(1, (this.accel * accelScale * boostAccel * dt) / this.maxSpeed);
     } else {
       this.speed = Math.max(0, this.speed - this.brake * dt);
     }
@@ -282,13 +301,19 @@ export class Racer {
       this.speed = Math.max(0, this.speed - 8 * dt);
     }
 
+    const speedRatio = THREE.MathUtils.clamp(this.speed / this.maxSpeed, 0, 1);
     const steerPower =
       this.turnRate *
-      (this.drift ? 1.65 : 1) *
-      (0.45 + this.speed / this.maxSpeed) *
-      (this.isPlayer ? 1.35 : 1);
+      (this.drift ? 1.85 : 1) *
+      (0.52 + speedRatio * 0.55) *
+      (this.isPlayer ? 1.42 : 1);
     if (this.isPlayer) {
-      this.lateral += this.steer * steerPower * dt * 0.62;
+      const steerInput = this.steer;
+      this.lateral += steerInput * steerPower * dt * 0.92;
+      // Snap back toward center when not steering — tighter Dawnshard response
+      if (Math.abs(steerInput) < 0.01) {
+        this.lateral *= 1 - Math.min(1, dt * (this.drift ? 1.8 : 3.2));
+      }
     }
     this.lateral = THREE.MathUtils.clamp(this.lateral, -0.92, 0.92);
 
@@ -310,8 +335,11 @@ export class Racer {
 
     if (this.boostTimer > 0) this.boostTimer -= dt;
 
-    if (this.drift && this.speed > 10) {
-      this.spectrum = Math.min(100, this.spectrum + dt * (this.isPlayer ? 16 : 8));
+    if (this.drift && this.speed > 8) {
+      const steerBonus = this.isPlayer ? Math.abs(this.steer) * 10 : 2;
+      const speedBonus = speedRatio * 8;
+      const chargeRate = (this.isPlayer ? 22 : 8) + steerBonus + speedBonus;
+      this.spectrum = Math.min(100, this.spectrum + dt * chargeRate);
     }
 
     const frame = track.getFrame(this.progress);
@@ -351,13 +379,16 @@ export class Racer {
   }
 
   checkPickups(track) {
-    if (this.finished) return;
+    const empty = { orb: false, gate: false };
+    if (this.finished) return empty;
     const pos = this.mesh.root.position;
 
     const orbGain = this.isPlayer ? 24 : this.ai?.orbGain ?? 10;
     const gateSpec = this.isPlayer ? 20 : this.ai?.gateSpec ?? 8;
     const gateSpeed = this.isPlayer ? 12 : this.ai?.gateSpeed ?? 4;
     const pickupRadius = this.isPlayer ? 3.6 : 2.6;
+    let pickedOrb = false;
+    let hitGate = false;
 
     for (const orb of track.orbs) {
       if (orb.taken) continue;
@@ -367,6 +398,7 @@ export class Racer {
         if (orb.glow) orb.glow.visible = false;
         this.orbs += 1;
         this.spectrum = Math.min(100, this.spectrum + orbGain);
+        pickedOrb = true;
       }
     }
 
@@ -385,9 +417,12 @@ export class Racer {
         this.speed = Math.min(this.maxSpeed * 1.35, this.speed + gateSpeed);
         this.gateHits.set(i, now);
         gate.mesh.material.emissiveIntensity = 2.5;
-        gate._flash = 0.4;
+        gate._flash = 0.55;
+        hitGate = true;
       }
     }
+
+    return { orb: pickedOrb, gate: hitGate };
   }
 }
 

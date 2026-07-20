@@ -33,21 +33,27 @@ export class Ally {
         this.prevState = null;
 
         this.speed = 5.0;
-        this.followDistance = 4 + Math.random() * 2;
+        this.followDistance = 3 + Math.random() * 1.5;
         this.formationAngle = config.formationAngle || 0;
         this.formationOffset = new THREE.Vector3();
 
         this.target = null;
+        this.squadFocusTarget = null;
         this.targetPosition = null;
         this.holdPosition = null;
         this.reviveTarget = null;
 
-        this.fireRate = 0.22 + Math.random() * 0.13;
+        this.fireRate = 0.2 + Math.random() * 0.1;
         this.fireTimer = 0;
-        this.accuracy = 0.50 + Math.random() * 0.15;
+        this.accuracy = 0.55 + Math.random() * 0.12;
+        if (this.role === 'assault') this.accuracy += 0.05;
         this.damage = 12;
-        this.range = 28;
-        this.detectionRange = 32;
+        this.range = 30;
+        this.detectionRange = 34;
+
+        this.reviveRange = 2.5;
+        this.reviveTimer = 0;
+        this.reviveDuration = 1.2;
 
         this.stateTimer = 0;
         this.thinkTimer = 0;
@@ -638,8 +644,10 @@ export class Ally {
         return sprite;
     }
 
-    update(dt, playerPos, enemies, allies, command, gameState) {
+    update(dt, playerPos, enemies, allies, command, gameState, squadFocusTarget) {
         if (!this.alive) return;
+
+        this.squadFocusTarget = squadFocusTarget || null;
 
         this.indicator.position.copy(this.mesh.position);
         this.indicator.position.y += 2.5;
@@ -695,12 +703,18 @@ export class Ally {
                 break;
 
             case ALLY_STATES.ENGAGING:
+                if (this.squadFocusTarget && this.squadFocusTarget.alive) {
+                    this.target = this.squadFocusTarget;
+                } else if (!this.target || !this.target.alive || this.target.health <= 0) {
+                    const nearest = this._findNearestEnemy(enemies, playerPos);
+                    if (nearest) this.target = nearest.enemy;
+                }
                 if (!this.target || !this.target.alive || this.target.health <= 0) {
                     this.target = null;
                     this._changeState(ALLY_STATES.FOLLOWING);
                 } else {
                     const distToTarget = this.position.distanceTo(this.target.position);
-                    if (distToTarget > this.detectionRange * 1.3) {
+                    if (distToTarget > this.detectionRange * 1.4) {
                         this.target = null;
                         this._changeState(ALLY_STATES.FOLLOWING);
                     }
@@ -716,7 +730,9 @@ export class Ally {
         }
 
         if (this.state !== ALLY_STATES.REVIVING && downedAlly && this.role === 'medic') {
-            this.reviveTarget = downedAlly.ally;
+            if (!this.reviveTarget || downedAlly.dist < this.position.distanceTo(this.reviveTarget.position)) {
+                this.reviveTarget = downedAlly.ally;
+            }
             this._changeState(ALLY_STATES.REVIVING);
         }
     }
@@ -732,6 +748,9 @@ export class Ally {
                 this._changeState(ALLY_STATES.HOLDING);
                 break;
             case 'focus':
+                if (this.squadFocusTarget && this.squadFocusTarget.alive) {
+                    this.target = this.squadFocusTarget;
+                }
                 this._changeState(ALLY_STATES.ENGAGING);
                 break;
             case 'regroup':
@@ -742,17 +761,23 @@ export class Ally {
 
     _move(dt, playerPos) {
         let targetPos;
+        let moveSpeed = this.speed;
 
         switch (this.state) {
             case ALLY_STATES.FOLLOWING:
             case ALLY_STATES.REGROUPING:
+                const distToPlayer = this.position.distanceTo(playerPos);
+                const dynamicFollow = this.followDistance + Math.min(distToPlayer * 0.15, 2);
                 const angle = this.formationAngle;
                 this.formationOffset.set(
-                    Math.sin(angle) * this.followDistance,
+                    Math.sin(angle) * dynamicFollow,
                     0,
-                    Math.cos(angle) * this.followDistance
+                    Math.cos(angle) * dynamicFollow
                 );
                 targetPos = playerPos.clone().add(this.formationOffset);
+                if (this.state === ALLY_STATES.REGROUPING) {
+                    moveSpeed *= 1.25;
+                }
                 break;
 
             case ALLY_STATES.HOLDING:
@@ -778,6 +803,7 @@ export class Ally {
             case ALLY_STATES.REVIVING:
                 if (this.reviveTarget) {
                     targetPos = this.reviveTarget.position.clone();
+                    moveSpeed *= 1.45;
                 }
                 break;
 
@@ -792,9 +818,9 @@ export class Ally {
 
             if (dist > 0.5) {
                 dir.normalize();
-                const moveSpeed = this.speed * dt;
-                this.position.x += dir.x * Math.min(moveSpeed, dist);
-                this.position.z += dir.z * Math.min(moveSpeed, dist);
+                const step = moveSpeed * dt;
+                this.position.x += dir.x * Math.min(step, dist);
+                this.position.z += dir.z * Math.min(step, dist);
                 this.rotation = Math.atan2(dir.x, dir.z);
             }
         }
@@ -805,14 +831,22 @@ export class Ally {
     _combat(dt, enemies, playerPos, gameState) {
         if (this.state === ALLY_STATES.REVIVING && this.reviveTarget) {
             const dist = this.position.distanceTo(this.reviveTarget.position);
-            if (dist < 2) {
-                this.reviveTarget.revive();
-                this.reviveTarget = null;
-                this._changeState(ALLY_STATES.FOLLOWING);
-                if (gameState) gameState.stats.revives++;
+            if (dist < this.reviveRange) {
+                this.reviveTimer += dt;
+                if (this.reviveTimer >= this.reviveDuration) {
+                    this.reviveTarget.revive();
+                    this.reviveTarget = null;
+                    this.reviveTimer = 0;
+                    this._changeState(ALLY_STATES.FOLLOWING);
+                    if (gameState) gameState.stats.revives++;
+                }
+            } else {
+                this.reviveTimer = 0;
             }
             return;
         }
+
+        this.reviveTimer = 0;
 
         if (this.state !== ALLY_STATES.ENGAGING || !this.target || !this.target.alive) return;
 
@@ -841,11 +875,18 @@ export class Ally {
         let nearest = null;
         let nearestDist = Infinity;
 
+        if (this.squadFocusTarget && this.squadFocusTarget.alive && this.squadFocusTarget.health > 0) {
+            const dist = this.position.distanceTo(this.squadFocusTarget.position);
+            if (dist < this.detectionRange * 1.5) {
+                return { enemy: this.squadFocusTarget, dist };
+            }
+        }
+
         for (const enemy of enemies) {
             if (!enemy.alive || enemy.health <= 0) continue;
             const dist = this.position.distanceTo(enemy.position);
             const playerDist = playerPos.distanceTo(enemy.position);
-            const score = dist + playerDist * 0.5;
+            const score = dist * 0.7 + playerDist * 0.6;
 
             if (score < nearestDist) {
                 nearestDist = score;
@@ -857,11 +898,15 @@ export class Ally {
     }
 
     _findDownedAlly(allies) {
+        let closest = null;
         for (const ally of allies) {
             if (ally === this || !ally.downed || !ally.alive) continue;
-            return { ally, dist: this.position.distanceTo(ally.position) };
+            const dist = this.position.distanceTo(ally.position);
+            if (!closest || dist < closest.dist) {
+                closest = { ally, dist };
+            }
         }
-        return null;
+        return closest;
     }
 
     _changeState(newState) {
@@ -923,6 +968,7 @@ export class Ally {
         this.position.set(x, 0, z);
         this.target = null;
         this.reviveTarget = null;
+        this.reviveTimer = 0;
         this.holdPosition = null;
         this._changeState(ALLY_STATES.FOLLOWING);
         this.mesh.visible = true;

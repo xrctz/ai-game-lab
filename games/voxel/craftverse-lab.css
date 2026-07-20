@@ -120,6 +120,69 @@ body.cv-embedded .menu-btn {
   line-height: 1.5;
 }
 
+#cv-lab-click-overlay .cv-lab-overlay-tips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 18px;
+  max-width: 420px;
+}
+#cv-lab-click-overlay .cv-lab-overlay-tips span {
+  font-size: 0.72rem;
+  color: rgba(200, 245, 230, 0.78);
+  background: rgba(6, 20, 18, 0.55);
+  border: 1px solid rgba(94, 234, 212, 0.22);
+  border-radius: 8px;
+  padding: 5px 9px;
+}
+#cv-lab-click-overlay .cv-lab-overlay-tips kbd {
+  font: 600 0.68rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #5eead4;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(94, 234, 212, 0.28);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-right: 4px;
+}
+
+#cv-lab-quick-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 42px;
+  transform: translateX(-50%);
+  z-index: 99997;
+  max-width: min(520px, 90vw);
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(4, 14, 12, 0.78);
+  border: 1px solid rgba(94, 234, 212, 0.25);
+  color: rgba(220, 250, 240, 0.88);
+  font: 600 0.74rem/1.4 'Segoe UI', system-ui, sans-serif;
+  text-align: center;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.8s ease;
+}
+#cv-lab-quick-hint strong {
+  color: #5eead4;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+#cv-lab-quick-hint kbd {
+  font: 600 0.68rem/1 ui-monospace, monospace;
+  color: #99f6e4;
+  background: rgba(0,0,0,0.35);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+#cv-lab-quick-hint.cv-lab-hint-hide {
+  opacity: 0;
+}
+body.cv-embedded #cv-lab-quick-hint {
+  bottom: 54px;
+}
+
 
 /* ── Pointer-lock error / Esc message ── */
 #cv-lab-lock-msg {

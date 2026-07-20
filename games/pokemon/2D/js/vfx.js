@@ -25,6 +25,7 @@ const VFX = {
   particles: [],
   raf: null,
   last: 0,
+  maxParticles: 80,
 };
 
 function vfxInit() {
@@ -89,6 +90,11 @@ function vfxRect(el) {
 
 function spawnParticle(opts) {
   if (!VFX.layer) return;
+  // Cap DOM particles for performance on low-end devices
+  if (VFX.particles.length >= VFX.maxParticles) {
+    const oldest = VFX.particles.shift();
+    if (oldest?.el) oldest.el.remove();
+  }
   const el = document.createElement('div');
   el.className = 'vfx-particle ' + (opts.className || '');
   el.textContent = opts.char || '';
@@ -298,6 +304,17 @@ function vfxImpactBurst(side, moveType, power = 40, effectiveness = 1) {
     VFX.layer.appendChild(ring);
     setTimeout(() => ring.remove(), 500);
   }
+}
+
+/** Brief full-arena color flash (encounter, catch, etc.) */
+function vfxScreenFlash(kind = 'white', duration = 350) {
+  const arena = document.getElementById('battle-arena');
+  if (!arena) return;
+  const cls = kind === 'red' ? 'flash-red' : kind === 'super' ? 'flash-super' : 'flash-white';
+  arena.classList.remove('shake', 'shake-hard', 'flash-white', 'flash-red', 'flash-super');
+  void arena.offsetWidth;
+  arena.classList.add(cls);
+  setTimeout(() => arena.classList.remove(cls), duration);
 }
 
 function vfxHitFlash(side, effectiveness = 1, critical = false) {
@@ -535,20 +552,24 @@ function sleepVfx(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-/** Catch ball animation */
-async function vfxCatchBall(success) {
+/** Catch ball animation — shake count mirrors catch tension */
+async function vfxCatchBall(success, shakeCount = 3) {
   vfxInit();
   const overlay = document.getElementById('catch-overlay');
   const ball = document.getElementById('catch-ball-img');
+  const shakeLabel = document.getElementById('catch-shake-text');
   const enemy = document.getElementById('enemy-sprite');
   if (!overlay) return;
 
   overlay.classList.add('visible');
+  if (shakeLabel) shakeLabel.textContent = '';
   if (ball) {
     ball.classList.remove('throw', 'wiggle', 'catch-success', 'catch-fail');
     void ball.offsetWidth;
     ball.classList.add('throw');
   }
+
+  vfxScreenFlash('white', 280);
 
   // Hide enemy briefly when "sucked in"
   await sleepVfx(500);
@@ -558,34 +579,47 @@ async function vfxCatchBall(success) {
     ball.classList.add('wiggle');
   }
 
-  await sleepVfx(1400);
+  // Dramatic shake beats (1..shakeCount); fail breaks out on last shake
+  const shakes = clamp(shakeCount, 1, 3);
+  for (let i = 1; i <= shakes; i++) {
+    if (shakeLabel) shakeLabel.textContent = `...${i}!`;
+    await sleepVfx(480);
+    if (!success && i === shakes) {
+      vfxScreenFlash('red', 300);
+      break;
+    }
+  }
 
   if (success) {
+    if (shakeLabel) shakeLabel.textContent = 'Gotcha!';
     if (ball) {
       ball.classList.remove('wiggle');
       ball.classList.add('catch-success');
     }
     if (enemy) enemy.style.opacity = '0';
+    vfxScreenFlash('super', 400);
     // Stars
     if (VFX.layer) {
       const r = enemy ? vfxRect(enemy) : { cx: 200, cy: 100 };
-      for (let i = 0; i < 16; i++) {
+      const starN = Math.min(16, VFX.maxParticles - VFX.particles.length);
+      for (let i = 0; i < starN; i++) {
         spawnParticle({
           className: 'vfx-spark',
           char: '★',
-          color: '#ffcb05',
+          color: i % 3 ? '#ffcb05' : '#fff',
           x: r.cx,
           y: r.cy,
           vx: (Math.random() - 0.5) * 160,
           vy: (Math.random() - 0.5) * 160 - 40,
           life: 0.9,
           gravity: 80,
-          size: 16,
+          size: 14 + Math.random() * 6,
         });
       }
     }
     await sleepVfx(700);
   } else {
+    if (shakeLabel) shakeLabel.textContent = 'Broke free!';
     if (ball) {
       ball.classList.remove('wiggle');
       ball.classList.add('catch-fail');
@@ -596,5 +630,14 @@ async function vfxCatchBall(success) {
 
   overlay.classList.remove('visible');
   if (ball) ball.classList.remove('throw', 'wiggle', 'catch-success', 'catch-fail');
+  if (shakeLabel) shakeLabel.textContent = '';
   if (enemy && !success) enemy.style.opacity = '1';
+}
+
+/** Compute dramatic shake count from catch odds (1–3). */
+function vfxCatchShakeCount(wild, ballBonus = 1) {
+  const chance = catchChance(wild, ballBonus);
+  if (chance >= 0.7) return 1;
+  if (chance >= 0.35) return 2;
+  return 3;
 }

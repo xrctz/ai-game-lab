@@ -53,6 +53,8 @@ export class AudioSystem {
         this.sounds.melee = this._createMeleeSound();
         this.sounds.pickup = this._createPickupSound();
         this.sounds.allyCallout = this._createCalloutSound();
+        this.sounds.squadConfirm = this._createSquadConfirmSound();
+        this.sounds.weaponSwitch = this._createWeaponSwitchSound();
         this.sounds.waveStart = this._createWaveStartSound();
         this.sounds.waveEnd = this._createWaveEndSound();
     }
@@ -209,10 +211,35 @@ export class AudioSystem {
     }
 
     _createCalloutSound() {
-        return this._createBuffer(0.15, (data, sr, len) => {
+        return this._createBuffer(0.18, (data, sr, len) => {
             for (let i = 0; i < len; i++) {
                 const t = i / len;
-                data[i] = Math.sin(2 * Math.PI * 800 * t) * Math.exp(-t * 8) * 0.15;
+                const env = Math.exp(-t * 6);
+                const tone = Math.sin(2 * Math.PI * (720 + t * 120) * t) * 0.12;
+                const crackle = (Math.random() * 2 - 1) * 0.04 * env;
+                data[i] = (tone + crackle) * env;
+            }
+        });
+    }
+
+    _createSquadConfirmSound() {
+        return this._createBuffer(0.12, (data, sr, len) => {
+            for (let i = 0; i < len; i++) {
+                const t = i / len;
+                const env = Math.exp(-t * 10);
+                data[i] = Math.sin(2 * Math.PI * 880 * t) * env * 0.18 +
+                          Math.sin(2 * Math.PI * 1320 * t) * env * 0.08;
+            }
+        });
+    }
+
+    _createWeaponSwitchSound() {
+        return this._createBuffer(0.08, (data, sr, len) => {
+            for (let i = 0; i < len; i++) {
+                const t = i / len;
+                const env = Math.exp(-t * 25);
+                data[i] = (Math.random() * 2 - 1) * env * 0.25 +
+                          Math.sin(2 * Math.PI * 400 * t) * env * 0.15;
             }
         });
     }

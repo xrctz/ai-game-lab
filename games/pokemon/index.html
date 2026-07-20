@@ -63,7 +63,16 @@
       border-color: var(--accent);
       box-shadow: 0 12px 40px rgba(255, 203, 5, 0.15);
     }
+    a.card:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 4px;
+    }
     .card h2 { font-size: 14px; color: var(--accent); }
+    .card .meta {
+      font-size: 7px;
+      color: #7eb6d6;
+      line-height: 1.7;
+    }
     .card .tag {
       display: inline-block;
       font-size: 7px;
@@ -90,6 +99,7 @@
     <a class="card" href="2D/">
       <span class="tag tag-2d">CLASSIC</span>
       <h2>2D Edition</h2>
+      <p class="meta">Canvas · pixel sprites · retro HUD</p>
       <p>
         Original canvas overworld with pixel trainer sprites, retro HUD,
         mid-battle switch, trainer fights, and save/load.
@@ -100,6 +110,7 @@
     <a class="card" href="3D/">
       <span class="tag tag-3d">NEW</span>
       <h2>3D Edition</h2>
+      <p class="meta">Three.js · Blender GLBs · orbit cam</p>
       <p>
         Three.js overworld built from Blender GLB models, orbit camera,
         3D battle arena, and the same RPG systems as the 2D game.

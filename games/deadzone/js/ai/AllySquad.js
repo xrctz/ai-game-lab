@@ -6,6 +6,7 @@ export class AllySquad {
         this.allies = [];
         this.lastCommand = null;
         this.commandCooldown = 0;
+        this.focusTarget = null;
     }
 
     init() {
@@ -26,17 +27,53 @@ export class AllySquad {
             this.commandCooldown -= dt;
             if (this.commandCooldown <= 0) {
                 this.lastCommand = null;
+                this.focusTarget = null;
             }
         }
 
-        for (const ally of this.allies) {
-            ally.update(dt, playerPos, enemies, this.allies, this.lastCommand, gameState);
+        if (this.lastCommand === 'focus') {
+            this.focusTarget = this._pickFocusTarget(playerPos, enemies);
         }
+
+        for (const ally of this.allies) {
+            ally.update(dt, playerPos, enemies, this.allies, this.lastCommand, gameState, this.focusTarget);
+        }
+    }
+
+    _pickFocusTarget(playerPos, enemies) {
+        let best = null;
+        let bestScore = Infinity;
+
+        for (const enemy of enemies) {
+            if (!enemy.alive || enemy.health <= 0) continue;
+            const playerDist = playerPos.distanceTo(enemy.position);
+            if (playerDist > 40) continue;
+
+            let squadDist = 0;
+            let squadCount = 0;
+            for (const ally of this.allies) {
+                if (!ally.alive || ally.downed) continue;
+                squadDist += ally.position.distanceTo(enemy.position);
+                squadCount++;
+            }
+            const avgSquadDist = squadCount > 0 ? squadDist / squadCount : playerDist;
+            const score = playerDist * 0.55 + avgSquadDist * 0.45;
+
+            if (score < bestScore) {
+                bestScore = score;
+                best = enemy;
+            }
+        }
+
+        return best;
     }
 
     issueCommand(command) {
         this.lastCommand = command;
         this.commandCooldown = 0.5;
+        if (command === 'focus') {
+            this.focusTarget = null;
+        }
     }
 
     getAliveAllies() {
@@ -62,5 +99,6 @@ export class AllySquad {
         }
         this.lastCommand = null;
         this.commandCooldown = 0;
+        this.focusTarget = null;
     }
 }
