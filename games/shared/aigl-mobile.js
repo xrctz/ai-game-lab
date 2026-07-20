@@ -78,13 +78,17 @@
       btn.classList.remove('is-active');
       synthKey(code, false, key);
     };
+    // Ignore pointer events of type "touch" — those are already covered by the
+    // touchstart/touchend handlers, and firing both double-triggers the key.
+    var pdown = function (e) { if (e.pointerType === 'touch') return; down(e); };
+    var pup = function (e) { if (e.pointerType === 'touch') return; up(e); };
     btn.addEventListener('touchstart', down, { passive: false });
     btn.addEventListener('touchend', up, { passive: false });
     btn.addEventListener('touchcancel', up, { passive: false });
-    btn.addEventListener('pointerdown', down);
-    btn.addEventListener('pointerup', up);
-    btn.addEventListener('pointerleave', up);
-    btn.addEventListener('pointercancel', up);
+    btn.addEventListener('pointerdown', pdown);
+    btn.addEventListener('pointerup', pup);
+    btn.addEventListener('pointerleave', pup);
+    btn.addEventListener('pointercancel', pup);
   }
 
   function makeBtn(label, className) {
@@ -490,12 +494,30 @@
       var lightL = makeBtn('L Lt');
       var flash = makeBtn('Flash');
       var lightR = makeBtn('R Lt');
+      var ir = makeBtn('IR');
+      var mute = makeBtn('Mute');
       var cam = makeBtn('Cameras', 'wide');
 
-      [lookL, lookC, lookR, doorL, doorR, lightL, flash, lightR, cam].forEach(function (b) {
+      // Clearer screen-reader labels than the terse on-screen abbreviations.
+      var labels = [
+        [lookL, 'Look left door'], [lookC, 'Look at desk'], [lookR, 'Look right door'],
+        [doorL, 'Toggle left door'], [doorR, 'Toggle right door'],
+        [lightL, 'Hold for left hall light'], [flash, 'Flashlight'],
+        [lightR, 'Hold for right hall light'], [ir, 'Night vision'],
+        [mute, 'Mute audio'], [cam, 'Toggle camera tablet'],
+      ];
+      labels.forEach(function (pair) { pair[0].setAttribute('aria-label', pair[1]); });
+
+      [lookL, lookC, lookR, doorL, doorR, lightL, flash, lightR, ir, mute, cam].forEach(function (b) {
         grid.appendChild(b);
       });
       root.appendChild(grid);
+
+      var banner = document.createElement('div');
+      banner.className = 'aigl-mob-banner';
+      banner.textContent = 'Tap doors · hold lights · Cameras for the security feed';
+      root.insertBefore(banner, grid);
+      scheduleBannerHide(banner);
 
       function tap(code, key) {
         synthKey(code, true, key);
@@ -509,8 +531,22 @@
       doorR.addEventListener('click', function () { tap('KeyE', 'e'); });
       cam.addEventListener('click', function () { tap('Space', ' '); });
       flash.addEventListener('click', function () { tap('KeyF', 'f'); });
+      ir.addEventListener('click', function () { tap('KeyI', 'i'); });
+      mute.addEventListener('click', function () { tap('KeyM', 'm'); });
       bindHoldButton(lightL, 'KeyZ', 'z');
       bindHoldButton(lightR, 'KeyC', 'c');
+
+      // When the camera tablet is open, collapse the door/light buttons so they
+      // don't cover the tablet UI — keep only the wide Cameras button so the
+      // player can still tap to close the feed.
+      var tablet = document.getElementById('tablet');
+      if (tablet) {
+        var syncCams = function () {
+          grid.classList.toggle('aigl-fnaf-cams-open', !tablet.classList.contains('hidden'));
+        };
+        new MutationObserver(syncCams).observe(tablet, { attributes: true, attributeFilter: ['class'] });
+        syncCams();
+      }
 
       mounted['aigl-mob-fnaf'] = root;
       return root;
@@ -533,6 +569,7 @@
     ensureCss: ensureCss,
     synthKey: synthKey,
     bindHoldButton: bindHoldButton,
+    scheduleBannerHide: scheduleBannerHide,
     makeBtn: makeBtn,
     createRoot: createRoot,
     createJoystick: createJoystick,

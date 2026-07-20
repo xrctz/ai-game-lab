@@ -17,9 +17,9 @@
     <!-- Title Screen -->
     <div id="title-screen">
       <div id="title-main">
-        <h1>CRAFTVERSE<span>Voxel sandbox · Lab v20</span></h1>
-        <button class="menu-btn" id="btn-singleplayer">Play</button>
-        <button class="menu-btn" id="btn-creative">Creative Mode</button>
+        <h1>CRAFTVERSE<span>Voxel sandbox · Lab v21</span></h1>
+        <button class="menu-btn" id="btn-singleplayer" aria-label="Play survival mode">Play</button>
+        <button class="menu-btn" id="btn-creative" aria-label="Play creative mode">Creative Mode</button>
         <div class="title-hint">WASD move · Space jump · E inventory · Esc menu</div>
       </div>
       <div id="title-worlds" class="hidden">
@@ -30,9 +30,9 @@
       </div>
       <div id="title-new-world" class="hidden">
         <h2>Create New World</h2>
-        <p>World Name:</p>
+        <label for="new-world-name">World Name:</label>
         <input type="text" id="new-world-name" value="New World" />
-        <p>Seed (optional):</p>
+        <label for="new-world-seed">Seed (optional):</label>
         <input type="text" id="new-world-seed" placeholder="random" />
         <br />
         <button class="menu-btn" id="btn-start-new">Create World</button>
@@ -113,7 +113,7 @@
     <div id="toast-container"></div>
 
     <!-- CraftVerse Lab inject layer — embed mode, pointer-lock UX, hub bridge -->
-    <script src="./craftverse-lab.js?v=21" defer></script>
+    <script src="./craftverse-lab.js?v=22" defer></script>
 
   </body>
 </html>

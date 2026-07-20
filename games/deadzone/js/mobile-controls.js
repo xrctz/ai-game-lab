@@ -23,9 +23,7 @@
     banner.className = 'aigl-mob-banner';
     banner.textContent = 'Joystick move · drag upper-right to aim';
     root.appendChild(banner);
-    setTimeout(function () {
-      if (banner.parentNode) banner.style.opacity = '0';
-    }, 5000);
+    window.AIGLMobile.scheduleBannerHide(banner);
 
     var move = { x: 0, y: 0 };
     function applyMove() {
